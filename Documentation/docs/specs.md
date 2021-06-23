@@ -1,5 +1,5 @@
 # Specifications
-These are the current specifications of the FPGC4:
+These are the current specifications of the FPGC5:
 
 - 25MHz CPU clock   
 - 6.94MHz GPU clock

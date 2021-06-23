@@ -3,7 +3,7 @@
 !!! info "TODO"
 	Update this page!
 
-Using the C compiler it is possible to compile C code to B322 assembly. Using C it is way easier to write code for the FPGC4, although it is less optimized and currently not perfectly stable.
+Using the C compiler it is possible to compile C code to B322 assembly. Using C it is way easier to write code for the FPGC5, although it is less optimized and currently not perfectly stable.
 
 ## How the C Compiler works
 A C compiler is a very complex piece of software. To prevent having to spend a very long time on writing an instable, slow and unfinished C compiler, I modified an existing C compiler instead. I found a very good and well documented C compiler written in Python (the easiest programming language), called [ShivyC](https://github.com/ShivamSarodia/ShivyC). ShivyC outputs x86_64 assembly code. It has the following stages:
@@ -29,15 +29,15 @@ B322 uses word addressable memory, meaning that each address is 32 bits. x86_64 
 B322 has READ, WRITE and COPY instruction to access memory. All other instructions can only be applied to registers (and in some cases literals). x86_64 can use literals, registers and memory (with offsets and multiplications!!!) for almost all instructions. This is by far the biggest problem I currently have and requires writing cases for almost all possibilities. I started doing this kind of ad hoc and need to spend more time on this to improve stability.
 
 ## Stack
-C uses a stack. Since the hardware stack of the FPGC4 is too small, has no external pointers and is not addressable, a software stack is used instead. The stack starts at the end of SDRAM at 0x700000 and grows towards 0. The interrupt handlers have a separate (and smaller) stack, starting at 0x7B0000. R14 and R15 are used as base pointer and stack pointer respectively.
+C uses a stack. Since the hardware stack of the FPGC5 is too small, has no external pointers and is not addressable, a software stack is used instead. The stack starts at the end of SDRAM at 0x700000 and grows towards 0. The interrupt handlers have a separate (and smaller) stack, starting at 0x7B0000. R14 and R15 are used as base pointer and stack pointer respectively.
 
-Since x86_64 has byte addressable memory, integers (32 bit) are stored with an offset of 4 of each other. The FPGC4 does not have byte addressable memory. This means that chars are stored in 32 bit spaces and therefore have no overflow. This also means that using variables longer that 32 bits (longs) are cutoff at 32 bits. Should not be a big issue, since we only have 27 bits addresses anyways. Worst case, this means that 75% of the stack is unused. While this sounds like a lot, it is currently not a problem because of the relatively huge memory size of 32MiB. Will probably fix it in the future.
+Since x86_64 has byte addressable memory, integers (32 bit) are stored with an offset of 4 of each other. The FPGC5 does not have byte addressable memory. This means that chars are stored in 32 bit spaces and therefore have no overflow. This also means that using variables longer that 32 bits (longs) are cutoff at 32 bits. Should not be a big issue, since we only have 27 bits addresses anyways. Worst case, this means that 75% of the stack is unused. While this sounds like a lot, it is currently not a problem because of the relatively huge memory size of 32MiB. Will probably fix it in the future.
 
 ## Register mapping
 The registers are mapped in the following way:
 
 ``` text
-x86_64 	| FPGC4
+x86_64 	| FPGC5
 ----------------
 rax		| r1
 rbx 	| r2
@@ -52,7 +52,7 @@ r11 	| r11
 rbp 	| r14
 rsp 	| r15
 ```
-This leaves registers r7, r12 and r13 unused in the FPGC4.
+This leaves registers r7, r12 and r13 unused in the FPGC5.
 r12 and r13 are currently used as temporary registers for certain assembly instructions, which is sometimes needed/convenient for converting single x86_64 instructions to multiple B322 instructions. For example, in x86_64 you can write a number to the stack at an offset using `mov [rbp-offset] 37`. In B322 you first need to load the literal into a register before using a write instruction. r7 is currently used as temp register for loading the address of global variables during for read/write instructions.
 
 
@@ -62,7 +62,7 @@ r12 and r13 are currently used as temporary registers for certain assembly instr
 - Full context switch for interrupt handlers
 
 ## Testing the compiler
-To make sure that everything still works after making a change in the compiler, I made a number of test .c files with an expected return value. Using the runCfiles.sh script, you can send compile and send multiple .c files to the FPGC4 and get their return value. So to automatically test all test files, you just have to run `runCfiles.sh test/*.c`. The script automatically compiles, assembles and sends the code over UART to the FPGC4 (so use the UART bootloader for the SPI flash module). When the program is done executing, the FPGC4 will send back the return value, which you can compare. The FPGC4 also resets between each file, because of the UART DTR reset (just like an Arduino).
+To make sure that everything still works after making a change in the compiler, I made a number of test .c files with an expected return value. Using the runCfiles.sh script, you can send compile and send multiple .c files to the FPGC5 and get their return value. So to automatically test all test files, you just have to run `runCfiles.sh test/*.c`. The script automatically compiles, assembles and sends the code over UART to the FPGC5 (so use the UART bootloader for the SPI flash module). When the program is done executing, the FPGC5 will send back the return value, which you can compare. The FPGC5 also resets between each file, because of the UART DTR reset (just like an Arduino).
 
 ## Supported and unsupported features
 Most basic features like for/while loops are supported, so I will not list everything.
@@ -80,7 +80,7 @@ Most basic features like for/while loops are supported, so I will not list every
 
 ### Unsupported
 - floating points
-- negative numbers! (the FPGC4 does not do any signed operations)
+- negative numbers! (the FPGC5 does not do any signed operations)
 - division and modulo (use div() and mod() in the math library for this)
 - include guards, since this is handled internally inside the compiler (for includes)
 - compiling and linking multiple .c files. So libraries should be written entirely in a single .h file

@@ -1,5 +1,5 @@
 # Memory map
-The FPGC4 uses two memory maps to access all different types of memory and I/O.
+The FPGC5 uses two memory maps to access all different types of memory and I/O.
 One map is used by the CPU (and implemented by the MU) and the other map is used by the GPU. The GPU memory map is only useful when developing the GPU (in Verilog), so for writing code, you only need to understand the CPU memory map.
 
 ## CPU memory map

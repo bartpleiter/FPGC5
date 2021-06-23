@@ -6,7 +6,7 @@ While working on the C compiler, I started writing some C libraries. Some librar
 
 ## CH376.h
 This library is used to communicate with the CH376 chip. Currently it only contains functions for file system functions (see midiSynth.c for USB MIDI functions).
-It can read and write large chunks of data and uses the interrupt signal (without using actual interrupts on the FPGC4) to read return values from the chip.
+It can read and write large chunks of data and uses the interrupt signal (without using actual interrupts on the FPGC5) to read return values from the chip.
 Most functions have a return value (1 on success and 0 on failure). Please note that you should use filenames that follow the 8.3 DOS standard (ALL CAPS!).
 
 ## GFX.h

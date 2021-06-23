@@ -7,7 +7,7 @@
 
 - using Icarus Verilog and GTKwave
 - instructions how to simulate
-	- add things you want to test in FPGC_tb.v
+	- add things you want to test in \*\_tb.v
 	- testbench dumps all signals to a .wave file for GTKwave
 	- run the testbench with 
 		iverilog -o output FPGC_tb.v && vvp output
