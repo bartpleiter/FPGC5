@@ -1,0 +1,42 @@
+site_name: FPGC4 Documentation
+
+theme:
+    name: material
+    custom_dir: overrides
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - codehilite
+  - admonition
+
+repo_name: b4rt-dev/FPGC4
+repo_url: https://github.com/b4rt-dev/fpgc4
+
+edit_uri: edit/master/Documentation/docs/
+
+use_directory_urls: False
+
+nav:
+  - Introduction: 'index.md'
+  - 'specs.md'
+  - 'arch.md'
+  - 'cpu.md'
+  - 'mu.md'
+  - 'gpu.md'
+  - 'map.md'
+  - 'sim.md'
+  - 'bl.md'
+  - 'pcb.md'
+  - 'asm.md'
+  - 'libasm.md'
+  - 'c.md'
+  - 'libc.md'
+  - 'bdos.md'
+  - 'prog.md'
+  - 'quartus.md'
+  - 'midi.md'
+  - 'apu.md'
+  - 'progress.md'
+  - 'doc.md'

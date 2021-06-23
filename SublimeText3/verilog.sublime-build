@@ -1,0 +1,7 @@
+//my static compile script, will not work on practically any other PC, so modify the path to your files
+//it is static so I can compile my testbench while not having to switch tabs to the testbench file
+{
+	"shell_cmd": "iverilog -o /home/bart/Documents/FPGA/FPGC4/Verilog/output/output /home/bart/Documents/FPGA/FPGC4/Verilog/testbench/FPGC_tb.v && vvp /home/bart/Documents/FPGA/FPGC4/Verilog/output/output",
+	"file_patterns": ["*.v"]
+}
+//also, you can use $file for current file

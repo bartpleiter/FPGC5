@@ -1,0 +1,112 @@
+[*]
+[*] GTKWave Analyzer v (Modified by Bart for High DPI displays) 3.3.103 (w)1999-2019 BSI
+[*] Thu Jan 16 20:32:29 2020
+[*]
+[dumpfile] "/home/bart/Documents/FPGA/FPGC4/Verilog/output/wave.vcd"
+[dumpfile_mtime] "Thu Jan 16 20:31:39 2020"
+[dumpfile_size] 19615892
+[savefile] "/home/bart/Documents/FPGA/FPGC4/Verilog/output/FPGC4.gtkw"
+[timestart] 0
+[size] 2736 1716
+[pos] -1 -1
+*-18.838461 2149000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] FPGC_tb.
+[treeopen] FPGC_tb.fpgc.
+[treeopen] FPGC_tb.fpgc.fsx.
+[sst_width] 382
+[signals_width] 754
+[sst_expanded] 1
+[sst_vpaned_height] 965
+@28
+FPGC_tb.fpgc.clk
+FPGC_tb.fpgc.nreset
+FPGC_tb.fpgc.reset
+@200
+-
+-FSX
+@28
+FPGC_tb.fpgc.fsx.BGW_r[2:0]
+FPGC_tb.fpgc.fsx.BGW_g[2:0]
+FPGC_tb.fpgc.fsx.BGW_b[1:0]
+@200
+-
+@28
+FPGC_tb.fpgc.fsx.SPR_r[2:0]
+FPGC_tb.fpgc.fsx.SPR_g[2:0]
+FPGC_tb.fpgc.fsx.SPR_b[1:0]
+@24
+FPGC_tb.fpgc.fsx.draw_behind_bg
+FPGC_tb.fpgc.fsx.draw_sprite
+@200
+-
+-
+@24
+FPGC_tb.fpgc.fsx.vga_clk
+FPGC_tb.fpgc.fsx.vga_hs
+FPGC_tb.fpgc.fsx.vga_vs
+FPGC_tb.fpgc.fsx.o_de
+FPGC_tb.fpgc.fsx.frameDrawn
+@200
+-
+@24
+FPGC_tb.fpgc.fsx.h_count[9:0]
+FPGC_tb.fpgc.fsx.v_count[8:0]
+@200
+-
+-SpriteRenderer
+@25
+FPGC_tb.fpgc.fsx.spriterenderer.h_count[9:0]
+@24
+FPGC_tb.fpgc.fsx.spriterenderer.h_count_visible[9:0]
+FPGC_tb.fpgc.fsx.spriterenderer.h_count_visible_delay[9:0]
+FPGC_tb.fpgc.fsx.spriterenderer.h_tile_next[5:0]
+FPGC_tb.fpgc.fsx.spriterenderer.h_tile[5:0]
+FPGC_tb.fpgc.fsx.spriterenderer.h_tile_pixel[2:0]
+@200
+-
+@24
+FPGC_tb.fpgc.fsx.spriterenderer.v_count[8:0]
+FPGC_tb.fpgc.fsx.spriterenderer.v_count_visible[8:0]
+FPGC_tb.fpgc.fsx.spriterenderer.v_count_visible_delay[8:0]
+FPGC_tb.fpgc.fsx.spriterenderer.v_tile[5:0]
+FPGC_tb.fpgc.fsx.spriterenderer.v_tile_pixel[2:0]
+@200
+-
+@24
+FPGC_tb.fpgc.fsx.spriterenderer.tile[10:0]
+FPGC_tb.fpgc.fsx.spriterenderer.tile_next[10:0]
+@200
+-
+@24
+FPGC_tb.fpgc.fsx.spriterenderer.spritephase[5:0]
+FPGC_tb.fpgc.fsx.spriterenderer.spritephaseOffset[5:0]
+@200
+-
+@24
+FPGC_tb.fpgc.fsx.spriterenderer.h_count_div2[9:0]
+FPGC_tb.fpgc.fsx.spriterenderer.h_count_div2_offset[9:0]
+@200
+-
+-Memory
+@24
+FPGC_tb.fpgc.vram8_gpu_addr[13:0]
+FPGC_tb.fpgc.vram8_gpu_q[7:0]
+@200
+-
+@24
+FPGC_tb.fpgc.vram32_gpu_addr[13:0]
+@28
+FPGC_tb.fpgc.vram32_gpu_q[31:0]
+@200
+-
+@24
+FPGC_tb.fpgc.vram322_gpu_addr[13:0]
+@28
+FPGC_tb.fpgc.vram322_gpu_q[31:0]
+@200
+-
+@24
+FPGC_tb.fpgc.fsx.vramSPR_addr[13:0]
+FPGC_tb.fpgc.fsx.vramSPR_q[8:0]
+[pattern_trace] 1
+[pattern_trace] 0

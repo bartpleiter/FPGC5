@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name FPGC4IOboard-rescue)(type Legacy)(uri ${KIPRJMOD}/FPGC4IOboard-rescue.lib)(options "")(descr ""))
+)
