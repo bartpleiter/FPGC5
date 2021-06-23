@@ -190,7 +190,7 @@ assign vram32_gpu_d     = 32'd0;
 VRAM #(
 .WIDTH(32), 
 .WORDS(1056), 
-.LIST("/home/bart/Documents/FPGA/FPGC4/Verilog/memory/vram32.list")
+.LIST("/home/bart/Documents/FPGA/FPGC5/Verilog/memory/vram32.list")
 )   vram32(
 //CPU port
 .cpu_clk    (clk),
@@ -223,7 +223,7 @@ assign vram322_gpu_d     = 32'd0;
 VRAM #(
 .WIDTH(32), 
 .WORDS(1056), 
-.LIST("/home/bart/Documents/FPGA/FPGC4/Verilog/memory/vram32.list")
+.LIST("/home/bart/Documents/FPGA/FPGC5/Verilog/memory/vram32.list")
 )   vram322(
 //CPU port
 .cpu_clk    (clk),
@@ -262,7 +262,7 @@ assign vram8_gpu_d      = 8'd0;
 VRAM #(
 .WIDTH(8), 
 .WORDS(8194), 
-.LIST("/home/bart/Documents/FPGA/FPGC4/Verilog/memory/vram8.list")
+.LIST("/home/bart/Documents/FPGA/FPGC5/Verilog/memory/vram8.list")
 )   vram8(
 //CPU port
 .cpu_clk    (clk),
@@ -301,7 +301,7 @@ assign vramSPR_gpu_d      = 9'd0;
 VRAM #(
 .WIDTH(9), 
 .WORDS(256), 
-.LIST("/home/bart/Documents/FPGA/FPGC4/Verilog/memory/vramSPR.list")
+.LIST("/home/bart/Documents/FPGA/FPGC5/Verilog/memory/vramSPR.list")
 )   vramSPR(
 //CPU port
 .cpu_clk    (clk),

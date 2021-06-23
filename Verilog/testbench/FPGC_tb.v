@@ -6,41 +6,41 @@
 `timescale 1 ns/1 ns
 
 //Include top level design
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/FPGC4.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/FPGC5.v"
 
 //Include modules
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/MultiStabilizer.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/ClockDivider.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/DtrReset.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/MultiStabilizer.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/ClockDivider.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/DtrReset.v"
 
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/GPU/FSX.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/GPU/BGWrenderer.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/GPU/Spriterenderer.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/FSX.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/BGWrenderer.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/Spriterenderer.v"
 
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/Memory/VRAM.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/Memory/mt48lc16m16a2.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/Memory/w25q128jv.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/Memory/SDRAMcontroller.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/Memory/SPIreader.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/Memory/ROM.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/Memory/MemoryUnit.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/Memory/VRAM.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/Memory/mt48lc16m16a2.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/Memory/w25q128jv.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/Memory/SDRAMcontroller.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/Memory/SPIreader.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/Memory/ROM.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/Memory/MemoryUnit.v"
 
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/CPU/CPU.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/CPU/ALU.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/CPU/ControlUnit.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/CPU/InstructionDecoder.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/CPU/PC.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/CPU/Regbank.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/CPU/Stack.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/CPU/Timer.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/CPU/CPU.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/CPU/ALU.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/CPU/ControlUnit.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/CPU/InstructionDecoder.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/CPU/PC.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/CPU/Regbank.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/CPU/Stack.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/CPU/Timer.v"
 
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/IO/Keyboard.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/IO/NESpadReader.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/IO/OStimer.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/IO/UARTtx.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/IO/UARTrx.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/IO/SimpleSPI.v"
-`include "/home/bart/Documents/FPGA/FPGC4/Verilog/modules/IO/SimpleFastSPI.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/Keyboard.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/NESpadReader.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/OStimer.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/UARTtx.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/UARTrx.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/SimpleSPI.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/SimpleFastSPI.v"
 
 //Define testmodule
 module FPGC_tb;
@@ -171,7 +171,7 @@ reg  [3:0]  GPI;
 //DIP Switch
 reg [3:0] DIPS;
 
-FPGC4 fpgc (
+FPGC5 fpgc (
 .clk(clk), //25MHz
 .nreset(nreset),
 
@@ -279,7 +279,7 @@ FPGC4 fpgc (
 initial
 begin
     //Dump everything for GTKwave
-    $dumpfile("/home/bart/Documents/FPGA/FPGC4/Verilog/output/wave.vcd");
+    $dumpfile("/home/bart/Documents/FPGA/FPGC5/Verilog/output/wave.vcd");
     $dumpvars;
     
     clk = 0;

@@ -7,7 +7,7 @@ Quartus/simulation/
 Quartus/output_files/*
 Quartus/greybox_tmp/
 !Quartus/output_files/output_file.jic
-!Quartus/output_files/FPGC4.sof
+!Quartus/output_files/FPGC5.sof
 Programmer/verify.bin
 Quartus/*/*.bak
 Quartus/*/*/*.bak
