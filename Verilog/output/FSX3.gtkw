@@ -1,0 +1,180 @@
+[*]
+[*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
+[*] Tue Jun 22 18:42:06 2021
+[*]
+[dumpfile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FSX3\output\wave.vcd"
+[dumpfile_mtime] "Tue Jun 22 18:27:31 2021"
+[dumpfile_size] 95712360
+[savefile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FSX3\output\FSX3.gtkw"
+[timestart] 2725096
+[size] 1920 1027
+[pos] -1 -1081
+*-8.815579 2725530 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] FSX3_tb.
+[treeopen] FSX3_tb.fsx.
+[treeopen] FSX3_tb.fsx.rgb2hdmi.
+[sst_width] 254
+[signals_width] 497
+[sst_expanded] 1
+[sst_vpaned_height] 296
+@28
+FSX3_tb.clkPixel
+@200
+-
+-TMDS
+@28
+FSX3_tb.clkTMDShalf
+@200
+-
+-RGB2HDMI
+@28
+FSX3_tb.fsx.rgb2hdmi.cTMDS
+FSX3_tb.fsx.rgb2hdmi.encodedRed[9:0]
+FSX3_tb.fsx.rgb2hdmi.encodedGreen[9:0]
+FSX3_tb.fsx.rgb2hdmi.encodedBlue[9:0]
+@800028
+FSX3_tb.fsx.TMDS_p[3:0]
+@28
+(0)FSX3_tb.fsx.TMDS_p[3:0]
+(1)FSX3_tb.fsx.TMDS_p[3:0]
+(2)FSX3_tb.fsx.TMDS_p[3:0]
+(3)FSX3_tb.fsx.TMDS_p[3:0]
+@1001200
+-group_end
+@c00028
+FSX3_tb.fsx.TMDS_n[3:0]
+@28
+(0)FSX3_tb.fsx.TMDS_n[3:0]
+(1)FSX3_tb.fsx.TMDS_n[3:0]
+(2)FSX3_tb.fsx.TMDS_n[3:0]
+(3)FSX3_tb.fsx.TMDS_n[3:0]
+@1401200
+-group_end
+@200
+-
+-Composite
+@8022
+FSX3_tb.fsx.composite[7:0]
+@200
+-
+-VRAM
+@22
+FSX3_tb.fsx.vram322_addr[13:0]
+FSX3_tb.fsx.vram322_q[31:0]
+@200
+-
+@22
+FSX3_tb.fsx.vramSPR_addr[13:0]
+FSX3_tb.fsx.vramSPR_q[8:0]
+@200
+-
+@22
+FSX3_tb.fsx.vram8_addr[13:0]
+@24
+FSX3_tb.fsx.vram8_q[7:0]
+@200
+-
+@22
+FSX3_tb.fsx.vram32_addr[13:0]
+@28
+FSX3_tb.fsx.vram32_q[31:0]
+@200
+-
+-BGW
+@28
+FSX3_tb.fsx.bgwrenderer.clk
+FSX3_tb.fsx.bgwrenderer.hs
+FSX3_tb.fsx.bgwrenderer.vs
+@24
+FSX3_tb.fsx.bgwrenderer.h_count[11:0]
+FSX3_tb.fsx.bgwrenderer.v_count[11:0]
+@28
+FSX3_tb.fsx.bgwrenderer.blank
+@24
+FSX3_tb.fsx.bgwrenderer.XtileOffset[5:0]
+FSX3_tb.fsx.bgwrenderer.XfineOffset[2:0]
+@200
+-
+@24
+FSX3_tb.fsx.bgwrenderer.hTileCounter[5:0]
+FSX3_tb.fsx.bgwrenderer.hTileDoublePixelCounter[3:0]
+FSX3_tb.fsx.bgwrenderer.hTilePixelCounter[2:0]
+@200
+-
+@24
+FSX3_tb.fsx.bgwrenderer.vTileCounter[4:0]
+FSX3_tb.fsx.bgwrenderer.vTileDoubleLineCounter[3:0]
+FSX3_tb.fsx.bgwrenderer.vTileLineCounter[2:0]
+@200
+-
+@24
+FSX3_tb.fsx.bgwrenderer.bg_tile[10:0]
+FSX3_tb.fsx.bgwrenderer.bg_tile_line[10:0]
+FSX3_tb.fsx.bgwrenderer.window_tile[10:0]
+FSX3_tb.fsx.bgwrenderer.window_tile_line[10:0]
+@200
+-
+@24
+FSX3_tb.fsx.bgwrenderer.bg_tile_next[10:0]
+FSX3_tb.fsx.bgwrenderer.window_tile_next[10:0]
+@200
+-
+@24
+FSX3_tb.fsx.bgwrenderer.color_index[7:0]
+FSX3_tb.fsx.bgwrenderer.tile_index[7:0]
+@28
+FSX3_tb.fsx.bgwrenderer.pattern_bg_tile[15:0]
+FSX3_tb.fsx.bgwrenderer.palette_bg_tile[31:0]
+FSX3_tb.fsx.bgwrenderer.pattern_window_tile[15:0]
+@200
+-
+@28
+FSX3_tb.fsx.bgwrenderer.current_pattern_bg_tile[15:0]
+FSX3_tb.fsx.bgwrenderer.current_palette_bg_tile[31:0]
+FSX3_tb.fsx.bgwrenderer.current_pattern_window_tile[15:0]
+FSX3_tb.fsx.bgwrenderer.current_palette_window_tile[31:0]
+@200
+-
+@28
+FSX3_tb.fsx.bgwrenderer.current_pixel_pattern_bg[1:0]
+FSX3_tb.fsx.bgwrenderer.current_pixel_pattern_window[1:0]
+@200
+-
+@28
+FSX3_tb.fsx.bgwrenderer.bg_r[2:0]
+FSX3_tb.fsx.bgwrenderer.bg_g[2:0]
+FSX3_tb.fsx.bgwrenderer.bg_b[1:0]
+FSX3_tb.fsx.bgwrenderer.window_r[2:0]
+FSX3_tb.fsx.bgwrenderer.window_g[2:0]
+FSX3_tb.fsx.bgwrenderer.window_b[1:0]
+@200
+-
+@28
+FSX3_tb.fsx.bgwrenderer.buf_bg_r[23:0]
+FSX3_tb.fsx.bgwrenderer.buf_bg_g[23:0]
+FSX3_tb.fsx.bgwrenderer.buf_bg_b[15:0]
+@200
+-
+@28
+FSX3_tb.fsx.bgwrenderer.r[2:0]
+FSX3_tb.fsx.bgwrenderer.g[2:0]
+FSX3_tb.fsx.bgwrenderer.b[1:0]
+@200
+-
+-Video Timings
+@28
+FSX3_tb.fsx.clkPixel
+FSX3_tb.fsx.csync
+FSX3_tb.fsx.hsync
+FSX3_tb.fsx.vsync
+@29
+FSX3_tb.fsx.blank
+@24
+FSX3_tb.fsx.v_count[11:0]
+FSX3_tb.fsx.h_count[11:0]
+@28
+FSX3_tb.fsx.frameDrawn
+@420
+FSX3_tb.fsx.framecounter
+[pattern_trace] 1
+[pattern_trace] 0

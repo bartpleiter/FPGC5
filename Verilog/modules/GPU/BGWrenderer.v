@@ -1,125 +1,35 @@
 /*
 * Renders Background and Window plane
 */
-module BGWrenderer
-#(
-    parameter H_RES   = 320,      // horizontal resolution (pixels)
-    parameter V_RES   = 200,      // vertical resolution (lines)
-    parameter H_FP    = 34,       // horizontal front porch
-    parameter H_SYNC  = 32,       // horizontal sync
-    parameter H_BP    = 56,       // horizontal back porch
-    parameter V_FP    = 23,        // vertical front porch
-    parameter V_SYNC  = 5,        // vertical sync
-    parameter V_BP    = 34,       // vertical back porch
-    parameter H_POL   = 0,        // horizontal sync polarity (0:neg, 1:pos)
-    parameter V_POL   = 0         // vertical sync polarity
-) 
-(
-    //VGA I/O
-    input               vga_clk,            //9MHz
-    input               vga_hs,
-    input               vga_vs,
-    output wire [2:0]   vga_r,
-    output wire [2:0]   vga_g,
-    output wire [1:0]   vga_b,
+module BGWrenderer(
+    // Video I/O
+    input               clk,
+    input               hs,
+    input               vs,
+    input               blank,
 
-    input [9:0]         h_count,  // line position in pixels including blanking 
-    input [8:0]         v_count,  // frame position in lines including blanking 
+    // Output pixels
+    output wire [2:0]   r,
+    output wire [2:0]   g,
+    output wire [1:0]   b,
 
-    input               o_hs, 
-    input               o_vs, 
-    input               o_de, 
-    input               o_h, 
-    input               o_v, 
-    input               o_frame,
+    input [11:0]         h_count,  // line position in pixels including blanking 
+    input [11:0]         v_count,  // frame position in lines including blanking 
 
-    //VRAM32
+    // VRAM32
     output [13:0]       vram32_addr,
     input  [31:0]       vram32_q, 
 
-    //VRAM8
+    // VRAM8
     output [13:0]       vram8_addr,
     input  [7:0]        vram8_q
 );
 
-// Horizontal: sync, active, and pixels
-localparam HS_STA = H_FP - 1;           // sync start (first pixel is 0)
-localparam HS_END = HS_STA + H_SYNC;    // sync end
-localparam HA_STA = HS_END + H_BP;      // active start
-localparam HA_END = HA_STA + H_RES;     // active end 
-localparam LINE   = HA_END;             // line pixels 
+localparam VSTART = 86; // Line to start rendering
+localparam HSTART = 128; // About two tiles before blanking ends
 
-// Vertical: sync, active, and pixels
-localparam VS_STA = V_FP - 1;           // sync start (first line is 0)
-localparam VS_END = VS_STA + V_SYNC;    // sync end
-localparam VA_STA = VS_END + V_BP;      // active start
-localparam VA_END = VA_STA + V_RES;     // active end 
-localparam FRAME  = VA_END;             // frame lines 
-
-//RENDERING
-reg [5:0] XtileOffset;
-reg [2:0] XfineOffset;
-
-initial
-begin
-    XtileOffset <= 6'd0;
-    XfineOffset <= 3'd0;
-end
-
-
-wire [8:0] v_count_visible;
-assign v_count_visible = v_count - V_FP - V_SYNC - V_BP;
-
-wire [9:0] h_count_visible;
-assign h_count_visible = h_count - H_FP - H_SYNC - H_BP + XfineOffset; //+XfineOffset for fine scrolling
-
-wire [9:0] h_count_visible_noscroll;
-assign h_count_visible_noscroll = h_count - H_FP - H_SYNC - H_BP;
-
-wire [5:0] h_tile;
-assign h_tile = (h_count_visible / 8)  + XtileOffset;
-
-wire [5:0] h_tile_noscroll;
-assign h_tile_noscroll = (h_count_visible_noscroll / 8);
-
-wire [5:0] v_tile;
-assign v_tile = v_count_visible / 8;
-
-wire [2:0] h_tile_pixel;
-assign h_tile_pixel = h_count_visible[2:0];
-
-wire [2:0] h_tile_pixel_noscroll;
-assign h_tile_pixel_noscroll = h_count_visible_noscroll[2:0];
-
-wire [2:0] v_tile_pixel;
-assign v_tile_pixel = v_count_visible[2:0];
-
-wire [10:0] tile;
-assign tile = (v_tile * (512/8)) + h_tile; //512, because this gives us room for scrolling
-
-wire [10:0] tile_noscroll;
-assign tile_noscroll = (v_tile * (H_RES/8)) + h_tile_noscroll;
-
-wire [5:0] h_tile_next;
-assign h_tile_next = ((h_count - H_FP - H_SYNC - H_BP + XfineOffset + 8) / 8)  + XtileOffset;
-
-wire [5:0] h_tile_next_noscroll;
-assign h_tile_next_noscroll = ((h_count - H_FP - H_SYNC - H_BP + 8) / 8);
-
-wire [5:0] h_tile_next_noscroll2;
-assign h_tile_next_noscroll2 = (h_count <  H_FP + H_SYNC + H_BP - 5) ?  0:
-                            h_tile_next_noscroll;
-
-wire [10:0] tile_next;
-assign tile_next = (v_tile * (512/8)) + h_tile_next; //512, because this gives us room for scrolling
-
-wire [10:0] tile_next_noscroll;
-assign tile_next_noscroll = (v_tile * (H_RES/8)) + h_tile_next_noscroll;
-
-wire [10:0] tile_next_noscroll2;
-assign tile_next_noscroll2 = (v_tile * (H_RES/8)) + h_tile_next_noscroll2;
-
-parameter
+// Actions based on hTilePixelCounter value
+localparam
     fetch_bg_tile       = 0,
     fetch_pattern_bg    = 1,
     fetch_bg_color      = 2,
@@ -130,384 +40,343 @@ parameter
     fetch_wind_color    = 6,
     fetch_palette_wind  = 7;
 
-/*
-8 cycles per tile:
- 1. fetch bg tile table address with next tile
- 2. fetch pattern table with tile id from 1
- 3. fetch bg color table address with next tile
- 4. fetch palette table with palette id from 3
- 5. fetch window tile table address with next tile
- 6. fetch pattern table with tile id from 5
- 7. fetch window color table
- 8. fetch palette table with palette id from 7
-*/
-wire [2:0] fetchState;
-assign fetchState = (h_tile_pixel == 0) ? fetch_bg_tile:
-                    (h_tile_pixel == 1) ? fetch_pattern_bg:
-                    (h_tile_pixel == 2) ? fetch_bg_color:
-                    (h_tile_pixel == 3) ? fetch_palette_bg:
-                    (h_tile_pixel == 4) ? fetch_wind_tile:
-                    (h_tile_pixel == 5) ? fetch_pattern_wind:
-                    (h_tile_pixel == 6) ? fetch_wind_color:
-                    (h_tile_pixel == 7) ? fetch_palette_wind:
-                    0;
+// Rendering offsets
+reg [5:0] XtileOffset = 6'd0;
+reg [2:0] XfineOffset = 3'd0;
 
-reg [2:0] fetchStateOffset;
-reg [2:0] fetchStateOffset_noscroll;
-always @(negedge vga_clk)
+// Tile and pixel counters
+reg [5:0] hTileCounter = 6'd0; // 40 hTiles
+reg [3:0] hTileDoublePixelCounter = 4'd0; // 16 pixels per tile
+wire [2:0] hTilePixelCounter = hTileDoublePixelCounter[3:1]; // 8 pixels per tile
+
+reg [4:0] vTileCounter = 5'd0; // 25 vTiles
+reg [3:0] vTileDoubleLineCounter = 4'd0; // 16 pixels per tile
+wire [2:0] vTileLineCounter = vTileDoubleLineCounter[3:1]; // 8 pixels per tile
+
+reg [10:0] bg_tile = 11'd0;
+reg [10:0] window_tile = 11'd0;
+reg [10:0] bg_tile_line = 11'd0; // does not include the horizontal position
+reg [10:0] window_tile_line = 11'd0; //does not include the horizontal position
+
+wire [10:0] bg_tile_next = (h_count < HSTART && vTileCounter == 5'd0) ? XtileOffset : bg_tile + XtileOffset;
+wire [10:0] window_tile_next = (h_count < HSTART && vTileCounter == 5'd0) ? 11'd0 : window_tile;
+
+
+// Updating tile and pixel counters
+always @(posedge clk)
 begin
-    fetchStateOffset <= fetchState;
-    fetchStateOffset_noscroll <= fetchState - XfineOffset;
-end
-
-reg [7:0] tile_index;
-reg [15:0] pattern_bg_tile;
-reg [15:0] pattern_wind_tile;
-reg [7:0] color_index;
-reg [31:0] palette;
-
-
-
-reg [63:0] rendered_bg_tile_next;
-reg [63:0] rendered_bg_tile;
-
-wire [2:0] data_bg_r, data_bg_g;
-wire [1:0] data_bg_b;
-assign data_bg_r = (h_tile_pixel == 0) ? rendered_bg_tile[0*8 +7: 0*8 +5]:
-                (h_tile_pixel == 1) ? rendered_bg_tile[1*8 +7: 1*8 +5]:
-                (h_tile_pixel == 2) ? rendered_bg_tile[2*8 +7: 2*8 +5]:
-                (h_tile_pixel == 3) ? rendered_bg_tile[3*8 +7: 3*8 +5]:
-                (h_tile_pixel == 4) ? rendered_bg_tile[4*8 +7: 4*8 +5]:
-                (h_tile_pixel == 5) ? rendered_bg_tile[5*8 +7: 5*8 +5]:
-                (h_tile_pixel == 6) ? rendered_bg_tile[6*8 +7: 6*8 +5]:
-                (h_tile_pixel == 7) ? rendered_bg_tile[7*8 +7: 7*8 +5]:
-            3'd0;
-
-assign data_bg_g = (h_tile_pixel == 0) ? rendered_bg_tile[0*8 +4: 0*8 +2]:
-                (h_tile_pixel == 1) ? rendered_bg_tile[1*8 +4: 1*8 +2]:
-                (h_tile_pixel == 2) ? rendered_bg_tile[2*8 +4: 2*8 +2]:
-                (h_tile_pixel == 3) ? rendered_bg_tile[3*8 +4: 3*8 +2]:
-                (h_tile_pixel == 4) ? rendered_bg_tile[4*8 +4: 4*8 +2]:
-                (h_tile_pixel == 5) ? rendered_bg_tile[5*8 +4: 5*8 +2]:
-                (h_tile_pixel == 6) ? rendered_bg_tile[6*8 +4: 6*8 +2]:
-                (h_tile_pixel == 7) ? rendered_bg_tile[7*8 +4: 7*8 +2]:
-            3'd0;
-
-assign data_bg_b = (h_tile_pixel == 0) ? rendered_bg_tile[0*8 +1: 0*8 +0]:
-                (h_tile_pixel == 1) ? rendered_bg_tile[1*8 +1: 1*8 +0]:
-                (h_tile_pixel == 2) ? rendered_bg_tile[2*8 +1: 2*8 +0]:
-                (h_tile_pixel == 3) ? rendered_bg_tile[3*8 +1: 3*8 +0]:
-                (h_tile_pixel == 4) ? rendered_bg_tile[4*8 +1: 4*8 +0]:
-                (h_tile_pixel == 5) ? rendered_bg_tile[5*8 +1: 5*8 +0]:
-                (h_tile_pixel == 6) ? rendered_bg_tile[6*8 +1: 6*8 +0]:
-                (h_tile_pixel == 7) ? rendered_bg_tile[7*8 +1: 7*8 +0]:
-            2'd0;
-
-reg [63:0] rendered_wind_tile_next;
-reg [63:0] rendered_wind_tile;
-
-wire [2:0] data_wind_r, data_wind_g;
-wire [1:0] data_wind_b;
-assign data_wind_r = (h_tile_pixel_noscroll == 0) ? rendered_wind_tile[0*8 +7: 0*8 +5]:
-                (h_tile_pixel_noscroll == 1) ? rendered_wind_tile[1*8 +7: 1*8 +5]:
-                (h_tile_pixel_noscroll == 2) ? rendered_wind_tile[2*8 +7: 2*8 +5]:
-                (h_tile_pixel_noscroll == 3) ? rendered_wind_tile[3*8 +7: 3*8 +5]:
-                (h_tile_pixel_noscroll == 4) ? rendered_wind_tile[4*8 +7: 4*8 +5]:
-                (h_tile_pixel_noscroll == 5) ? rendered_wind_tile[5*8 +7: 5*8 +5]:
-                (h_tile_pixel_noscroll == 6) ? rendered_wind_tile[6*8 +7: 6*8 +5]:
-                (h_tile_pixel_noscroll == 7) ? rendered_wind_tile[7*8 +7: 7*8 +5]:
-            3'd0;
-
-assign data_wind_g = (h_tile_pixel_noscroll == 0) ? rendered_wind_tile[0*8 +4: 0*8 +2]:
-                (h_tile_pixel_noscroll == 1) ? rendered_wind_tile[1*8 +4: 1*8 +2]:
-                (h_tile_pixel_noscroll == 2) ? rendered_wind_tile[2*8 +4: 2*8 +2]:
-                (h_tile_pixel_noscroll == 3) ? rendered_wind_tile[3*8 +4: 3*8 +2]:
-                (h_tile_pixel_noscroll == 4) ? rendered_wind_tile[4*8 +4: 4*8 +2]:
-                (h_tile_pixel_noscroll == 5) ? rendered_wind_tile[5*8 +4: 5*8 +2]:
-                (h_tile_pixel_noscroll == 6) ? rendered_wind_tile[6*8 +4: 6*8 +2]:
-                (h_tile_pixel_noscroll == 7) ? rendered_wind_tile[7*8 +4: 7*8 +2]:
-            3'd0;
-
-assign data_wind_b = (h_tile_pixel_noscroll == 0) ? rendered_wind_tile[0*8 +1: 0*8 +0]:
-                (h_tile_pixel_noscroll == 1) ? rendered_wind_tile[1*8 +1: 1*8 +0]:
-                (h_tile_pixel_noscroll == 2) ? rendered_wind_tile[2*8 +1: 2*8 +0]:
-                (h_tile_pixel_noscroll == 3) ? rendered_wind_tile[3*8 +1: 3*8 +0]:
-                (h_tile_pixel_noscroll == 4) ? rendered_wind_tile[4*8 +1: 4*8 +0]:
-                (h_tile_pixel_noscroll == 5) ? rendered_wind_tile[5*8 +1: 5*8 +0]:
-                (h_tile_pixel_noscroll == 6) ? rendered_wind_tile[6*8 +1: 6*8 +0]:
-                (h_tile_pixel_noscroll == 7) ? rendered_wind_tile[7*8 +1: 7*8 +0]:
-            2'd0;
-
-initial
-begin
-    fetchStateOffset = 0;
-    fetchStateOffset_noscroll = 0;
-    tile_index = 0;
-    pattern_bg_tile = 0;
-    pattern_wind_tile = 0;
-    color_index = 0;
-    palette = 0;
-    rendered_bg_tile = 0;
-    rendered_bg_tile_next = 0;
-    rendered_wind_tile = 0;
-    rendered_wind_tile_next = 0;
-end
-
-//For reversing the tile data
-wire [31:0] vram32_q_reverse;
-genvar i;
-generate
-for (i=0; i<=31; i=i+1) begin:m
-    assign vram32_q_reverse[31-i] = vram32_q[i];
-    end
-endgenerate
-
-always @(posedge vga_clk)
-begin
-    if (!vga_vs && !vga_hs) //this is when we want to fetch the gpu parameters from vram8
+    if (!vs)
     begin
-        case (fetchStateOffset)
-            fetch_bg_tile:      begin
-                                    XtileOffset <= vram8_q;
-                                end
-            fetch_pattern_bg:  begin
-                                    XfineOffset <= vram8_q;
-                                end
-        endcase
+        bg_tile <= 11'd0;
+        bg_tile_line <= 11'd0;
+        // Window tile starts at -1, since it does not have a buffer for fine scrolling
+        window_tile <= 11'b11111111111;
+        window_tile_line <= 11'b11111111111;
     end
-    else 
+
+    // Horizontal counters
+    if (h_count < HSTART || v_count < VSTART-1 || v_count >= VSTART-1 + 400)
     begin
-        if (fetchStateOffset_noscroll == fetch_palette_wind)
+        hTileCounter <= 6'd0;
+        hTileDoublePixelCounter <= 4'd0;
+        bg_tile <= bg_tile_line;
+        window_tile <= window_tile_line;
+    end
+    else
+    begin
+        hTileDoublePixelCounter <= hTileDoublePixelCounter + 1'b1;
+        if (hTileDoublePixelCounter == 4'd15)
         begin
-            rendered_wind_tile <= rendered_wind_tile_next;
+            hTileCounter <= hTileCounter + 1'b1;
+            bg_tile <= bg_tile + 1'b1;
+            window_tile <= window_tile + 1'b1;
         end
-
-        case (fetchStateOffset)
-        fetch_bg_tile:      begin
-                                tile_index <= vram8_q;
-                            end
-        fetch_pattern_bg:   begin //bg pattern is in vram32_q
-                                //odd lines use right side of pattern
-                                if (v_tile_pixel[0] == 1)
-                                    pattern_bg_tile <= vram32_q_reverse[31:16];
-                                else
-                                    pattern_bg_tile <= vram32_q_reverse[15:0];
-                            end
-        fetch_bg_color:     begin 
-                                color_index <= vram8_q;
-                            end
-        fetch_palette_bg:   begin //bg palette is in vram32_q
-                                palette <= vram32_q;
-                                case (pattern_bg_tile[1:0])
-                                    2'b00: rendered_bg_tile_next[7:0] <= vram32_q[31:24];
-                                    2'b01: rendered_bg_tile_next[7:0] <= vram32_q[23:16];
-                                    2'b10: rendered_bg_tile_next[7:0] <= vram32_q[15:8];
-                                    2'b11: rendered_bg_tile_next[7:0] <= vram32_q[7:0];
-                                endcase
-                                case (pattern_bg_tile[3:2])
-                                    2'b00: rendered_bg_tile_next[15:8] <= vram32_q[31:24];
-                                    2'b01: rendered_bg_tile_next[15:8] <= vram32_q[23:16];
-                                    2'b10: rendered_bg_tile_next[15:8] <= vram32_q[15:8];
-                                    2'b11: rendered_bg_tile_next[15:8] <= vram32_q[7:0];
-                                endcase
-                                case (pattern_bg_tile[5:4])
-                                    2'b00: rendered_bg_tile_next[23:16] <= vram32_q[31:24];
-                                    2'b01: rendered_bg_tile_next[23:16] <= vram32_q[23:16];
-                                    2'b10: rendered_bg_tile_next[23:16] <= vram32_q[15:8];
-                                    2'b11: rendered_bg_tile_next[23:16] <= vram32_q[7:0];
-                                endcase
-                                case (pattern_bg_tile[7:6])
-                                    2'b00: rendered_bg_tile_next[31:24] <= vram32_q[31:24];
-                                    2'b01: rendered_bg_tile_next[31:24] <= vram32_q[23:16];
-                                    2'b10: rendered_bg_tile_next[31:24] <= vram32_q[15:8];
-                                    2'b11: rendered_bg_tile_next[31:24] <= vram32_q[7:0];
-                                endcase
-                                case (pattern_bg_tile[9:8])
-                                    2'b00: rendered_bg_tile_next[39:32] <= vram32_q[31:24];
-                                    2'b01: rendered_bg_tile_next[39:32] <= vram32_q[23:16];
-                                    2'b10: rendered_bg_tile_next[39:32] <= vram32_q[15:8];
-                                    2'b11: rendered_bg_tile_next[39:32] <= vram32_q[7:0];
-                                endcase
-                                case (pattern_bg_tile[11:10])
-                                    2'b00: rendered_bg_tile_next[47:40] <= vram32_q[31:24];
-                                    2'b01: rendered_bg_tile_next[47:40] <= vram32_q[23:16];
-                                    2'b10: rendered_bg_tile_next[47:40] <= vram32_q[15:8];
-                                    2'b11: rendered_bg_tile_next[47:40] <= vram32_q[7:0];
-                                endcase
-                                case (pattern_bg_tile[13:12])
-                                    2'b00: rendered_bg_tile_next[55:48] <= vram32_q[31:24];
-                                    2'b01: rendered_bg_tile_next[55:48] <= vram32_q[23:16];
-                                    2'b10: rendered_bg_tile_next[55:48] <= vram32_q[15:8];
-                                    2'b11: rendered_bg_tile_next[55:48] <= vram32_q[7:0];
-                                endcase
-                                case (pattern_bg_tile[15:14])
-                                    2'b00: rendered_bg_tile_next[63:56] <= vram32_q[31:24];
-                                    2'b01: rendered_bg_tile_next[63:56] <= vram32_q[23:16];
-                                    2'b10: rendered_bg_tile_next[63:56] <= vram32_q[15:8];
-                                    2'b11: rendered_bg_tile_next[63:56] <= vram32_q[7:0];
-                                endcase
-                            end
-        fetch_wind_tile:    begin
-                                tile_index <= vram8_q;
-                            end
-        fetch_pattern_wind: begin //wind pattern is in vram32_q
-                                //odd lines use right side of pattern
-                                if (v_tile_pixel[0] == 1)
-                                    pattern_wind_tile <= vram32_q_reverse[31:16];
-                                else
-                                    pattern_wind_tile <= vram32_q_reverse[15:0];
-                            end
-        fetch_wind_color:   begin
-                                color_index <= vram8_q;
-                            end
-        fetch_palette_wind: begin //wind palette is in vram32_q (might have to write to rendered_tile here)
-                                palette <= vram32_q;
-                                rendered_bg_tile <= rendered_bg_tile_next;
-                                if (XfineOffset == 0)
-                                begin
-                                    case (pattern_wind_tile[1:0])
-                                        2'b00: rendered_wind_tile[7:0] <= vram32_q[31:24];
-                                        2'b01: rendered_wind_tile[7:0] <= vram32_q[23:16];
-                                        2'b10: rendered_wind_tile[7:0] <= vram32_q[15:8];
-                                        2'b11: rendered_wind_tile[7:0] <= vram32_q[7:0];
-                                    endcase
-                                    case (pattern_wind_tile[3:2])
-                                        2'b00: rendered_wind_tile[15:8] <= vram32_q[31:24];
-                                        2'b01: rendered_wind_tile[15:8] <= vram32_q[23:16];
-                                        2'b10: rendered_wind_tile[15:8] <= vram32_q[15:8];
-                                        2'b11: rendered_wind_tile[15:8] <= vram32_q[7:0];
-                                    endcase
-                                    case (pattern_wind_tile[5:4])
-                                        2'b00: rendered_wind_tile[23:16] <= vram32_q[31:24];
-                                        2'b01: rendered_wind_tile[23:16] <= vram32_q[23:16];
-                                        2'b10: rendered_wind_tile[23:16] <= vram32_q[15:8];
-                                        2'b11: rendered_wind_tile[23:16] <= vram32_q[7:0];
-                                    endcase
-                                    case (pattern_wind_tile[7:6])
-                                        2'b00: rendered_wind_tile[31:24] <= vram32_q[31:24];
-                                        2'b01: rendered_wind_tile[31:24] <= vram32_q[23:16];
-                                        2'b10: rendered_wind_tile[31:24] <= vram32_q[15:8];
-                                        2'b11: rendered_wind_tile[31:24] <= vram32_q[7:0];
-                                    endcase
-                                    case (pattern_wind_tile[9:8])
-                                        2'b00: rendered_wind_tile[39:32] <= vram32_q[31:24];
-                                        2'b01: rendered_wind_tile[39:32] <= vram32_q[23:16];
-                                        2'b10: rendered_wind_tile[39:32] <= vram32_q[15:8];
-                                        2'b11: rendered_wind_tile[39:32] <= vram32_q[7:0];
-                                    endcase
-                                    case (pattern_wind_tile[11:10])
-                                        2'b00: rendered_wind_tile[47:40] <= vram32_q[31:24];
-                                        2'b01: rendered_wind_tile[47:40] <= vram32_q[23:16];
-                                        2'b10: rendered_wind_tile[47:40] <= vram32_q[15:8];
-                                        2'b11: rendered_wind_tile[47:40] <= vram32_q[7:0];
-                                    endcase
-                                    case (pattern_wind_tile[13:12])
-                                        2'b00: rendered_wind_tile[55:48] <= vram32_q[31:24];
-                                        2'b01: rendered_wind_tile[55:48] <= vram32_q[23:16];
-                                        2'b10: rendered_wind_tile[55:48] <= vram32_q[15:8];
-                                        2'b11: rendered_wind_tile[55:48] <= vram32_q[7:0];
-                                    endcase
-                                    case (pattern_wind_tile[15:14])
-                                        2'b00: rendered_wind_tile[63:56] <= vram32_q[31:24];
-                                        2'b01: rendered_wind_tile[63:56] <= vram32_q[23:16];
-                                        2'b10: rendered_wind_tile[63:56] <= vram32_q[15:8];
-                                        2'b11: rendered_wind_tile[63:56] <= vram32_q[7:0];
-                                    endcase
-                                end
-                                else 
-                                begin
-                                    case (pattern_wind_tile[1:0])
-                                        2'b00: rendered_wind_tile_next[7:0] <= vram32_q[31:24];
-                                        2'b01: rendered_wind_tile_next[7:0] <= vram32_q[23:16];
-                                        2'b10: rendered_wind_tile_next[7:0] <= vram32_q[15:8];
-                                        2'b11: rendered_wind_tile_next[7:0] <= vram32_q[7:0];
-                                    endcase
-                                    case (pattern_wind_tile[3:2])
-                                        2'b00: rendered_wind_tile_next[15:8] <= vram32_q[31:24];
-                                        2'b01: rendered_wind_tile_next[15:8] <= vram32_q[23:16];
-                                        2'b10: rendered_wind_tile_next[15:8] <= vram32_q[15:8];
-                                        2'b11: rendered_wind_tile_next[15:8] <= vram32_q[7:0];
-                                    endcase
-                                    case (pattern_wind_tile[5:4])
-                                        2'b00: rendered_wind_tile_next[23:16] <= vram32_q[31:24];
-                                        2'b01: rendered_wind_tile_next[23:16] <= vram32_q[23:16];
-                                        2'b10: rendered_wind_tile_next[23:16] <= vram32_q[15:8];
-                                        2'b11: rendered_wind_tile_next[23:16] <= vram32_q[7:0];
-                                    endcase
-                                    case (pattern_wind_tile[7:6])
-                                        2'b00: rendered_wind_tile_next[31:24] <= vram32_q[31:24];
-                                        2'b01: rendered_wind_tile_next[31:24] <= vram32_q[23:16];
-                                        2'b10: rendered_wind_tile_next[31:24] <= vram32_q[15:8];
-                                        2'b11: rendered_wind_tile_next[31:24] <= vram32_q[7:0];
-                                    endcase
-                                    case (pattern_wind_tile[9:8])
-                                        2'b00: rendered_wind_tile_next[39:32] <= vram32_q[31:24];
-                                        2'b01: rendered_wind_tile_next[39:32] <= vram32_q[23:16];
-                                        2'b10: rendered_wind_tile_next[39:32] <= vram32_q[15:8];
-                                        2'b11: rendered_wind_tile_next[39:32] <= vram32_q[7:0];
-                                    endcase
-                                    case (pattern_wind_tile[11:10])
-                                        2'b00: rendered_wind_tile_next[47:40] <= vram32_q[31:24];
-                                        2'b01: rendered_wind_tile_next[47:40] <= vram32_q[23:16];
-                                        2'b10: rendered_wind_tile_next[47:40] <= vram32_q[15:8];
-                                        2'b11: rendered_wind_tile_next[47:40] <= vram32_q[7:0];
-                                    endcase
-                                    case (pattern_wind_tile[13:12])
-                                        2'b00: rendered_wind_tile_next[55:48] <= vram32_q[31:24];
-                                        2'b01: rendered_wind_tile_next[55:48] <= vram32_q[23:16];
-                                        2'b10: rendered_wind_tile_next[55:48] <= vram32_q[15:8];
-                                        2'b11: rendered_wind_tile_next[55:48] <= vram32_q[7:0];
-                                    endcase
-                                    case (pattern_wind_tile[15:14])
-                                        2'b00: rendered_wind_tile_next[63:56] <= vram32_q[31:24];
-                                        2'b01: rendered_wind_tile_next[63:56] <= vram32_q[23:16];
-                                        2'b10: rendered_wind_tile_next[63:56] <= vram32_q[15:8];
-                                        2'b11: rendered_wind_tile_next[63:56] <= vram32_q[7:0];
-                                    endcase
-                                end
-                                
-                            end
-        endcase
     end
-    
+
+    // Vertical counters
+    if (h_count == 12'd0)
+    begin
+        if (v_count < VSTART || v_count >= VSTART + 400)
+        begin
+            vTileCounter <= 5'd0;
+            vTileDoubleLineCounter <= 4'd0;
+            bg_tile <= 11'd0;
+            window_tile <= 11'd0;
+        end
+        else 
+        begin
+            vTileDoubleLineCounter <= vTileDoubleLineCounter + 1'b1;
+            if (vTileDoubleLineCounter == 4'd15)
+            begin
+                vTileCounter <= vTileCounter + 1'b1;
+                bg_tile_line <= bg_tile_line + 7'd64; // + number of tiles per line in bg plane
+                window_tile_line <= window_tile_line + 6'd40; // + number of tiles per line in window plane
+            end
+        end
+    end
 end
 
-assign vram8_addr = ((!vga_vs && !vga_hs) && fetchState == fetch_bg_tile) ? 8192:
-                    ((!vga_vs && !vga_hs) && fetchState == fetch_pattern_bg) ? 8193:
-                    (fetchState == fetch_bg_tile) ? tile_next:
-                    (fetchState == fetch_bg_color) ? 2048 + tile_next:
-                    (fetchState == fetch_wind_tile && XfineOffset <= 4) ? 4096 + tile_next_noscroll2:
-                    (fetchState == fetch_wind_tile && XfineOffset > 4 && h_tile_next_noscroll2 != 0) ? 4096 + tile_next_noscroll2 + 1:
-                    (fetchState == fetch_wind_tile && XfineOffset > 4 && h_tile_next_noscroll2 == 0 && h_tile_next_noscroll == 0) ? 4096 + tile_next_noscroll2 + 1:
-                    (fetchState == fetch_wind_tile && XfineOffset > 4 && h_tile_next_noscroll2 == 0 && h_tile_next_noscroll != 0) ? 4096 + tile_next_noscroll2:
-                    (fetchState == fetch_wind_color && XfineOffset <= 6) ? 6144 + tile_next_noscroll2:
-                    (fetchState == fetch_wind_color && XfineOffset > 6 && h_tile_next_noscroll2 != 0) ? 6144 + tile_next_noscroll2 + 1:
-                    (fetchState == fetch_wind_color && XfineOffset > 6 && h_tile_next_noscroll2 == 0 && h_tile_next_noscroll == 0) ? 6144 + tile_next_noscroll2 + 1:
-                    (fetchState == fetch_wind_color && XfineOffset > 6 && h_tile_next_noscroll2 == 0 && h_tile_next_noscroll != 0) ? 6144 + tile_next_noscroll2:
+// Data for next tile
+reg [7:0]  tile_index           = 8'd0;
+reg [7:0]  color_index          = 8'd0;
+reg [15:0] pattern_bg_tile      = 16'd0;
+reg [15:0] pattern_window_tile  = 16'd0;
+reg [31:0] palette_bg_tile      = 32'd0;
+//reg [31:0] palette_window_tile  = 32'd0; // should not be needed
+
+// Data for current tile, should be updated at start of each tile
+reg [15:0] current_pattern_bg_tile      = 16'd0;
+reg [15:0] current_pattern_window_tile  = 16'd0;
+reg [31:0] current_palette_bg_tile      = 32'd0;
+reg [31:0] current_palette_window_tile  = 32'd0;
+
+// Reading from VRAM
+always @(posedge clk)
+begin
+
+    // Parameters
+    if (h_count == 12'd1)
+        XtileOffset <= vram8_q;
+    if (h_count == 12'd2)
+        XfineOffset <= vram8_q;
+
+    if (hTileDoublePixelCounter[0])
+    begin
+        case (hTilePixelCounter)
+            fetch_bg_tile:      tile_index <= vram8_q;
+
+            fetch_pattern_bg:   begin
+                                    if (vTileLineCounter[0])
+                                        pattern_bg_tile <= vram32_q[15:0];
+                                    else
+                                        pattern_bg_tile <= vram32_q[31:16];
+                                end
+
+            fetch_bg_color:     color_index <= vram8_q;
+
+            fetch_palette_bg:   palette_bg_tile <= vram32_q;
+
+            fetch_wind_tile:    tile_index <= vram8_q;
+
+            fetch_pattern_wind: begin
+                                    if (vTileLineCounter[0])
+                                        pattern_window_tile <= vram32_q[15:0];
+                                    else
+                                        pattern_window_tile <= vram32_q[31:16];
+                                end
+
+            fetch_wind_color:   color_index <= vram8_q;
+
+            //fetch_palette_wind: palette_window_tile <= vram32_q; // is not needed, because the data can be directly put into current_palette_window_tile
+        endcase
+    end
+
+    if (hTileDoublePixelCounter == 4'd15)
+    begin
+        current_pattern_bg_tile     <= pattern_bg_tile;
+        current_pattern_window_tile <= pattern_window_tile;
+        current_palette_bg_tile     <= palette_bg_tile;
+        current_palette_window_tile <= vram32_q;
+    end
+end
+
+
+assign vram8_addr = (h_count == 12'd0) ? 8192: // tile scroll offset
+                    (h_count == 12'd1) ? 8193: // fine scroll offset
+                    (hTilePixelCounter == fetch_bg_tile)    ? bg_tile_next:
+                    (hTilePixelCounter == fetch_bg_color)   ? 2048  + bg_tile_next:
+                    (hTilePixelCounter == fetch_wind_tile)  ? 4096  + window_tile_next:
+                    (hTilePixelCounter == fetch_wind_color) ? 6144  + window_tile_next:
                     14'd0;
 
-assign vram32_addr = (fetchState == fetch_pattern_bg) ? (tile_index * 4) + (v_tile_pixel/2): //*4 because 4 addresses per tile
-                     (fetchState == fetch_palette_bg) ? 1024 + color_index:
-                     (fetchState == fetch_pattern_wind) ? (tile_index * 4) + (v_tile_pixel/2): //*4 because 4 addresses per tile
-                     (fetchState == fetch_palette_wind) ? 1024 + color_index:
+assign vram32_addr = (hTilePixelCounter == fetch_pattern_bg) ? (tile_index << 2) + (vTileLineCounter >> 1): //*4 because 4 addresses per tile
+                     (hTilePixelCounter == fetch_palette_bg) ? 1024 + color_index:
+                     (hTilePixelCounter == fetch_pattern_wind) ? (tile_index << 2) + (vTileLineCounter >> 1): //*4 because 4 addresses per tile
+                     (hTilePixelCounter == fetch_palette_wind) ? 1024 + color_index:
                     14'd0;
 
 
 
-//BG or Window selector
+// Pattern data for current pixel
+reg [1:0] current_pixel_pattern_bg;
+reg [1:0] current_pixel_pattern_window;
 
-wire window_drawn;
-assign window_drawn = (data_wind_r != 3'd0 || data_wind_g != 3'd0 || data_wind_b != 2'd0) ? 1'b1:
-                    1'b0;
+always @(*)
+begin
+    case (hTilePixelCounter)
+        3'd0:   begin
+                    current_pixel_pattern_bg <= current_pattern_bg_tile[15:14];
+                    current_pixel_pattern_window <= current_pattern_window_tile[15:14];
+                end
+        3'd1:   begin
+                    current_pixel_pattern_bg <= current_pattern_bg_tile[13:12];
+                    current_pixel_pattern_window <= current_pattern_window_tile[13:12];
+                end
+        3'd2:   begin
+                    current_pixel_pattern_bg <= current_pattern_bg_tile[11:10];
+                    current_pixel_pattern_window <= current_pattern_window_tile[11:10];
+                end
+        3'd3:   begin
+                    current_pixel_pattern_bg <= current_pattern_bg_tile[9:8];
+                    current_pixel_pattern_window <= current_pattern_window_tile[9:8];
+                end
+        3'd4:   begin
+                    current_pixel_pattern_bg <= current_pattern_bg_tile[7:6];
+                    current_pixel_pattern_window <= current_pattern_window_tile[7:6];
+                end
+        3'd5:   begin
+                    current_pixel_pattern_bg <= current_pattern_bg_tile[5:4];
+                    current_pixel_pattern_window <= current_pattern_window_tile[5:4];
+                end
+        3'd6:   begin
+                    current_pixel_pattern_bg <= current_pattern_bg_tile[3:2];
+                    current_pixel_pattern_window <= current_pattern_window_tile[3:2];
+                end
+        3'd7:   begin
+                    current_pixel_pattern_bg <= current_pattern_bg_tile[1:0];
+                    current_pixel_pattern_window <= current_pattern_window_tile[1:0];
+                end
+    endcase
 
-assign vga_r =  (o_de && window_drawn) ? data_wind_r: 
-                (o_de && !window_drawn) ? data_bg_r: 
-                3'd0;
-assign vga_g =  (o_de && window_drawn) ? data_wind_g: 
-                (o_de && !window_drawn) ? data_bg_g: 
-                3'd0;
-assign vga_b =  (o_de && window_drawn) ? data_wind_b: 
-                (o_de && !window_drawn) ? data_bg_b: 
-                3'd0;
+end
+
+
+// Apply palette to current pixel pattern
+reg [2:0] bg_r;
+reg [2:0] bg_g;
+reg [1:0] bg_b;
+
+reg [2:0] window_r;
+reg [2:0] window_g;
+reg [1:0] window_b;
+
+always @(*)
+begin
+    case (current_pixel_pattern_bg)
+        2'b00:  begin
+                    bg_r <= current_palette_bg_tile[31:29];
+                    bg_g <= current_palette_bg_tile[28:26];
+                    bg_b <= current_palette_bg_tile[25:24];
+                end
+
+        2'b01:  begin
+                    bg_r <= current_palette_bg_tile[23:21];
+                    bg_g <= current_palette_bg_tile[20:18];
+                    bg_b <= current_palette_bg_tile[17:16];
+                end
+
+        2'b10:  begin
+                    bg_r <= current_palette_bg_tile[15:13];
+                    bg_g <= current_palette_bg_tile[12:10];
+                    bg_b <= current_palette_bg_tile[9:8];
+                end
+
+        2'b11:  begin
+                    bg_r <= current_palette_bg_tile[7:5];
+                    bg_g <= current_palette_bg_tile[4:2];
+                    bg_b <= current_palette_bg_tile[1:0];
+                end
+    endcase
+
+    case (current_pixel_pattern_window)
+        2'b00:  begin
+                    window_r <= current_palette_window_tile[31:29];
+                    window_g <= current_palette_window_tile[28:26];
+                    window_b <= current_palette_window_tile[25:24];
+                end
+
+        2'b01:  begin
+                    window_r <= current_palette_window_tile[23:21];
+                    window_g <= current_palette_window_tile[20:18];
+                    window_b <= current_palette_window_tile[17:16];
+                end
+
+        2'b10:  begin
+                    window_r <= current_palette_window_tile[15:13];
+                    window_g <= current_palette_window_tile[12:10];
+                    window_b <= current_palette_window_tile[9:8];
+                end
+
+        2'b11:  begin
+                    window_r <= current_palette_window_tile[7:5];
+                    window_g <= current_palette_window_tile[4:2];
+                    window_b <= current_palette_window_tile[1:0];
+                end
+    endcase
+end
+
+// Background pixel buffers for 8 pixels, so fine scrolling can be applied
+reg [23:0] buf_bg_r = 24'd0;
+reg [23:0] buf_bg_g = 24'd0;
+reg [15:0] buf_bg_b = 16'd0;
+
+
+always @(posedge clk)
+begin
+    // Do only once per two cycles, since we are using a double horizontal resolution
+    if (h_count[0])
+    begin
+        buf_bg_r <= {buf_bg_r[20:0], bg_r};
+        buf_bg_g <= {buf_bg_g[20:0], bg_g};
+        buf_bg_b <= {buf_bg_b[13:0], bg_b};
+    end
+end
+
+reg [2:0] bg_r_sel;
+reg [2:0] bg_g_sel;
+reg [1:0] bg_b_sel;
+
+always @(*)
+begin
+    case (XfineOffset)
+        3'd0:   begin
+                    bg_r_sel <= buf_bg_r[23:21];
+                    bg_g_sel <= buf_bg_g[23:21];
+                    bg_b_sel <= buf_bg_b[15:14];
+                end
+        3'd1:   begin
+                    bg_r_sel <= buf_bg_r[20:18];
+                    bg_g_sel <= buf_bg_g[20:18];
+                    bg_b_sel <= buf_bg_b[13:12];
+                end
+        3'd2:   begin
+                    bg_r_sel <= buf_bg_r[17:15];
+                    bg_g_sel <= buf_bg_g[17:15];
+                    bg_b_sel <= buf_bg_b[11:10];
+                end
+        3'd3:   begin
+                    bg_r_sel <= buf_bg_r[14:12];
+                    bg_g_sel <= buf_bg_g[14:12];
+                    bg_b_sel <= buf_bg_b[9:8];
+                end
+        3'd4:   begin
+                    bg_r_sel <= buf_bg_r[11:9];
+                    bg_g_sel <= buf_bg_g[11:9];
+                    bg_b_sel <= buf_bg_b[7:6];
+                end
+        3'd5:   begin
+                    bg_r_sel <= buf_bg_r[8:6];
+                    bg_g_sel <= buf_bg_g[8:6];
+                    bg_b_sel <= buf_bg_b[5:4];
+                end
+        3'd6:   begin
+                    bg_r_sel <= buf_bg_r[5:3];
+                    bg_g_sel <= buf_bg_g[5:3];
+                    bg_b_sel <= buf_bg_b[3:2];
+                end
+        3'd7:   begin
+                    bg_r_sel <= buf_bg_r[2:0];
+                    bg_g_sel <= buf_bg_g[2:0];
+                    bg_b_sel <= buf_bg_b[1:0];
+                end
+    endcase
+end
+
+// Give priority to the window layer. Current method is by checking for a black palette for 0b00 pixels
+
+wire bgPriority = current_pixel_pattern_window == 2'b00 && current_palette_window_tile[31:24] == 8'd0;
+assign r = (bgPriority) ? bg_r_sel : window_r;
+assign g = (bgPriority) ? bg_g_sel : window_g;
+assign b = (bgPriority) ? bg_b_sel : window_b;
 
 endmodule

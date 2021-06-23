@@ -3,20 +3,19 @@
 * Generates video from VRAM
 */
 module FSX(
-    //VGA I/O
-    input               vga_clk,
-    
-    output wire [2:0]   vga_r,
-    output wire [2:0]   vga_g,
-    output wire [1:0]   vga_b,
-    output wire         vga_hs,
-    output wire         vga_vs,
+    //Clocks
+    input clkPixel,
+    input clkTMDShalf,
 
-    //CRT Video
-    output          crt_sync,
-    output [2:0]    crt_r,
-    output [2:0]    crt_g,
-    output [1:0]    crt_b,
+    //HDMI
+    output [3:0] TMDS_p,
+    output [3:0] TMDS_n,
+
+    //NTSC composite
+    output [7:0] composite,
+
+    //Select output method
+    input selectOutput,
 
     //VRAM32
     output [13:0]       vram32_addr,
@@ -35,114 +34,44 @@ module FSX(
     input  [8:0]        vramSPR_q,
 
     //Interrupt signal
-    output reg         frameDrawn
+    output              frameDrawn
 );
-//assign vga_blk = 1'b1;
-//assign frameDrawn = o_frame;
 
-//DISPLAY SIGNAL GENERATION
-/* 480x272 TFT screen
-parameter
-    H_RES=480,      // horizontal resolution (pixels)
-    V_RES=272,      // vertical resolution (lines)
-    H_FP=2,        // horizontal front porch
-    H_SYNC=41,      // horizontal sync
-    H_BP=2,        // horizontal back porch
-    V_FP=2,        // vertical front porch
-    V_SYNC=10,       // vertical sync
-    V_BP=2,        // vertical back porch
-    H_POL=0,        // horizontal sync polarity (0:neg, 1:pos)
-    V_POL=0;        // vertical sync polarity (0:neg, 1:pos)
-*/
+// LVDS Converter
+wire [3:0] TMDS;
 
-parameter
-//CRT 320x200 (40x25 chars) with horizontal compression for overscan prevention
-    H_RES   = 320,      // horizontal resolution (pixels)
-    V_RES   = 200,      // vertical resolution (lines)
-    H_FP    = 34,       // horizontal front porch
-    H_SYNC  = 32,       // horizontal sync
-    H_BP    = 56,       // horizontal back porch
-    V_FP    = 23,       // vertical front porch
-    V_SYNC  = 5,        // vertical sync
-    V_BP    = 34,       // vertical back porch
-    H_POL   = 0,        // horizontal sync polarity (0:neg, 1:pos)
-    V_POL   = 0;        // vertical sync polarity
+lvds lvdsConverter(
+    .datain     (TMDS),
+    .dataout    (TMDS_p),
+    .dataout_b  (TMDS_n)
+);
 
+
+wire [11:0] h_count;
+wire [11:0] v_count;
+
+wire hsync;
+wire vsync;
+wire csync;
+wire blank;
+
+TimingGenerator timingGenerator(
+    // Clock
+    .clkPixel(clkPixel),
+
+    // Position counters
+    .h_count(h_count),
+    .v_count(v_count),
+
+    // Video signals
+    .hsync(hsync),
+    .vsync(vsync),
+    .csync(csync),
+    .blank(blank),
     
-// Horizontal: sync, active, and pixels
-localparam HS_STA = H_FP - 1;           // sync start (first pixel is 0)
-localparam HS_END = HS_STA + H_SYNC;    // sync end
-localparam HA_STA = HS_END + H_BP;      // active start
-localparam HA_END = HA_STA + H_RES;     // active end 
-localparam LINE   = HA_END;             // line pixels 
-
-// Vertical: sync, active, and pixels
-localparam VS_STA = V_FP - 1;           // sync start (first line is 0)
-localparam VS_END = VS_STA + V_SYNC;    // sync end
-localparam VA_STA = VS_END + V_BP;      // active start
-localparam VA_END = VA_STA + V_RES;     // active end 
-localparam FRAME  = VA_END;             // frame lines 
-
-reg [9:0] h_count;  // line position in pixels including blanking 
-reg [8:0] v_count;  // frame position in lines including blanking 
-
-wire o_hs, o_vs, o_de, o_h, o_v, o_frame;
-assign crt_sync = !(o_hs^o_vs);
-assign vga_hs = o_hs;
-assign vga_vs = o_vs;
-
-// generate sync signals with correct polarity
-assign o_hs = H_POL ? (h_count > HS_STA & h_count <= HS_END)
-    : ~(h_count > HS_STA & h_count <= HS_END);
-assign vga_hs = o_hs;
-assign o_vs = V_POL ? (v_count > VS_STA & v_count <= VS_END)
-    : ~(v_count > VS_STA & v_count <= VS_END);
-assign vga_vs = o_vs;
-    
-// display enable: high during active period
-assign o_de = h_count > HA_STA & h_count <= HA_END
-    & v_count > VA_STA & v_count <= VA_END; 
-
-// keep o_h and o_v bound within active pixels
-assign o_h = (o_de & h_count > HA_STA & h_count <= HA_END) ? 
-                h_count - (HA_STA + 1): 0;
-assign o_v = (o_de & v_count > VA_STA & v_count <= VA_END) ? 
-                v_count - (VA_STA + 1): 0;
-
-// o_frame: high for some ticks when last frame is drawn
-assign o_frame = (v_count == 0 & h_count < 8);
- 
-always @ (posedge vga_clk)
-begin
-    if (h_count == LINE)  // end of line
-    begin
-         h_count <= 0;
-         if (v_count == FRAME) // end of frame
-         begin      
-              v_count <= 0;
-         end
-         else
-              v_count <= v_count + 1;
-    end
-    else 
-         h_count <= h_count + 1;
-
-    if (v_count == 0 && h_count < 8)
-        frameDrawn <= 1'b1;
-    else
-        frameDrawn <= 1'b0;
-end
-
-initial begin
-    h_count = 12'd0;
-    v_count = 12'd0;
-end
-
-/*
-reg [2:0] BGW_r = 0;
-reg [2:0] BGW_g = 0;
-reg [1:0] BGW_b = 0;
-*/
+    // Interrupt signal
+    .frameDrawn(frameDrawn)
+);
 
 
 wire [2:0] BGW_r;
@@ -150,135 +79,90 @@ wire [2:0] BGW_g;
 wire [1:0] BGW_b;
 
 
-BGWrenderer #(
-    .H_RES(H_RES),      // horizontal resolution (pixels)
-    .V_RES(V_RES),      // vertical resolution (lines)
-    .H_FP(H_FP),        // horizontal front porch
-    .H_SYNC(H_SYNC),       // horizontal sync
-    .H_BP(H_BP),        // horizontal back porch
-    .V_FP(V_FP),        // vertical front porch
-    .V_SYNC(V_SYNC),       // vertical sync
-    .V_BP(V_BP),        // vertical back porch
-    .H_POL(H_POL),        // horizontal sync polarity (0:neg, 1:pos)
-    .V_POL(V_POL)         // vertical sync polarity (0:neg, 1:pos)
-) bgwrenderer(
-    //VGA I/O
-    .vga_clk(vga_clk),            //9MHz
-    .vga_hs(o_hs),
-    .vga_vs(o_vs),
+BGWrenderer bgwrenderer(
+    // Video I/O
+    .clk(clkPixel),
+    .hs(hsync),
+    .vs(vsync),
+    .blank(blank),
     
-    .vga_r(BGW_r),
-    .vga_g(BGW_g),
-    .vga_b(BGW_b),
+    // Output colors
+    .r(BGW_r),
+    .g(BGW_g),
+    .b(BGW_b),
 
     .h_count(h_count),  // line position in pixels including blanking 
     .v_count(v_count),  // frame position in lines including blanking 
 
-    .o_hs(o_hs), 
-    .o_vs(o_vs), 
-    .o_de(o_de), 
-    .o_h(o_h), 
-    .o_v(o_v), 
-    .o_frame(o_frame),
-
-    //VRAM32
+    // VRAM32
     .vram32_addr(vram32_addr),
     .vram32_q(vram32_q), 
 
-    //VRAM8
+    // VRAM8
     .vram8_addr(vram8_addr),
     .vram8_q(vram8_q)
 );
 
-/*
-reg [2:0] SPR_r = 0;
-reg [2:0] SPR_g = 0;
-reg [1:0] SPR_b = 0;
-*/
 
-wire [2:0] SPR_r;
-wire [2:0] SPR_g;
-wire [1:0] SPR_b;
 
-wire       draw_sprite;
-wire       draw_behind_bg;
+wire [2:0] r;
+wire [2:0] g;
+wire [1:0] b;
 
-Spriterenderer #(
-    .H_RES(H_RES),      // horizontal resolution (pixels)
-    .V_RES(V_RES),      // vertical resolution (lines)
-    .H_FP(H_FP),        // horizontal front porch
-    .H_SYNC(H_SYNC),       // horizontal sync
-    .H_BP(H_BP),        // horizontal back porch
-    .V_FP(V_FP),        // vertical front porch
-    .V_SYNC(V_SYNC),       // vertical sync
-    .V_BP(V_BP),        // vertical back porch
-    .H_POL(H_POL),        // horizontal sync polarity (0:neg, 1:pos)
-    .V_POL(V_POL)         // vertical sync polarity (0:neg, 1:pos)
-) spriterenderer(
-    //VGA I/O
-    .vga_clk(vga_clk),            //9MHz
-    .vga_hs(o_hs),
-    .vga_vs(o_vs),
-    
-    .vga_r(SPR_r),
-    .vga_g(SPR_g),
-    .vga_b(SPR_b),
+assign r = BGW_r;
+assign g = BGW_g;
+assign b = BGW_b;
 
-    .h_count(h_count),  // line position in pixels including blanking 
-    .v_count(v_count),  // frame position in lines including blanking 
 
-    .o_hs(o_hs), 
-    .o_vs(o_vs), 
-    .o_de(o_de), 
-    .o_h(o_h), 
-    .o_v(o_v), 
-    .o_frame(o_frame),
+wire [7:0] rByte;
+wire [7:0] gByte;
+wire [7:0] bByte;
 
-    //VRAM32
-    .vram32_addr(vram322_addr), //use copy of vram32 here
-    .vram32_q(vram322_q), //use copy of vram32 here
+assign rByte = r[0] ? {r, 5'b11111} : {r, 5'b00000};
+assign gByte = g[0] ? {g, 5'b11111} : {g, 5'b00000};
+assign bByte = b[0] ? {b, 6'b111111} : {b, 6'b000000};
 
-    //VRAMSPR
-    .vramSPR_addr(vramSPR_addr),
-    .vramSPR_q(vramSPR_q),
-    
-    //Drawing signals
-    .draw_sprite(draw_sprite),
-    .draw_behind_bg(draw_behind_bg)
+
+// Convert VGA signal to HDMI signals
+RGB2HDMI rgb2hdmi(
+    .clkTMDS(clkTMDShalf),
+    .clkRGB (clkPixel),
+    .rRGB   (rByte),
+    .gRGB   (gByte),
+    .bRGB   (bByte),
+    .blk    (blank),
+    .hs     (hsync),
+    .vs     (vsync), 
+    .bTMDS  (TMDS[0]),
+    .gTMDS  (TMDS[1]),
+    .rTMDS  (TMDS[2]),
+    .cTMDS  (TMDS[3])
 );
 
-//FRAME TO PICTURE IN SIMULATION
 
+// Image file generator for simulation
 integer file;
-integer framecounter = "0";
-always @(negedge vga_vs)
+integer framecounter = 0;
+always @(negedge vsync)
 begin
-    file = $fopen({"/home/bart/Documents/FPGA/FPGC4/Verilog/output/frame",framecounter,".ppm"}, "w");
+    //$display($sformatf("/home/bart/Documents/FPGA/FSX3/output/frame%0d.ppm", framecounter));
+    file = $fopen($sformatf("/home/bart/Documents/FPGA/FSX3/output/frame%0d.ppm", framecounter), "w");
     $fwrite(file, "P3\n");
-    $fwrite(file, "320 240\n");
+    $fwrite(file, "640 480\n");
     $fwrite(file, "7\n");
     framecounter = framecounter + 1;
 end
 
-always @(posedge vga_clk)
+always @(posedge clkPixel)
 begin
-    if (o_de)
+    if (~blank)
     begin
-        $fwrite(file, "%d  %d  %d\n", crt_r, crt_g, {1'b1, crt_b});
+        $fwrite(file, "%d  %d  %d\n", r, g, {1'b1, b});
     end
 end
 
-//temporary for testing. Should implement some kind of pixelvalid in spriterenderer
-wire sprite_drawn;
-assign sprite_drawn = (SPR_r != 3'd0 || SPR_g != 3'd0 || SPR_b != 2'd0) ? 1'b1:
-                    1'b0;
 
-assign crt_r =  (sprite_drawn) ?  SPR_r: BGW_r;
-assign crt_g =  (sprite_drawn) ?  SPR_g: BGW_g;
-assign crt_b =  (sprite_drawn) ?  SPR_b: BGW_b;
 
-assign vga_r = crt_r;
-assign vga_g = crt_g;
-assign vga_b = crt_b;
+
 
 endmodule
