@@ -28,7 +28,6 @@ module Spriterenderer
 
     input               o_hs, 
     input               o_vs, 
-    input               o_de, 
     input               o_h, 
     input               o_v, 
     input               o_frame,
@@ -56,6 +55,11 @@ module Spriterenderer
 //disable : 1b
 //------------ +
 //         34b
+
+
+wire o_de;
+assign o_de = h_count > HA_STA & h_count <= HA_END
+    & v_count > VA_STA & v_count <= VA_END; 
 
 
 parameter MAX_SPRITES = 16;

@@ -18,7 +18,7 @@ end
 
 initial
 begin
-    $readmemb("../Verilog/memory/rom.list", rom);
+    $readmemb("memory/rom.list", rom);
 end
 
 endmodule

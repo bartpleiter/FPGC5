@@ -9,9 +9,13 @@ module FPGC4(
     output          vga_clk,
     output          vga_hs,
     output          vga_vs,
-    output [2:0]    vga_r,
-    output [2:0]    vga_g,
-    output [1:0]    vga_b,
+    //output [2:0]    vga_r,
+    //output [2:0]    vga_g,
+    //output [1:0]    vga_b,
+	 
+	 //HDMI
+	 output wire [3:0] TMDS_p,
+	 output wire [3:0] TMDS_n,
 	 
 	 //RGBs video
 	 output          crt_sync,
@@ -104,18 +108,41 @@ module FPGC4(
 
 );
 
+/*
+// LVDS Converter
+wire [3:0] TMDS;
+
+lvds lvdsConverter(
+	.datain		(TMDS),
+	.dataout		(TMDS_p),
+	.dataout_b	(TMDS_n)
+);
+*/
+
+// Clock generator PLL
+wire clkTMDShalf; 	// TMDS clock (pre-DDR), 5x pixel clock
+wire clkPixel;	// Pixel clock
+
+clock_pll clock_pll_inst(
+	.inclk0	(clock),
+	.c0		(clkPixel),
+	.c1		(clkTMDShalf)
+);
+
+
+
 //-------------------CLK-------------------------
 wire clk;
 
 //PLL for VGA/CRT @~6.94MHz and System @25MHz
 pll pll (
 .inclk0(clock),
-.c0(crt_clk),
+.c0(),
 .c1(clk)
 );
 
 //Run VGA at CRT speed
-assign vga_clk = crt_clk;
+//assign vga_clk = crt_clk;
 
 //Run SDRAM at system speed
 assign SDRAM_CLK = clk;
@@ -196,7 +223,7 @@ assign vram32_gpu_d     = 32'd0;
 VRAM #(
 .WIDTH(32), 
 .WORDS(1056), 
-.LIST("../Verilog/memory/vram32.list")
+.LIST("memory/vram32.list")
 )   vram32(
 //CPU port
 .cpu_clk    (clk),
@@ -206,7 +233,7 @@ VRAM #(
 .cpu_q      (vram32_cpu_q),
 
 //GPU port
-.gpu_clk    (crt_clk),
+.gpu_clk    (clkPixel),
 .gpu_d      (vram32_gpu_d),
 .gpu_addr   (vram32_gpu_addr),
 .gpu_we     (vram32_gpu_we),
@@ -229,7 +256,7 @@ assign vram322_gpu_d     = 32'd0;
 VRAM #(
 .WIDTH(32), 
 .WORDS(1056), 
-.LIST("../Verilog/memory/vram32.list")
+.LIST("memory/vram32.list")
 )   vram322(
 //CPU port
 .cpu_clk    (clk),
@@ -239,7 +266,7 @@ VRAM #(
 .cpu_q      (),
 
 //GPU port
-.gpu_clk    (crt_clk),
+.gpu_clk    (clkPixel),
 .gpu_d      (vram322_gpu_d),
 .gpu_addr   (vram322_gpu_addr),
 .gpu_we     (vram322_gpu_we),
@@ -268,7 +295,7 @@ assign vram8_gpu_d      = 8'd0;
 VRAM #(
 .WIDTH(8), 
 .WORDS(8194), 
-.LIST("../Verilog/memory/vram8.list")
+.LIST("memory/vram8.list")
 )   vram8(
 //CPU port
 .cpu_clk    (clk),
@@ -278,7 +305,7 @@ VRAM #(
 .cpu_q      (vram8_cpu_q),
 
 //GPU port
-.gpu_clk    (crt_clk),
+.gpu_clk    (clkPixel),
 .gpu_d      (vram8_gpu_d),
 .gpu_addr   (vram8_gpu_addr),
 .gpu_we     (vram8_gpu_we),
@@ -307,7 +334,7 @@ assign vramSPR_gpu_d      = 9'd0;
 VRAM #(
 .WIDTH(9), 
 .WORDS(256), 
-.LIST("../Verilog/memory/vramSPR.list")
+.LIST("memory/vramSPR.list")
 )   vramSPR(
 //CPU port
 .cpu_clk    (clk),
@@ -317,7 +344,7 @@ VRAM #(
 .cpu_q      (vramSPR_cpu_q),
 
 //GPU port
-.gpu_clk    (crt_clk),
+.gpu_clk    (clkPixel),
 .gpu_d      (vramSPR_gpu_d),
 .gpu_addr   (vramSPR_gpu_addr),
 .gpu_we     (vramSPR_gpu_we),
@@ -339,23 +366,38 @@ ROM rom(
 
 
 //-----------------------FSX-------------------------
+//TMP unused pins
+
+assign vga_clk = 1'b0;
+assign vga_hs  = 1'b0;
+assign vga_vs  = 1'b0;
+
+assign crt_sync = 1'b0;
+assign crt_clk = 1'b0;
+assign crt_r = 3'd0;
+assign crt_g = 3'd0;
+assign crt_b = 2'd0;
+
+
 //FSX I/O
+wire [7:0]  composite; // NTSC composite video signal
+reg         selectOutput = 1'b1; // 1 -> HDMI, 0 -> Composite
+
 
 FSX fsx(
-.vga_clk 		 (crt_clk),
+//Clocks
+.clkPixel       (clkPixel),
+.clkTMDShalf    (clkTMDShalf),
 
-//VGA
-.vga_r          (vga_r),
-.vga_g          (vga_g),
-.vga_b          (vga_b),
-.vga_hs         (vga_hs),
-.vga_vs         (vga_vs),
+//HDMI
+.TMDS_p         (TMDS_p),
+.TMDS_n         (TMDS_n),
 
-//CRT
-.crt_sync 		 (crt_sync),
-.crt_r 			 (crt_r),
-.crt_g 			 (crt_g),
-.crt_b 			 (crt_b),
+//NTSC composite
+.composite      (composite),
+
+//Select output method
+.selectOutput   (selectOutput),
 
 //VRAM32
 .vram32_addr    (vram32_gpu_addr),
