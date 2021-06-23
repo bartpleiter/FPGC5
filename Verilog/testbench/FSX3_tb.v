@@ -6,17 +6,17 @@
 `timescale 1 ns/1 ns
 
 //Include modules
-`include "/home/bart/Documents/FPGA/FSX3/modules/GPU/FSX.v"
-`include "/home/bart/Documents/FPGA/FSX3/modules/GPU/BGWrenderer.v"
-`include "/home/bart/Documents/FPGA/FSX3/modules/GPU/Spriterenderer.v"
-`include "/home/bart/Documents/FPGA/FSX3/modules/GPU/TimingGenerator.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/FSX.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/BGWrenderer.v"
+//`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/Spriterenderer.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/TimingGenerator.v"
 
-`include "/home/bart/Documents/FPGA/FSX3/modules/GPU/HDMI/RGB2HDMI.v"
-`include "/home/bart/Documents/FPGA/FSX3/modules/GPU/HDMI/TMDSenc.v"
-`include "/home/bart/Documents/FPGA/FSX3/modules/GPU/HDMI/lvds.v"
-`include "/home/bart/Documents/FPGA/FSX3/modules/GPU/HDMI/ddr.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/HDMI/RGB2HDMI.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/HDMI/TMDSenc.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/HDMI/lvds.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/HDMI/ddr.v"
 
-`include "/home/bart/Documents/FPGA/FSX3/modules/Memory/VRAM.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/Memory/VRAM.v"
 
 //Define testmodule
 module FSX3_tb;
@@ -41,7 +41,7 @@ assign vram32_gpu_d     = 32'd0;
 VRAM #(
 .WIDTH(32), 
 .WORDS(1056), 
-.LIST("/home/bart/Documents/FPGA/FSX3/memory/vram32.list")
+.LIST("/home/bart/Documents/FPGA/FPGC5/Verilog/memory/vram32.list")
 )   vram32(
 //GPU port
 .gpu_clk    (clkPixel),
@@ -67,7 +67,7 @@ assign vram322_gpu_d     = 32'd0;
 VRAM #(
 .WIDTH(32), 
 .WORDS(1056), 
-.LIST("/home/bart/Documents/FPGA/FSX3/memory/vram32.list")
+.LIST("/home/bart/Documents/FPGA/FPGC5/Verilog/memory/vram32.list")
 )   vram322(
 //GPU port
 .gpu_clk    (clkPixel),
@@ -93,7 +93,7 @@ assign vram8_gpu_d      = 8'd0;
 VRAM #(
 .WIDTH(8), 
 .WORDS(8194), 
-.LIST("/home/bart/Documents/FPGA/FSX3/memory/vram8.list")
+.LIST("/home/bart/Documents/FPGA/FPGC5/Verilog/memory/vram8.list")
 )   vram8(
 //GPU port
 .gpu_clk    (clkPixel),
@@ -119,7 +119,7 @@ assign vramSPR_gpu_d      = 9'd0;
 VRAM #(
 .WIDTH(9), 
 .WORDS(256), 
-.LIST("/home/bart/Documents/FPGA/FSX3/memory/vramSPR.list")
+.LIST("/home/bart/Documents/FPGA/FPGC5/Verilog/memory/vramSPR.list")
 )   vramSPR(
 //GPU port
 .gpu_clk    (clkPixel),
@@ -180,7 +180,7 @@ FSX fsx(
 initial
 begin
     //Dump everything for GTKwave
-    $dumpfile("/home/bart/Documents/FPGA/FSX3/output/wave.vcd");
+    $dumpfile("/home/bart/Documents/FPGA/FPGC5/Verilog/output/wave.vcd");
     $dumpvars;
     
     clkTMDShalf = 0;

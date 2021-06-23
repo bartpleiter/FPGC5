@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
-[*] Tue Jun 22 18:42:06 2021
+[*] Wed Jun 23 14:03:54 2021
 [*]
-[dumpfile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FSX3\output\wave.vcd"
-[dumpfile_mtime] "Tue Jun 22 18:27:31 2021"
-[dumpfile_size] 95712360
-[savefile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FSX3\output\FSX3.gtkw"
-[timestart] 2725096
+[dumpfile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\wave.vcd"
+[dumpfile_mtime] "Wed Jun 23 14:02:03 2021"
+[dumpfile_size] 95678455
+[savefile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\FSX3.gtkw"
+[timestart] 2724626
 [size] 1920 1027
-[pos] -1 -1081
-*-8.815579 2725530 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -1 -1
+*-7.615580 2725201 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] FSX3_tb.
 [treeopen] FSX3_tb.fsx.
 [treeopen] FSX3_tb.fsx.rgb2hdmi.

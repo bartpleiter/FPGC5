@@ -6,7 +6,7 @@ module VRAM
 #(
     parameter WIDTH = 32,
     parameter WORDS = 256,
-    parameter LIST  = "/home/bart/Documents/FPGA/FPGC4/Verilog/memory/vram32.list"
+    parameter LIST  = "/home/bart/Documents/FPGA/FPGC5/Verilog/memory/vram32.list"
 ) 
 (
   input                   cpu_clk,        
@@ -36,7 +36,7 @@ begin
 end
 
 //gpu port
-always @(negedge gpu_clk) 
+always @(posedge gpu_clk) 
 begin
   gpu_q <= ram[gpu_addr];
   if (gpu_we)

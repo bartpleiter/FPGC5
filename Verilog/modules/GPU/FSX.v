@@ -145,8 +145,7 @@ integer file;
 integer framecounter = 0;
 always @(negedge vsync)
 begin
-    //$display($sformatf("/home/bart/Documents/FPGA/FSX3/output/frame%0d.ppm", framecounter));
-    file = $fopen($sformatf("/home/bart/Documents/FPGA/FSX3/output/frame%0d.ppm", framecounter), "w");
+    file = $fopen($sformatf("/home/bart/Documents/FPGA/FPGC5/Verilog/output/frame%0d.ppm", framecounter), "w");
     $fwrite(file, "P3\n");
     $fwrite(file, "640 480\n");
     $fwrite(file, "7\n");
