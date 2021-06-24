@@ -379,7 +379,7 @@ void startMidiPlayer()
     write 0 r2 r0 // reset midi index ;\
     write 1 r2 r1 // reset time index ;\
     ;\
-    load32 0xC02628 r1  // r1 = Timer2 value register ;\
+    load32 0xC0273B r1  // r1 = Timer2 value register ;\
     ;\
     // start timer2 to start playing ;\
     load 1 r3 ;\
@@ -447,7 +447,7 @@ void int2()
     //TIME ;\
     read 1 r2 r5        // read time index to r5 ;\
     ;\
-    load32 0xC02628 r1  // r1 = Timer2 value register ;\
+    load32 0xC0273B r1  // r1 = Timer2 value register ;\
     ;\
     addr2reg MUSICLENS r3 ;\
     add r3 r5 r3        // add time index offset to address ;\
@@ -473,7 +473,7 @@ void int2()
     read 2 r4 r12        // get byte3 ;\
     ;\
     // write to uart2 ;\
-    load32 0xC02732 r8 ;\
+    load32 0xC02725 r8 ;\
     write 0 r8 r10 ;\
     write 0 r8 r11 ;\
     write 0 r8 r12 ;\

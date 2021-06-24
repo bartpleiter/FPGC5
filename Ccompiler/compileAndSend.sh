@@ -16,7 +16,8 @@ then
             # convert list to binary files and send to FPGC4
 
             # WSL1/linux version
-            (cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC4" && python3 uartFlasher.py)
+            (cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC4" && python.exe uartFlasher_win.py) #python3 uartFlasher.py)
+            #(cd ../Programmer && bash compileROM.sh && echo "Sending binary to FPGC4" && python.exe flash.py write -d COM3)
     
     else # assemble failed, run again to show error
         echo "Failed to assemble B332 ASM code"
