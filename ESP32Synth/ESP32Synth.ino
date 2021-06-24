@@ -31,6 +31,10 @@
  * DEFINITIONS AND VARIABLES
  */
 
+//---------- LIGHT SLEEP -------------
+#define SLEEPPREVENTCOUNTER 1000
+int sleepCounter = SLEEPPREVENTCOUNTER; // counter to prevent immidiate sleep after wakeup
+
 //------------ MIDI INPUT -------------
 HardwareSerial MidiSerial(2);         // MIDI input (and control output (TBI)) on UART2
 
@@ -328,10 +332,39 @@ void setup()
 
 }
 
+// Go to light sleep when idle for a while
+// Wakes up when there is activity on UART2 RX
+void sleepIfIdle()
+{
+  if (sleepCounter > 0)
+  {
+    sleepCounter--;
+    return;
+  }
+  
+  boolean isIdle = true;
+  for (uint32_t n = 0; n < MAXVOICES; n++) 
+  {
+    if(voices[n].adsr.state != ADSR_IDLE)
+    {
+      isIdle = false;
+      break;
+    }
+  }
+
+  if (isIdle)
+  {
+    gpio_wakeup_enable(GPIO_NUM_16, GPIO_INTR_LOW_LEVEL);
+    esp_sleep_enable_gpio_wakeup();
+    esp_light_sleep_start();
+
+    sleepCounter = SLEEPPREVENTCOUNTER;
+  }
+}
 
 // Things to do when not generating sounds
 void loop() 
-{
+{ 
   checkMIDI();        // check for MIDI commands
 
   // fill buffer with samples
@@ -348,4 +381,6 @@ void loop()
   i2s_write_bytes(I2S_PORT, (const char *)&sampleBuf[0], sizeof(uint32_t)*SAMPLE_BUFFER_SIZE, 100);
 
   turnOffLowVolumeNotes();
+
+  sleepIfIdle();
 }
