@@ -15,10 +15,13 @@ do
         if (cd ../Assembler && python3 Assembler.py > ../Programmer/code.list) # compile and write to code.list in Programmer folder
         then
                 echo "B332 ASM code successfully assembled"
-                # convert list to binary files and send to FPGC4
+                # convert list to binary files and send to FPGC
 
                 # WSL1/linux version
-                (cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC4" && python3 uartFlasher.py testMode)
+                #(cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC" && python3 uartFlasher.py testMode)
+
+                # WSL2/windows version
+                (cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC" && python.exe uartFlasher_win.py testMode)
 
                 retVal="$?"
                 echo "$filename exited with code: $retVal"

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# script for compiling a bare metal C program, and send it to the FPGC4, without doing tests
+# script for compiling a bare metal C program, and send it to the FPGC, without doing tests
 
 echo "Processing: $1"
 # for each c file, compile and run
@@ -13,11 +13,23 @@ then
     if (cd ../Assembler && python3 Assembler.py > ../Programmer/code.list) # compile and write to code.list in Programmer folder
     then
             echo "B332 ASM code successfully assembled"
-            # convert list to binary files and send to FPGC4
+            # convert list to binary files and send to FPGC
 
-            # WSL1/linux version
-            (cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC4" && python.exe uartFlasher_win.py) #python3 uartFlasher.py)
-            #(cd ../Programmer && bash compileROM.sh && echo "Sending binary to FPGC4" && python.exe flash.py write -d COM3)
+            # WSL1/Linux version
+            #if [[ $1 == "flash" ||  $1 == "write" ]]
+            #then
+            #    (cd ../Programmer && bash compileROM.sh && echo "Flashing binary to FPGC flash" && python3 flash.py write)
+            #else
+            #    (cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC" && python3 uartFlasher.py)
+            #fi
+
+            # WSL2/Windows version
+            if [[ $2 == "flash" ||  $2 == "write" ]]
+            then
+                (cd ../Programmer && bash compileROM.sh && echo "Flashing binary to FPGC flash" && python.exe flash_win.py write)
+            else
+                (cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC" && python.exe uartFlasher_win.py)
+            fi
     
     else # assemble failed, run again to show error
         echo "Failed to assemble B332 ASM code"

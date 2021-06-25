@@ -11,13 +11,22 @@ then
     if (cd ../Assembler && python3 Assembler.py os > ../Programmer/code.list) # compile and write to code.list in Programmer folder
     then
             echo "B332 ASM code successfully assembled"
-            # convert list to binary files and send to FPGC4
+            # convert list to binary files and send to FPGC
 
+            # WSL1/Linux version
+            #if [[ $1 == "flash" ||  $1 == "write" ]]
+            #then
+            #    (cd ../Programmer && bash compileROM.sh && echo "Flashing binary to FPGC flash" && python3 flash.py write)
+            #else
+            #    (cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC" && python3 uartFlasher.py)
+            #fi
+
+            # WSL2/Windows version
             if [[ $1 == "flash" ||  $1 == "write" ]]
             then
-                (cd ../Programmer && bash compileROM.sh && echo "Flashing binary to FPGC4 flash" && python3 flash.py write)
+                (cd ../Programmer && bash compileROM.sh && echo "Flashing binary to FPGC flash" && python.exe flash_win.py write)
             else
-                (cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC4" && python3 uartFlasher.py)
+                (cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC" && python.exe uartFlasher_win.py)
             fi
     
     else # assemble failed, run again to show error
