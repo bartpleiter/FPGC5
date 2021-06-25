@@ -3,6 +3,8 @@
 # Uploads file to BDOS over network.
 # File is written to current path.
 # Current transfer+processing speed: ~1KB/s
+# NOTE: DO NOT USE WIFI!!! use a stable ethernet connection instead
+
 
 import socket
 import sys

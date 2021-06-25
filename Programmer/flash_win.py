@@ -117,8 +117,8 @@ def sendSingleByte(b):
     port.write(b)
 
     # give FPGC4 time to process byte, windows (cpu intensive) alternative for #sleep(0.00XYZ) 
-    now = time.time_ns() // 100000 
-    while ((time.time_ns() // 100000) < now + 5):
+    now = time.time_ns() // 1000000 
+    while ((time.time_ns() // 1000000) < now + 2):
         pass
 
 

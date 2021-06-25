@@ -3,6 +3,7 @@
 # Sends user program to BDOS over network.
 # Program is directly written to memory.
 # Current transfer+processing speed: ~11KB/s
+# NOTE: DO NOT USE WIFI!!! use a stable ethernet connection instead
 
 import socket
 import sys

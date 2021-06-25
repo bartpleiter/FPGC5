@@ -90,7 +90,7 @@ int main()
     BDOS_Reinit_VRAM();
     
     // Print welcome message
-    GFX_PrintConsole("BDOS Alpha\n");
+    GFX_PrintConsole("BDOS\n");
 
     NETLOADER_init(NETLOADER_SOCKET);
 

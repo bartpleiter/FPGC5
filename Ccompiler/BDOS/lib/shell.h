@@ -423,11 +423,11 @@ void SHELL_createFile(char* arg)
 // Parses command line buffer and executes command if found
 // Commands to parse:
 // [x] RUN
-// [x] CDIR
-// [x] LDIR
+// [x] CD
+// [x] LS
 // [] HELP/?
 // [x] CLEAR
-// [] PRINT
+// [x] PRINT
 // [] MKDIR
 // [] RMDIR
 // [x] MKFILE
@@ -451,8 +451,8 @@ void SHELL_parseCommand(char* p)
         }
     }
 
-    // LDIR
-    else if (SHELL_commandCompare(p, "ldir"))
+    // LS
+    else if (SHELL_commandCompare(p, "ls"))
     {
         int args = SHELL_numberOfArguments(p);
         // if incorrect number of arguments
@@ -463,7 +463,7 @@ void SHELL_parseCommand(char* p)
         }
         else if (args == 1)
         {
-            SHELL_ldir(p+5); // pointer to start of first arg, which ends with \0
+            SHELL_ldir(p+3); // pointer to start of first arg, which ends with \0
         }
         else // if no args
         {
@@ -471,8 +471,8 @@ void SHELL_parseCommand(char* p)
         }
     }
 
-    // CDIR
-    else if (SHELL_commandCompare(p, "cdir"))
+    // CD
+    else if (SHELL_commandCompare(p, "cd"))
     {
         int args = SHELL_numberOfArguments(p);
         // if incorrect number of arguments
@@ -484,7 +484,7 @@ void SHELL_parseCommand(char* p)
         else if (args == 1)
         {
             // pointer to start of first arg, which ends with \0
-            if (FS_changePath(p+5) != ANSW_USB_INT_SUCCESS)
+            if (FS_changePath(p+3) != ANSW_USB_INT_SUCCESS)
             {
                 GFX_PrintConsole("E: Invalid path\n");
             }

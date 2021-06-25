@@ -3,6 +3,9 @@ BDOS (or Barts Drive Operating System) is a single-tasking operating system for 
 
 While this is definitely not a complex OS like Linux or Windows, it does add a lot of functionality to the FPGC5. Mainly the shell and the ability to load programs from USB and Network are a huge step-up over the MCU-like programming experience where you can only run one program until it is reprogrammed.
 
+!!! danger
+    Timer2 is used for USB keyboard polling, so don't use it in user code!
+
 ## Functionality
 Currently, with BDOS you can:
 - Navigate and do other operations on the file system on a USB drive using the shell
@@ -72,7 +75,7 @@ The graphics library provides, on top of the basic functions from the general C 
 The PS2 keyboard library provides an interrupt handler for extracting keypresses from scancodes. It can handle shifted keys and extended keys. See ps2.h for more details on what is supported and what is not.
 
 ### usbkeyboard.h
-A library for reading keypresses from an USB keyboard. AFAIK it currently only works for some USB2.0 keyboards. The top USB port is used for this. The keyboard is polled using a timer.
+A library for reading keypresses from an USB keyboard. AFAIK it currently only works for some USB2.0 keyboards. The top USB port is used for this. The keyboard is polled using a timer (timer2, so don't use it in user code).
 
 ### hidfifo.h
 A FIFO for storing keypresses from PS/2, USB keyboard and SNES controller. The shell can read these key presses without needing to know from which device.
