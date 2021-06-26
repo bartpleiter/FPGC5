@@ -16,10 +16,10 @@ then
             # convert list to binary files and send to FPGC
 
             # WSL1/linux version
-            #(cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC over Network" && python3 netFlash.py code.bin)
+            (cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC over Network" && python3 netFlash.py code.bin)
 
             # WSL2/windows version
-            (cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC over Network" && python.exe netFlash.py code.bin)
+            #(cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC over Network" && python.exe netFlash.py code.bin)
     
     else # assemble failed, run again to show error
         echo "Failed to assemble B332 ASM code"

@@ -1,6 +1,6 @@
 /*
  * Testbench
- * Simulates the entire FPGC
+ * Simulates the FSX3 GPU
 */
 //Set timescale
 `timescale 1 ns/1 ns

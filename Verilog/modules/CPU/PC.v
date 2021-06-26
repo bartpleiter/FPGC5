@@ -13,7 +13,8 @@ module PC(
 );
 
 //Start value of PC
-parameter PCstart = 27'hC02522; //Internal ROM addr 0
+//parameter PCstart = 27'hC02522; //Internal ROM addr 0 //27'hC02522;
+parameter PCstart = 27'd0; //TEMP for simulation
 
 reg [26:0] PCintBackup;         //Backup of PC. Used when there is an interrupt. Is restored when reti is high
 reg int_en;                     //enable interrupts

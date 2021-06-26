@@ -1,0 +1,191 @@
+[*]
+[*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
+[*] Sat Jun 26 12:51:58 2021
+[*]
+[dumpfile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\wave.vcd"
+[dumpfile_mtime] "Sat Jun 26 12:51:08 2021"
+[dumpfile_size] 198548
+[savefile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\B323.gtkw"
+[timestart] 0
+[size] 1920 1027
+[pos] -1 -1
+*-8.215580 190 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] B323_tb.
+[treeopen] B323_tb.cpu.
+[sst_width] 254
+[signals_width] 417
+[sst_expanded] 1
+[sst_vpaned_height] 296
+@28
+B323_tb.cpu.clk
+B323_tb.cpu.reset
+@200
+-
+-MU
+@28
+B323_tb.clk
+B323_tb.start
+B323_tb.busy
+B323_tb.we
+@24
+B323_tb.address[26:0]
+B323_tb.data[31:0]
+@c00028
+B323_tb.q[31:0]
+@28
+(0)B323_tb.q[31:0]
+(1)B323_tb.q[31:0]
+(2)B323_tb.q[31:0]
+(3)B323_tb.q[31:0]
+(4)B323_tb.q[31:0]
+(5)B323_tb.q[31:0]
+(6)B323_tb.q[31:0]
+(7)B323_tb.q[31:0]
+(8)B323_tb.q[31:0]
+(9)B323_tb.q[31:0]
+(10)B323_tb.q[31:0]
+(11)B323_tb.q[31:0]
+(12)B323_tb.q[31:0]
+(13)B323_tb.q[31:0]
+(14)B323_tb.q[31:0]
+(15)B323_tb.q[31:0]
+(16)B323_tb.q[31:0]
+(17)B323_tb.q[31:0]
+(18)B323_tb.q[31:0]
+(19)B323_tb.q[31:0]
+(20)B323_tb.q[31:0]
+(21)B323_tb.q[31:0]
+(22)B323_tb.q[31:0]
+(23)B323_tb.q[31:0]
+(24)B323_tb.q[31:0]
+(25)B323_tb.q[31:0]
+(26)B323_tb.q[31:0]
+(27)B323_tb.q[31:0]
+(28)B323_tb.q[31:0]
+(29)B323_tb.q[31:0]
+(30)B323_tb.q[31:0]
+(31)B323_tb.q[31:0]
+@1401200
+-group_end
+@200
+-
+-Timer
+@28
+B323_tb.cpu.timer.clk
+B323_tb.cpu.timer.fetch
+B323_tb.cpu.timer.getRegs
+B323_tb.cpu.timer.readMem
+B323_tb.cpu.timer.writeBack
+@200
+-
+-PC
+@29
+B323_tb.cpu.pc.clk
+@24
+B323_tb.cpu.pc.pc_out[26:0]
+B323_tb.cpu.pc.jump
+@c00024
+B323_tb.cpu.pc.jump_addr[26:0]
+@28
+(0)B323_tb.cpu.pc.jump_addr[26:0]
+(1)B323_tb.cpu.pc.jump_addr[26:0]
+(2)B323_tb.cpu.pc.jump_addr[26:0]
+(3)B323_tb.cpu.pc.jump_addr[26:0]
+(4)B323_tb.cpu.pc.jump_addr[26:0]
+(5)B323_tb.cpu.pc.jump_addr[26:0]
+(6)B323_tb.cpu.pc.jump_addr[26:0]
+(7)B323_tb.cpu.pc.jump_addr[26:0]
+(8)B323_tb.cpu.pc.jump_addr[26:0]
+(9)B323_tb.cpu.pc.jump_addr[26:0]
+(10)B323_tb.cpu.pc.jump_addr[26:0]
+(11)B323_tb.cpu.pc.jump_addr[26:0]
+(12)B323_tb.cpu.pc.jump_addr[26:0]
+(13)B323_tb.cpu.pc.jump_addr[26:0]
+(14)B323_tb.cpu.pc.jump_addr[26:0]
+(15)B323_tb.cpu.pc.jump_addr[26:0]
+(16)B323_tb.cpu.pc.jump_addr[26:0]
+(17)B323_tb.cpu.pc.jump_addr[26:0]
+(18)B323_tb.cpu.pc.jump_addr[26:0]
+(19)B323_tb.cpu.pc.jump_addr[26:0]
+(20)B323_tb.cpu.pc.jump_addr[26:0]
+(21)B323_tb.cpu.pc.jump_addr[26:0]
+(22)B323_tb.cpu.pc.jump_addr[26:0]
+(23)B323_tb.cpu.pc.jump_addr[26:0]
+(24)B323_tb.cpu.pc.jump_addr[26:0]
+(25)B323_tb.cpu.pc.jump_addr[26:0]
+(26)B323_tb.cpu.pc.jump_addr[26:0]
+@1401200
+-group_end
+@200
+-
+-InstrDecoder
+@28
+B323_tb.cpu.instDec.instruction[31:0]
+B323_tb.cpu.instDec.instructionReg[31:0]
+@24
+B323_tb.cpu.instDec.areg[3:0]
+B323_tb.cpu.instDec.breg[3:0]
+B323_tb.cpu.instDec.dreg[3:0]
+@28
+B323_tb.cpu.instDec.instrOP[3:0]
+@24
+B323_tb.cpu.instDec.ce
+B323_tb.cpu.instDec.const11[10:0]
+B323_tb.cpu.instDec.const16[15:0]
+B323_tb.cpu.instDec.const27[26:0]
+B323_tb.cpu.instDec.he
+B323_tb.cpu.instDec.n1
+B323_tb.cpu.instDec.n2
+B323_tb.cpu.instDec.oe
+@28
+B323_tb.cpu.instDec.intf
+@200
+-
+-Regbank
+@28
+B323_tb.cpu.regbank.clk
+B323_tb.cpu.regbank.getRegs
+B323_tb.cpu.regbank.read_mem
+B323_tb.cpu.regbank.mem_q[31:0]
+B323_tb.cpu.regbank.writeBack
+@24
+B323_tb.cpu.regbank.data_a[31:0]
+B323_tb.cpu.regbank.data_b[31:0]
+B323_tb.cpu.regbank.data_d[31:0]
+@28
+B323_tb.cpu.regbank.we
+B323_tb.cpu.regbank.we_high
+@200
+-
+-ALU
+@28
+B323_tb.cpu.alu.opcode[3:0]
+@24
+B323_tb.cpu.alu.a[31:0]
+B323_tb.cpu.alu.b[31:0]
+B323_tb.cpu.alu.y[31:0]
+@28
+B323_tb.cpu.alu.bea
+B323_tb.cpu.alu.bga
+B323_tb.cpu.alu.skip
+@200
+-
+-Stack
+@28
+B323_tb.cpu.stack.clk
+@24
+B323_tb.cpu.stack.d[31:0]
+B323_tb.cpu.stack.q[31:0]
+B323_tb.cpu.stack.ptr[9:0]
+@28
+B323_tb.cpu.stack.pop
+B323_tb.cpu.stack.push
+@200
+-
+-Control Unit
+@28
+B323_tb.cpu.cu.clk
+@24
+B323_tb.cpu.cu.input_b[31:0]
+[pattern_trace] 1
+[pattern_trace] 0

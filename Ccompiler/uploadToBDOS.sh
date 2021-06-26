@@ -16,10 +16,10 @@ then
             # convert list to binary files and upload to FPGC
 
             # WSL1/linux version
-            #(cd ../Programmer && bash compileROM.sh noPadding && cp code.bin $2 && echo "Uploading $2 to FPGC over Network" && python3 netUpload.py $2 && rm $2)
+            (cd ../Programmer && bash compileROM.sh noPadding && cp code.bin $2 && echo "Uploading $2 to FPGC over Network" && python3 netUpload.py $2 && rm $2)
 
             # WSL2/windows version
-            (cd ../Programmer && bash compileROM.sh noPadding && cp code.bin $2 && echo "Uploading $2 to FPGC over Network" && python.exe netUpload.py $2 && rm $2)
+            #(cd ../Programmer && bash compileROM.sh noPadding && cp code.bin $2 && echo "Uploading $2 to FPGC over Network" && python.exe netUpload.py $2 && rm $2)
     
     else # assemble failed, run again to show error
         echo "Failed to assemble B332 ASM code"
