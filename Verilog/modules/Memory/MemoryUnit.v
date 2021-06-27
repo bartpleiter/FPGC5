@@ -227,7 +227,7 @@ module MemoryUnit(
     wire [31:0] sd_q;
 
     SDRAMcontroller sdramcontroller(
-    .clk        (clk),
+    .clk        (clk), // TODO: now must be 100MHz
     .reset      (reset),
 
     .busy       (sd_busy),       // high if controller is busy
@@ -235,7 +235,7 @@ module MemoryUnit(
     .d          (sd_d),          // data to write
     .we         (sd_we),         // high if write, low if read
     .q          (sd_q),          // read data output
-    .q_ready_delay(sd_q_ready),  // read data ready
+    .q_ready    (sd_q_ready),  // read data ready
     .start      (sd_start),
     .initDone   (sd_initDone),
 

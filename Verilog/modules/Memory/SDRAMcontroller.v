@@ -11,7 +11,8 @@ module SDRAMcontroller(
     input we,                   // high if write, low if read
     input start,                // high when controller should start reading/writing
     output [31:0] q,            // read data output
-    output reg q_ready_delay,   // read data ready
+    //output reg q_ready_delay,   // read data ready
+    output reg q_ready,   // read data ready
     output initDone,            // high when initialization done
 
     // SDRAM
@@ -43,7 +44,7 @@ assign {SDRAM_CSn, SDRAM_RASn, SDRAM_CASn, SDRAM_WEn} = SDRAM_CMD;
 parameter sdram_column_bits    = 10; 
 parameter sdram_address_width  = 25; 
 parameter sdram_startup_cycles = 10100; // -- 100us, plus a little more, @ 100MHz
-parameter cycles_per_refresh   = 195;  // (64000*100)/8192-1 Cycled as (64ms @100MHz)/8192 rows (780 for 100mhz)
+parameter cycles_per_refresh   = 780; // 25MHz -> 195;  // (64000*100)/8192-1 Cycled as (64ms @100MHz)/8192 rows (780 for 100mhz)
 
 // bit indexes used when splitting the address into row/colum/bank.
 parameter start_of_col  = 0;
@@ -124,12 +125,12 @@ assign refresh = (SDRAM_CMD == SDRAM_CMD_REFRESH);
 
 reg [8:0] InitCounter = 0;
 
-always @(negedge clk)
+always @(posedge clk)
 begin
 
     if (reset)
     begin
-        SDRAM_BA      <= 2'b00;                       //we will only use bank 0 for now
+        SDRAM_BA      <= 2'b00;
         SDRAM_DQM     <= 2'b11;
         SDRAM_A       <= 0;  
         SDRAM_CMD     <= SDRAM_CMD_UNSELECTED;
@@ -288,16 +289,17 @@ begin
             end   
             s_read_3: begin
                 state <= s_read_4;
-                q_low                       <= SDRAM_Q;
             end
 
             s_read_4: 
             begin
                 state <= s_read_precharge;
-                q_high                      <= SDRAM_Q;
+                q_low                       <= SDRAM_Q;
+                
             end
             s_read_precharge:
             begin
+                q_high                      <= SDRAM_Q;
                 q_ready                     <= 1'b1;
                 state                       <= s_idle_in_3;
                 SDRAM_CMD                   <= SDRAM_CMD_PRECHARGE;
@@ -312,6 +314,8 @@ begin
    
 end
 
+
+/*
 reg q_ready;
 
 always @(posedge clk)
@@ -323,19 +327,19 @@ begin
     else 
     begin
         q_ready_delay <= q_ready;
-        /*
-        if (state == s_read_4)
-            q_low <= SDRAM_Q;
-        if (state == s_read_precharge)
-            q_high <= SDRAM_Q;
-        */
+        
+        //if (state == s_read_4)
+        //    q_low <= SDRAM_Q;
+        //if (state == s_read_precharge)
+        //    q_high <= SDRAM_Q;
     end
 end
+*/
 
 
 initial
 begin
-  SDRAM_BA      <= 2'b00;                       //we will only use bank 0 for now
+  SDRAM_BA      <= 2'b00;
   SDRAM_DQM     <= 2'b11;
   SDRAM_A       <= 0;  
   SDRAM_CMD     <= SDRAM_CMD_UNSELECTED;
@@ -347,7 +351,7 @@ begin
   q_low         <= 0;
   q_high        <= 0;
   startup_refresh_count <= 0;
-  q_ready_delay <= 0;
+  //q_ready_delay <= 0;
 end
 
 endmodule

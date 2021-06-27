@@ -1,0 +1,55 @@
+[*]
+[*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
+[*] Sun Jun 27 15:51:53 2021
+[*]
+[dumpfile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\wave.vcd"
+[dumpfile_mtime] "Sun Jun 27 15:50:03 2021"
+[dumpfile_size] 13441
+[savefile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\SDRAM.gtkw"
+[timestart] 378900
+[size] 1920 1027
+[pos] -1 -1
+*-16.915577 647700 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] SDRAM_tb.
+[sst_width] 254
+[signals_width] 314
+[sst_expanded] 1
+[sst_vpaned_height] 296
+@200
+-SDRAM
+@29
+SDRAM_tb.reset
+@28
+SDRAM_tb.SDRAM_CLK
+@22
+SDRAM_tb.SDRAM_A[12:0]
+@28
+SDRAM_tb.SDRAM_BA[1:0]
+SDRAM_tb.SDRAM_CASn
+SDRAM_tb.SDRAM_RASn
+SDRAM_tb.SDRAM_CKE
+SDRAM_tb.SDRAM_CSn
+SDRAM_tb.SDRAM_WEn
+SDRAM_tb.SDRAM_DQM[1:0]
+@22
+SDRAM_tb.SDRAM_DQ[15:0]
+@200
+-
+-Controller
+@28
+SDRAM_tb.sd_we
+SDRAM_tb.clk
+SDRAM_tb.reset
+@22
+SDRAM_tb.sd_addr[23:0]
+SDRAM_tb.sd_d[31:0]
+SDRAM_tb.sd_q[31:0]
+@28
+SDRAM_tb.sd_q_ready
+SDRAM_tb.sd_start
+SDRAM_tb.sd_busy
+SDRAM_tb.sd_initDone
+@22
+SDRAM_tb.sdramcontroller.SDRAM_CMD[3:0]
+[pattern_trace] 1
+[pattern_trace] 0
