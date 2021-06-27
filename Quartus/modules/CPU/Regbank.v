@@ -23,8 +23,8 @@ reg [15:0] regsL [0:15];    //lowest 16 bits of regbank
 
 reg [15:0] data_a_l, data_a_h, data_b_l, data_b_h;
 
-//read at negedge clock
-always @(negedge clk) 
+//read
+always @(posedge clk) 
 begin
     if (getRegs)
     begin
@@ -36,8 +36,8 @@ begin
     end
 end
 
-//write at negedge clock
-always @(negedge clk) 
+//write
+always @(posedge clk) 
 begin
     if (writeBack && we)
     begin
@@ -61,20 +61,20 @@ begin
     end
 end
 
-//integer i;
+integer i;
 initial
 begin
     data_a_l = 16'd0;
     data_b_l = 16'd0;
     data_a_h = 16'd0;
     data_b_h = 16'd0;
-/*
+
     for (i = 0; i < 16; i = i + 1)
     begin
         regsL[i] = 16'd0;
         regsH[i] = 16'd0;
     end
- */   
+ 
 end
 
 endmodule

@@ -15,7 +15,7 @@ module Stack (
 reg [9:0] ptr;              //stack pointer
 reg [31:0] stack [1023:0];  //stack
 
-always @(negedge clk)
+always @(posedge clk)
 begin
     if (reset)
     begin

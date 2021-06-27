@@ -13,7 +13,7 @@ Quartus/*/*.bak
 Quartus/*/*/*.bak
 Documentation/site/
 Verilog/output/output
-Verilog/output/wave.vcd
+Verilog/output/*.vcd
 Verilog/output/*.ppm
 **/ __pycache__/
 **/*.pyc

@@ -1,19 +1,19 @@
 [*]
 [*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
-[*] Sat Jun 26 12:51:58 2021
+[*] Sun Jun 27 13:27:24 2021
 [*]
 [dumpfile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\wave.vcd"
-[dumpfile_mtime] "Sat Jun 26 12:51:08 2021"
-[dumpfile_size] 198548
+[dumpfile_mtime] "Sun Jun 27 12:45:46 2021"
+[dumpfile_size] 175312
 [savefile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\B323.gtkw"
 [timestart] 0
 [size] 1920 1027
 [pos] -1 -1
-*-8.215580 190 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-9.415580 2783 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] B323_tb.
 [treeopen] B323_tb.cpu.
 [sst_width] 254
-[signals_width] 417
+[signals_width] 487
 [sst_expanded] 1
 [sst_vpaned_height] 296
 @28
@@ -30,7 +30,7 @@ B323_tb.we
 @24
 B323_tb.address[26:0]
 B323_tb.data[31:0]
-@c00028
+@c00025
 B323_tb.q[31:0]
 @28
 (0)B323_tb.q[31:0]
@@ -65,7 +65,7 @@ B323_tb.q[31:0]
 (29)B323_tb.q[31:0]
 (30)B323_tb.q[31:0]
 (31)B323_tb.q[31:0]
-@1401200
+@1401205
 -group_end
 @200
 -
@@ -79,7 +79,7 @@ B323_tb.cpu.timer.writeBack
 @200
 -
 -PC
-@29
+@28
 B323_tb.cpu.pc.clk
 @24
 B323_tb.cpu.pc.pc_out[26:0]
@@ -148,6 +148,10 @@ B323_tb.cpu.regbank.getRegs
 B323_tb.cpu.regbank.read_mem
 B323_tb.cpu.regbank.mem_q[31:0]
 B323_tb.cpu.regbank.writeBack
+@22
+B323_tb.cpu.regbank.addr_a[3:0]
+B323_tb.cpu.regbank.addr_b[3:0]
+B323_tb.cpu.regbank.addr_d[3:0]
 @24
 B323_tb.cpu.regbank.data_a[31:0]
 B323_tb.cpu.regbank.data_b[31:0]

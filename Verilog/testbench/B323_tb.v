@@ -54,10 +54,15 @@ CPU cpu(
 
 reg [31:0] rom [0:511];
 
-always @(posedge clk) 
+always @(negedge clk) 
 begin
-    if (start)
+    if (busy)
+    begin
         q <= rom[address];
+        busy <= 0;
+    end
+    else if (start)
+        busy <= 1;    
 end
 
 

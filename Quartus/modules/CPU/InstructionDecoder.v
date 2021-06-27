@@ -25,7 +25,7 @@ assign instruction =    (fetch || getRegs) ? q:
 reg [31:0] instructionReg;
 
 //Save instruction just after fetch
-always @(negedge clk)
+always @(posedge clk)
 begin
     if (reset)
     begin

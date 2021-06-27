@@ -26,7 +26,7 @@ reg int1_prev, int2_prev, int3_prev, int4_prev; //previous values to detect risi
 reg rising_ext_int1, rising_ext_int2, rising_ext_int3, rising_ext_int4;
 reg ext_int1_prev, ext_int2_prev, ext_int3_prev, ext_int4_prev; //previous values to detect rising edge
 
-always @(negedge clk) 
+always @(posedge clk) 
 begin
 
     if (reset)

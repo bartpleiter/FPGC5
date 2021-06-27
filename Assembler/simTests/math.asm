@@ -8,6 +8,7 @@ Main:
     push r1
     pop r2
     read 0 r2 r1
+    or r1 r1 r1
     savpc r2
     halt
 
