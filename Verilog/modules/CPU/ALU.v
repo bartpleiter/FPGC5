@@ -52,21 +52,21 @@ always @ (*)
 begin
     if (skip)
     begin
-        y <= b;
+        y = b;
     end
     else
     begin
         case (opcode)
-            OP_OR:      y <= res_OR;
-            OP_AND:     y <= res_AND;
-            OP_XOR:     y <= res_XOR;
-            OP_ADD:     y <= res_ADD;
-            OP_SUB:     y <= res_SUB;
-            OP_SHIFTL:  y <= res_SHIFTL;
-            OP_SHIFTR:  y <= res_SHIFTR;
-            OP_MULT:    y <= res_MULT;
-            OP_NOTA:    y <= res_NOTA;
-            default:    y <= 32'd0;
+            OP_OR:      y = res_OR;
+            OP_AND:     y = res_AND;
+            OP_XOR:     y = res_XOR;
+            OP_ADD:     y = res_ADD;
+            OP_SUB:     y = res_SUB;
+            OP_SHIFTL:  y = res_SHIFTL;
+            OP_SHIFTR:  y = res_SHIFTR;
+            OP_MULT:    y = res_MULT;
+            OP_NOTA:    y = res_NOTA;
+            default:    y = 32'd0;
         endcase
     end
 end

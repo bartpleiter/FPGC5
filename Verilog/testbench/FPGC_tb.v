@@ -15,7 +15,12 @@
 
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/FSX.v"
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/BGWrenderer.v"
-`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/Spriterenderer.v"
+//`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/Spriterenderer.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/TimingGenerator.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/HDMI/RGB2HDMI.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/HDMI/TMDSenc.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/HDMI/lvds.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/HDMI/ddr.v"
 
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/Memory/VRAM.v"
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/Memory/mt48lc16m16a2.v"
@@ -92,21 +97,9 @@ mt48lc16m16a2 sdram (
 .Dqm    (SDRAM_DQM)
 );
 
-//VGA
-wire        vga_clk;
-wire        vga_hs;
-wire        vga_vs;
-wire [2:0]  vga_r;
-wire [2:0]  vga_g;
-wire [1:0]  vga_b;
-wire        vga_blk;
-
-//CRT
-wire        crt_clk;
-wire        crt_sync;
-wire [2:0]  crt_r;
-wire [2:0]  crt_g;
-wire [1:0]  crt_b;
+//HDMI
+wire [3:0] TMDS_p;
+wire [3:0] TMDS_n;
 
 //SPI1
 wire SPI1_clk;
@@ -172,24 +165,12 @@ reg  [3:0]  GPI;
 reg [3:0] DIPS;
 
 FPGC5 fpgc (
-.clk(clk), //25MHz
+.clk(clk),
 .nreset(nreset),
 
-//VGA for GM7123 module
-.vga_clk(vga_clk),
-.vga_hs(vga_hs),
-.vga_vs(vga_vs),
-.vga_r(vga_r),
-.vga_g(vga_g),
-.vga_b(vga_b),
-.vga_blk(vga_blk),
-
-//RGBs video
-.crt_sync(crt_sync),
-.crt_clk(crt_clk),
-.crt_r(crt_r),
-.crt_g(crt_g),
-.crt_b(crt_b),
+//HDMI
+.TMDS_p(TMDS_p),
+.TMDS_n(TMDS_n),
 
 //SDRAM
 .SDRAM_CLK(SDRAM_CLK),

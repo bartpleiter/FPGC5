@@ -1,25 +1,13 @@
 /*
-* Top level design of the FPGC4
+* Top level design of the FPGC5
 */
-module FPGC4(
+module FPGC5(
     input           clk, //25MHz
     input           nreset,
 
-    //VGA for GM7123 module
-    output          vga_clk,
-    output          vga_hs,
-    output          vga_vs,
-    output [2:0]    vga_r,
-    output [2:0]    vga_g,
-    output [1:0]    vga_b,
-    output          vga_blk,
-
-    //RGBs video
-    output          crt_sync,
-    output          crt_clk,
-    output [2:0]    crt_r,
-    output [2:0]    crt_g,
-    output [1:0]    crt_b,
+    //HDMI
+    output wire [3:0] TMDS_p,
+    output wire [3:0] TMDS_n,
 
     //SDRAM
     output          SDRAM_CLK,
@@ -107,12 +95,19 @@ module FPGC4(
 //-------------------CLK-------------------------
 //In hardware a PLL should be used here
 // to create the clk and crt_clk 
-assign crt_clk = clk; //'fix' for simulation
+//assign crt_clk = clk; //'fix' for simulation
 
 //Run VGA at CRT speed
-assign vga_clk = crt_clk;
+//assign vga_clk = crt_clk;
 
-//Run SDRAM at system speed
+wire clkTMDShalf;   // TMDS clock (pre-DDR), 5x pixel clock
+wire clkPixel;  // Pixel clock
+
+// everything at clk speed for simulation
+assign clkTMDShalf = clk;
+assign clkPixel = clk;
+
+//Run SDRAM at system speed (for now)
 assign SDRAM_CLK = clk;
 
 
@@ -200,7 +195,7 @@ VRAM #(
 .cpu_q      (vram32_cpu_q),
 
 //GPU port
-.gpu_clk    (crt_clk),
+.gpu_clk    (clkPixel),
 .gpu_d      (vram32_gpu_d),
 .gpu_addr   (vram32_gpu_addr),
 .gpu_we     (vram32_gpu_we),
@@ -233,7 +228,7 @@ VRAM #(
 .cpu_q      (),
 
 //GPU port
-.gpu_clk    (crt_clk),
+.gpu_clk    (clkPixel),
 .gpu_d      (vram322_gpu_d),
 .gpu_addr   (vram322_gpu_addr),
 .gpu_we     (vram322_gpu_we),
@@ -272,7 +267,7 @@ VRAM #(
 .cpu_q      (vram8_cpu_q),
 
 //GPU port
-.gpu_clk    (crt_clk),
+.gpu_clk    (clkPixel),
 .gpu_d      (vram8_gpu_d),
 .gpu_addr   (vram8_gpu_addr),
 .gpu_we     (vram8_gpu_we),
@@ -311,7 +306,7 @@ VRAM #(
 .cpu_q      (vramSPR_cpu_q),
 
 //GPU port
-.gpu_clk    (crt_clk),
+.gpu_clk    (clkPixel),
 .gpu_d      (vramSPR_gpu_d),
 .gpu_addr   (vramSPR_gpu_addr),
 .gpu_we     (vramSPR_gpu_we),
@@ -334,21 +329,25 @@ ROM rom(
 
 
 //-----------------------FSX-------------------------
+//FSX I/O
+wire [7:0]  composite; // NTSC composite video signal
+reg         selectOutput = 1'b1; // 1 -> HDMI, 0 -> Composite
+
+
 FSX fsx(
-.vga_clk        (crt_clk),
+//Clocks
+.clkPixel       (clkPixel),
+.clkTMDShalf    (clkTMDShalf),
 
-//VGA
-.vga_r          (vga_r),
-.vga_g          (vga_g),
-.vga_b          (vga_b),
-.vga_hs         (vga_hs),
-.vga_vs         (vga_vs),
+//HDMI
+.TMDS_p         (TMDS_p),
+.TMDS_n         (TMDS_n),
 
-//CRT
-.crt_sync       (crt_sync),
-.crt_r          (crt_r),
-.crt_g          (crt_g),
-.crt_b          (crt_b),
+//NTSC composite
+.composite      (composite),
+
+//Select output method
+.selectOutput   (selectOutput),
 
 //VRAM32
 .vram32_addr    (vram32_gpu_addr),
@@ -369,7 +368,6 @@ FSX fsx(
 //Interrupt signal
 .frameDrawn     (frameDrawn)
 );
-
 
 
 //----------------Memory Unit--------------------
