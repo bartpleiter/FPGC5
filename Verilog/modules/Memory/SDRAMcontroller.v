@@ -125,6 +125,8 @@ assign refresh = (SDRAM_CMD == SDRAM_CMD_REFRESH);
 
 reg [8:0] InitCounter = 0;
 
+reg isRefreshing = 1'b0;
+
 always @(posedge clk)
 begin
 
@@ -142,6 +144,7 @@ begin
         q_low         <= 0;
         q_high        <= 0;
         startup_refresh_count <= 0;
+        isRefreshing <= 1'b0;
     end
     else 
     begin
@@ -186,12 +189,13 @@ begin
                 if (startup_refresh_count > cycles_per_refresh) //refresh has priority!
                     begin
                         state       <= s_idle_in_6;
+                        isRefreshing <= 1'b1;
                         SDRAM_CMD   <= SDRAM_CMD_REFRESH;
                         startup_refresh_count <= 0;
                     end
                 else 
                 begin     
-                    if (start == 1)
+                    if (start)
                     begin
                         //--------------------------------
                         //-- Start the read or write cycle. 
@@ -219,7 +223,7 @@ begin
             s_open_in_1:
             begin
                 // if write command
-                if (we == 1'b1)
+                if (we)
                 begin
                     state <= s_write_1;
                     WrData <= data_low;
@@ -268,12 +272,20 @@ begin
             s_idle_in_4: state <= s_idle_in_3;
             s_idle_in_3: 
             begin
-                q_ready         <= 1'b0;
+                //q_ready     <= 1'b0;
                 state           <= s_idle_in_2;
                 SDRAM_CMD       <= SDRAM_CMD_NOP;
             end
             s_idle_in_2: state <= s_idle_in_1;
-            s_idle_in_1: state <= s_idle;
+            s_idle_in_1: 
+            begin
+                if (!start || isRefreshing)
+                begin
+                    q_ready     <= 1'b0;
+                    state       <= s_idle;
+                    isRefreshing <= 1'b0;
+                end
+            end
             s_read_1: 
             begin
                 state           <= s_read_2;
@@ -284,17 +296,19 @@ begin
                 SDRAM_DQM       <= 2'b00;
             end   
             s_read_2: begin
-                SDRAM_CMD       <= SDRAM_CMD_NOP;
-                state <= s_read_3;
+                SDRAM_CMD   <= SDRAM_CMD_NOP;
+                state       <= s_read_3;
             end   
             s_read_3: begin
                 state <= s_read_4;
+                
             end
 
             s_read_4: 
             begin
                 state <= s_read_precharge;
-                q_low                       <= SDRAM_Q;
+                q_low <= SDRAM_Q;
+                
                 
             end
             s_read_precharge:

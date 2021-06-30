@@ -122,35 +122,52 @@ lvds lvdsConverter(
 // Clock generator PLL
 wire clkTMDShalf; 	// TMDS clock (pre-DDR), 5x pixel clock
 wire clkPixel;	// Pixel clock
+wire clk_SDRAM; //100MHz SDRAM clock
 
 clock_pll clock_pll_inst(
 	.inclk0	(clock),
 	.c0		(clkPixel),
-	.c1		(clkTMDShalf)
+	.c1		(clkTMDShalf),
+	.c2 		(clk_SDRAM)
 );
 
 
 
 //-------------------CLK-------------------------
 wire clk;
+assign clk = clkPixel;
 
+/*
 //PLL for VGA/CRT @~6.94MHz and System @25MHz
 pll pll (
 .inclk0(clock),
-.c0(),
-.c1(clk)
+.c0(clk_SDRAM),
+.c1()//clk
 );
+*/
+
+//assign clk_SDRAM = clk;
+
+
 
 //Run VGA at CRT speed
 //assign vga_clk = crt_clk;
 
-//Run SDRAM at system speed
-assign SDRAM_CLK = clk;
+//Run SDRAM at 100MHz
+assign SDRAM_CLK = clk_SDRAM;
+
 
 						  
 //--------------------Reset&Stabilizers-----------------------
 //Reset signals
 wire nreset_stable, UART0_dtr_stable, reset;
+
+/*
+clkdiv4 cdiv4 (
+.clk(clk_SDRAM),
+.reset(reset),
+.clk_out(clk)
+);*/
 
 //Dip switch
 wire boot_mode_stable;
@@ -422,13 +439,15 @@ FSX fsx(
 
 //----------------Memory Unit--------------------
 //Memory Unit I/O
-wire [26:0] address;
-wire [31:0] data;
-wire        we;
-wire        start;
-wire        initDone;
-wire        busy;
-wire [31:0] q;
+
+//Bus
+wire [26:0] bus_addr;
+wire [31:0] bus_data;
+wire        bus_we;
+wire        bus_start;
+wire [31:0] bus_q;
+wire        bus_done;
+
 //Interrupt signals
 wire        OST1_int, OST2_int, OST3_int;
 wire 			UART0_rx_int, UART1_rx_int, UART2_rx_int;
@@ -437,16 +456,16 @@ wire        PS2_int;
 MemoryUnit mu(
 //clock
 .clk            (clk),
+.clk_SDRAM      (clk_SDRAM),
 .reset          (reset),
 
-//CPU connection (bus)
-.address        (address),
-.data           (data),
-.we             (we),
-.start          (start),
-.initDone       (initDone),       //High when initialization is done
-.busy           (busy),
-.q              (q),
+//CPU connection (Bus)
+.bus_addr       (bus_addr),
+.bus_data       (bus_data),
+.bus_we         (bus_we),
+.bus_start      (bus_start),
+.bus_q          (bus_q),
+.bus_done       (bus_done),
 
 /********
 * MEMORY
@@ -581,12 +600,20 @@ CPU cpu(
 .ext_int2       (PS2_int),          	//PS/2 scancode ready
 .ext_int3       (UART1_rx_int),       	//UART1 rx (APU)
 .ext_int4       (UART2_rx_int), 		  	//UART2 rx (EXT)
+/*
 .address        (address),
 .data           (data),
 .we             (we),
 .q              (q),
 .start          (start),
-.busy           (busy)
+.busy           (busy)*/
+.bus_addr       (bus_addr),
+.bus_data       (bus_data),
+.bus_we         (bus_we),
+.bus_start      (bus_start),
+.bus_q          (bus_q),
+.bus_done       (bus_done)
 );
 
 endmodule
+

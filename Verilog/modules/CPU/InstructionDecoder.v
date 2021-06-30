@@ -19,7 +19,7 @@ module InstructionDecoder(
 
 wire [31:0] instruction;
 
-assign instruction =    (fetch || getRegs) ? q:
+assign instruction =    (fetch) ? q:
                         instructionReg;
 
 reg [31:0] instructionReg;
@@ -33,7 +33,7 @@ begin
     end
     else
     begin
-        if (getRegs)
+        if (fetch)
         begin
             instructionReg <= q;
         end
