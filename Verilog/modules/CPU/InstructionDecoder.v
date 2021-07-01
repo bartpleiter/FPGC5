@@ -19,7 +19,7 @@ module InstructionDecoder(
 
 wire [31:0] instruction;
 
-assign instruction =    (fetch) ? q:
+assign instruction =    //(fetch) ? q:
                         instructionReg;
 
 reg [31:0] instructionReg;

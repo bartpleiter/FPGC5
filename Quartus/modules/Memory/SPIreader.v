@@ -9,7 +9,8 @@ module SPIreader (
     input [23:0] address, 
     output [31:0] instr, 
     input start, 
-    output reg initDone, recvDone,
+    output reg initDone, 
+    output recvDone,
     output wire write,
     output wire io0_out, io1_out, io2_out, io3_out, //d, q wp, hold
     input wire io0_in, io1_in, io2_in, io3_in       //d, q wp, hold
@@ -18,8 +19,9 @@ module SPIreader (
 
 
 wire recvDoneWire;
-assign recvDoneWire = (initDone && phase == 2 && (counter == 2 || counter == 3));
-
+assign recvDoneWire = (initDone && phase == 2 && counter == 0);
+assign recvDone = recvDoneWire;
+/*
 always @(posedge clk)
 begin
   if (reset)
@@ -31,7 +33,7 @@ begin
     recvDone <= recvDoneWire;
   end
 end
-
+*/
 
 wire [23:0] a; //address
 assign a = address << 2;

@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
-[*] Thu Jul 01 14:01:49 2021
+[*] Thu Jul 01 21:07:11 2021
 [*]
 [dumpfile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\wave.vcd"
-[dumpfile_mtime] "Thu Jul 01 13:59:22 2021"
-[dumpfile_size] 35495710
+[dumpfile_mtime] "Thu Jul 01 20:59:16 2021"
+[dumpfile_size] 35897589
 [savefile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\FPGC.gtkw"
-[timestart] 1298899610
+[timestart] 0
 [size] 1920 1027
 [pos] -1 -1
-*-14.287395 1298956790 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-28.987398 1096005000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] FPGC_tb.
 [treeopen] FPGC_tb.fpgc.
 [treeopen] FPGC_tb.fpgc.cpu.
@@ -327,15 +327,18 @@ FPGC_tb.fpgc.mu.sreader.clk
 @22
 FPGC_tb.fpgc.mu.sreader.a[23:0]
 FPGC_tb.fpgc.mu.sreader.address[23:0]
+@24
 FPGC_tb.fpgc.mu.sreader.counter[6:0]
 @28
 FPGC_tb.fpgc.mu.sreader.cs
 FPGC_tb.fpgc.mu.sreader.initDone
-@22
+@24
 FPGC_tb.fpgc.mu.sreader.instr[31:0]
+@22
 FPGC_tb.fpgc.mu.sreader.opcode[7:0]
-@28
+@24
 FPGC_tb.fpgc.mu.sreader.phase[2:0]
+@28
 FPGC_tb.fpgc.mu.sreader.recvDone
 FPGC_tb.fpgc.mu.sreader.recvDoneWire
 FPGC_tb.fpgc.mu.sreader.reset
@@ -355,10 +358,8 @@ FPGC_tb.fpgc.mu.SPIflash_wp
 -MU
 @22
 FPGC_tb.fpgc.mu.bus_addr[26:0]
->-600
 FPGC_tb.fpgc.mu.bus_data[31:0]
 @28
->0
 FPGC_tb.fpgc.mu.bus_done
 FPGC_tb.fpgc.mu.bus_done_next
 @22
@@ -426,6 +427,29 @@ FPGC_tb.fpgc.mu.sreader.write
 -
 -SPI3
 -
+-MemoryUnit
+@28
+FPGC_tb.fpgc.mu.clk
+FPGC_tb.fpgc.cpu.timer.fetch
+FPGC_tb.fpgc.cpu.timer.getRegs
+FPGC_tb.fpgc.cpu.timer.readMem
+FPGC_tb.fpgc.cpu.timer.writeBack
+@200
+-
+@28
+FPGC_tb.fpgc.cpu.timer.clk
+@22
+FPGC_tb.fpgc.mu.bus_addr[26:0]
+FPGC_tb.fpgc.mu.bus_data[31:0]
+@28
+FPGC_tb.fpgc.mu.bus_we
+FPGC_tb.fpgc.mu.bus_start
+@22
+FPGC_tb.fpgc.mu.bus_q[31:0]
+@28
+FPGC_tb.fpgc.mu.bus_done_next
+FPGC_tb.fpgc.mu.bus_done
+@200
 -
 -VRAM32
 @28
@@ -443,7 +467,9 @@ FPGC_tb.fpgc.mu.VRAM32_cpu_we
 FPGC_tb.fpgc.mu.clk
 @22
 FPGC_tb.fpgc.mu.VRAM8_cpu_addr[13:0]
+@23
 FPGC_tb.fpgc.mu.VRAM8_cpu_d[7:0]
+@22
 FPGC_tb.fpgc.mu.VRAM8_cpu_q[7:0]
 @28
 FPGC_tb.fpgc.mu.VRAM8_cpu_we

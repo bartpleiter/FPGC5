@@ -570,6 +570,30 @@ assign VRAMspr_cpu_we       = (bus_addr >= 27'hC02422 && bus_addr < 27'hC02522) 
 //ROM
 assign ROM_addr             = (bus_addr >= 27'hC02522 && bus_addr < 27'hC02722)   ? bus_addr - 27'hC02522      : 9'd0;
 
+/* does not play nicely in simulation because of XX stuff. hardware is fine it appears. need to investigate further
+//SPI FLASH MEMORY
+assign SPIflashReader_addr  = (bus_addr >= 27'h800000 && bus_addr < 27'hC00000)   ? bus_addr - 27'h800000      : 24'd0;
+assign SPIflashReader_start = (bus_addr >= 27'h800000 && bus_addr < 27'hC00000)   ? bus_start                     : 1'd0;
+
+//VRAM32
+assign VRAM32_cpu_addr      = bus_addr - 27'hC00000;
+assign VRAM32_cpu_d         = bus_data;
+assign VRAM32_cpu_we        = (bus_addr >= 27'hC00000 && bus_addr < 27'hC00420 && bus_we);
+
+//VRAM8
+assign VRAM8_cpu_addr       = bus_addr - 27'hC00420;
+assign VRAM8_cpu_d          = bus_data;
+assign VRAM8_cpu_we         = (bus_addr >= 27'hC00420 && bus_addr < 27'hC02422 && bus_we);
+
+//VRAMspr
+assign VRAMspr_cpu_addr     = bus_addr - 27'hC02422;
+assign VRAMspr_cpu_d        = bus_data;
+assign VRAMspr_cpu_we       = (bus_addr >= 27'hC02422 && bus_addr < 27'hC02522 && bus_we);
+
+//ROM
+assign ROM_addr             = bus_addr - 27'hC02522;
+*/
+
 //----
 //I/O
 //----
@@ -624,7 +648,11 @@ begin
         SPI0_enable <= 1'b0;
         bus_q <= 32'd0;
         bus_done <= 1'b0;
-        bus_done_next = 1'b0;
+        bus_done_next <= 1'b0;
+        sd_addr     <= 27'd0;
+        sd_d        <= 32'd0;
+        sd_we       <= 1'b0;
+        sd_start    <= 1'b0;
     end
     else 
     begin
@@ -654,13 +682,13 @@ begin
             sd_start    <= bus_start;
             if (sd_q_ready && sd_initDone)
             begin
-                //bus_done <= 1'b1;
-                bus_done_next <= 1'b1;
+                bus_done <= 1'b1;
+                //bus_done_next <= 1'b1;
                 sd_addr     <= 24'd0;
                 sd_d        <= 32'd0;
                 sd_we       <= 1'b0;
                 sd_start    <= 1'b0;
-                bus_q <= sd_q;
+                bus_q       <= sd_q;
             end
         end
 
@@ -669,7 +697,8 @@ begin
         begin
             if (SPIflashReader_recvDone || SPI0_enable)
             begin
-                if (!bus_done_next) bus_done_next <= 1'b1;
+                bus_done <= 1'b1;
+                //if (!bus_done_next) bus_done_next <= 1'b1;
                 bus_q <= SPIflashReader_q;
             end
         end
