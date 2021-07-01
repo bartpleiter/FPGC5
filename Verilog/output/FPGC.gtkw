@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
-[*] Wed Jun 30 08:14:41 2021
+[*] Wed Jun 30 18:06:59 2021
 [*]
 [dumpfile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\wave.vcd"
-[dumpfile_mtime] "Wed Jun 30 08:13:40 2021"
-[dumpfile_size] 36152116
+[dumpfile_mtime] "Wed Jun 30 18:06:04 2021"
+[dumpfile_size] 35622262
 [savefile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\FPGC.gtkw"
-[timestart] 1156770000
+[timestart] 1161240000
 [size] 1920 1027
 [pos] -1 -1
-*-20.587395 1157325000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-22.987394 1177640000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] FPGC_tb.
 [treeopen] FPGC_tb.fpgc.
 [treeopen] FPGC_tb.fpgc.cpu.
@@ -255,6 +255,41 @@ FPGC_tb.fpgc.mu.sd_q_ready
 @200
 -
 -
+@28
+FPGC_tb.fpgc.mu.sd_start
+FPGC_tb.fpgc.mu.sd_we
+FPGC_tb.fpgc.mu.sd_q_ready
+@22
+FPGC_tb.fpgc.mu.sd_q[31:0]
+@28
+FPGC_tb.fpgc.mu.sd_initDone
+@22
+FPGC_tb.fpgc.mu.sd_d[31:0]
+@28
+FPGC_tb.fpgc.mu.sd_busy
+@22
+FPGC_tb.fpgc.mu.sd_addr[23:0]
+@200
+-
+@28
+FPGC_tb.fpgc.mu.sdramcontroller.clk
+FPGC_tb.fpgc.mu.sdramcontroller.isRefreshing
+@22
+FPGC_tb.fpgc.mu.sdramcontroller.q_high[15:0]
+FPGC_tb.fpgc.mu.sdramcontroller.q_low[15:0]
+FPGC_tb.fpgc.mu.sdramcontroller.q[31:0]
+@28
+FPGC_tb.fpgc.mu.sdramcontroller.q_ready_reg
+FPGC_tb.fpgc.mu.sdramcontroller.q_ready
+@22
+FPGC_tb.fpgc.mu.sdramcontroller.state[6:0]
+@28
+FPGC_tb.fpgc.mu.sdramcontroller.we
+@22
+FPGC_tb.fpgc.mu.sdramcontroller.addr[23:0]
+FPGC_tb.fpgc.mu.sdramcontroller.d[31:0]
+@200
+-
 -
 -ROM
 @28
@@ -320,15 +355,16 @@ FPGC_tb.fpgc.mu.SPIflash_wp
 -MU
 @22
 FPGC_tb.fpgc.mu.bus_addr[26:0]
+>-600
 FPGC_tb.fpgc.mu.bus_data[31:0]
 @28
+>0
 FPGC_tb.fpgc.mu.bus_done
 FPGC_tb.fpgc.mu.bus_done_next
 @22
 FPGC_tb.fpgc.mu.bus_q[31:0]
 @28
 FPGC_tb.fpgc.mu.bus_start
-@29
 FPGC_tb.fpgc.mu.bus_we
 @200
 -

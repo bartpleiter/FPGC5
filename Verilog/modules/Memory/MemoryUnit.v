@@ -238,7 +238,7 @@ module MemoryUnit(
 
     SDRAMcontroller sdramcontroller(
     .clk        (clk_SDRAM), // now must be 100MHz
-    .reset      (reset),
+    //.reset      (reset),
 
     .busy       (sd_busy),       // high if controller is busy
     .addr       (sd_addr),       // addr to read or write
@@ -290,7 +290,7 @@ module MemoryUnit(
     .o_Rx_Byte  (UART0_w_Rx_Byte)
     );
 
-    /*
+    
     //------------
     //UART1
     //------------
@@ -529,7 +529,7 @@ module MemoryUnit(
     .rx_data        (PS2_scanCode)
     );
 
-*/
+
 
 
 //TODO: remove address clauses for data and address lines, since these only matter during writes, and we is protected anyways.
@@ -578,7 +578,7 @@ assign ROM_addr             = (bus_addr >= 27'hC02522 && bus_addr < 27'hC02722) 
 assign UART0_r_Tx_DV    = (bus_addr == 27'hC02723 && bus_we)                     ? bus_start                     : 1'b0;
 assign UART0_r_Tx_Byte  = (bus_addr == 27'hC02723)                           ? bus_data                      : 8'd0;
 
-/*
+
 assign UART1_r_Tx_DV    = (bus_addr == 27'hC02725 && bus_we)                     ? bus_start                     : 1'b0;
 assign UART1_r_Tx_Byte  = (bus_addr == 27'hC02725)                           ? bus_data                      : 8'd0;
 
@@ -613,7 +613,7 @@ assign OST2_trigger     = (bus_addr == 27'hC0273C && bus_we);
 assign OST3_value       = (bus_addr == 27'hC0273D && bus_we)                     ? bus_data                      : 32'd0;
 assign OST3_set         = (bus_addr == 27'hC0273D && bus_we);
 assign OST3_trigger     = (bus_addr == 27'hC0273E && bus_we);
-*/
+
 reg bus_done_next = 1'b0;
 
 always @(posedge clk)
@@ -646,16 +646,16 @@ begin
         //------
 
         //SDRAM
-        if (bus_start && bus_addr < 27'h800000)
+        if (bus_start && bus_addr < 27'h800000 && (!bus_done_next))
         begin
             sd_addr     <= bus_addr;
             sd_d        <= bus_data;
             sd_we       <= bus_we;
             sd_start    <= bus_start;
-            if (sd_q_ready)
+            if (sd_q_ready && sd_initDone)
             begin
-                bus_done <= 1'b1;
-                //if (!bus_done_next) bus_done_next <= 1'b1;
+                //bus_done <= 1'b1;
+                bus_done_next <= 1'b1;
                 sd_addr     <= 24'd0;
                 sd_d        <= 32'd0;
                 sd_we       <= 1'b0;
@@ -695,7 +695,7 @@ begin
                 bus_q <= 32'd0;
             end
         end
-            /*
+            
         if (bus_addr == 27'hC02724) bus_q <= UART1_w_Rx_Byte;
 
         //UART1 TX
@@ -870,7 +870,7 @@ begin
         if (bus_addr == 27'hC0273F) bus_q <= {16'd0, SNES_state};
 
         if (bus_addr == 27'hC02740) bus_q <= {24'd0, PS2_scanCode};
-        */
+        
         if (bus_addr == 27'hC02741) bus_q <= {31'd0, boot_mode};
 
         //Instant return addresses

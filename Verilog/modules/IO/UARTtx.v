@@ -167,7 +167,9 @@ begin
         s_CLEANUP :
         begin
             r_Tx_Done <= 1'b1;
-            r_SM_Main <= s_IDLE;
+
+            if (!i_Tx_DV) r_SM_Main <= s_IDLE;
+            else r_SM_Main <= s_CLEANUP;
         end
 
 
