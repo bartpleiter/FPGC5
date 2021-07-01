@@ -18,3 +18,4 @@ Verilog/output/*.vcd
 Verilog/output/*.ppm
 **/ __pycache__/
 **/*.pyc
+Quartus/*.ipregen.rpt

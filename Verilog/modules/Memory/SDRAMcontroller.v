@@ -131,7 +131,7 @@ reg [31:0] InitCounter = 0;
 
 reg isRefreshing = 1'b0;
 
-always @(negedge clk)
+always @(posedge clk)
 begin
 
     /*if (reset)

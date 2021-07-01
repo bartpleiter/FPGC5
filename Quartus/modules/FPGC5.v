@@ -128,7 +128,8 @@ clock_pll clock_pll_inst(
 	.inclk0	(clock),
 	.c0		(clkPixel),
 	.c1		(clkTMDShalf),
-	.c2 		(clk_SDRAM)
+	.c2 		(clk_SDRAM),
+	.c3 		(SDRAM_CLK)
 );
 
 
@@ -154,7 +155,7 @@ pll pll (
 //assign vga_clk = crt_clk;
 
 //Run SDRAM at 100MHz
-assign SDRAM_CLK = clk_SDRAM;
+//assign SDRAM_CLK = clk_SDRAM;
 
 
 						  
