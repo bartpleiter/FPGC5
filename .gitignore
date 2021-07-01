@@ -11,6 +11,7 @@ Quartus/greybox_tmp/
 Programmer/verify.bin
 Quartus/*/*.bak
 Quartus/*/*/*.bak
+Quartus/.qsys_edit/
 Documentation/site/
 Verilog/output/output
 Verilog/output/*.vcd
