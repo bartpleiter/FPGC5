@@ -14,6 +14,7 @@ module ControlUnit(
     input [26:0]    const27,
     input [3:0]     instrOP,
     //Memory
+    /*
     output [31:0]   data,
     input  [31:0]   q,
     output [26:0]   address,
@@ -21,6 +22,16 @@ module ControlUnit(
     output          read_mem,
     input           busy,
     output          start,
+    */
+    //Bus
+    output [26:0]   bus_addr,
+    output [31:0]   bus_data,
+    output          bus_we,
+    output          bus_start,
+    input [31:0]    bus_q,
+    input           bus_done,
+    output          busy,
+    output          read_mem,
     //Stack
     input  [31:0]   stack_q,
     output [31:0]   stack_d,
@@ -61,7 +72,7 @@ localparam  INSTR_HALT      = 4'b1111,
 
 
 //-----------MEMORY-----------
-assign address      =   (fetch)                                         ? pc_in:
+assign bus_addr     =   (fetch)                                         ? pc_in:
                         (readMem && !n2)                                ? data_a + const16: //address is usually in areg
                         (readMem && n2)                                 ? data_a - const16: //address is usually in areg
                         (writeBack && instrOP == INSTR_WRITE && !n1)    ? data_a + const16: //address is usually in areg
@@ -70,18 +81,23 @@ assign address      =   (fetch)                                         ? pc_in:
                         (writeBack && instrOP == INSTR_COPY && n1)      ? data_b - const16: //for copy, the write address is in breg
                         32'd0;
 
-assign data         =   (instrOP == INSTR_COPY) ? q: //for copy we want to write the read result
+assign bus_data     =   (instrOP == INSTR_COPY) ? bus_q: //for copy we want to write the read result
                         data_b; //data is otherwise stored in breg
 
+wire start;
 assign start        =   (fetch)                                         ||
                         (instrOP == INSTR_READ && readMem)              ||
                         (instrOP == INSTR_WRITE && writeBack)           ||
                         (instrOP == INSTR_COPY && (readMem || writeBack));
 
-assign we           =   (instrOP == INSTR_WRITE && writeBack)           ||
+assign bus_start    =   (start)&&(!bus_done);
+
+assign bus_we       =   (instrOP == INSTR_WRITE && writeBack)           ||
                         (instrOP == INSTR_COPY && writeBack);
 
 assign read_mem     =   (instrOP == INSTR_READ && !intf);
+
+assign busy         =   (start)&&(!bus_done); // same as bus_start for now, need to test
 
 //-----------ALU------------
 assign input_b      =   (instrOP == INSTR_ARITH && ce)  ?   {21'd0, const11}    :

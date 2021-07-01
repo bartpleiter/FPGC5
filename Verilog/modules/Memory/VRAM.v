@@ -25,7 +25,7 @@ module VRAM
 reg [WIDTH-1:0] ram [0:WORDS-1]; //basically the memory cells
 
 //cpu port
-always @(negedge cpu_clk) 
+always @(posedge cpu_clk) 
 begin
   cpu_q <= ram[cpu_addr];
   if (cpu_we)

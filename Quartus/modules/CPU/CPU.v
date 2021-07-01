@@ -3,14 +3,16 @@
 */
 module CPU(
     input clk, reset, int1, int2, int3, int4, ext_int1, ext_int2, ext_int3, ext_int4,
-    output [26:0] address,
-    output [31:0] data,
-    output        we,
-    output        start,
-    input [31:0]  q,
-    input         busy
+    output [26:0] bus_addr,
+    output [31:0] bus_data,
+    output        bus_we,
+    output        bus_start,
+    input [31:0]  bus_q,
+    input         bus_done
 );
 
+//-----------------------Bus-------------------------
+wire busy; // TODO: let CU set this signal
 
 //----------------------Timer------------------------
 //Timer I/O
@@ -76,7 +78,7 @@ Regbank regbank(
 .we(dreg_we),
 .we_high(dreg_we_high),
 .read_mem(read_mem),
-.mem_q(q)
+.mem_q(bus_q)
 );
 
 
@@ -127,7 +129,7 @@ InstructionDecoder instDec(
 .reset(reset),
 .fetch(fetch),
 .getRegs(getRegs),
-.q(q),
+.q(bus_q),
 .instrOP(instrOP),
 .const11(const11),
 .const16(const16),
@@ -168,14 +170,15 @@ ControlUnit cu(
 .const11(const11),
 .const16(const16),
 .const27(const27),
-//Memory
-.data(data),
-.address(address),
-.we(we),
-.q(q),
-.read_mem(read_mem),
+//Bus
+.bus_addr(bus_addr),
+.bus_data(bus_data),
+.bus_we(bus_we),
+.bus_start(bus_start),
+.bus_q(bus_q),
+.bus_done(bus_done),
 .busy(busy),
-.start(start),
+.read_mem(read_mem),
 //Stack
 .stack_q(stack_q),
 .stack_d(stack_d),

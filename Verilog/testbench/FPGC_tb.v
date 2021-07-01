@@ -52,6 +52,7 @@ module FPGC_tb;
 
 //Clock I/O
 reg clk;
+reg clk_SDRAM;
 reg nreset;
 
 
@@ -166,6 +167,7 @@ reg [3:0] DIPS;
 
 FPGC5 fpgc (
 .clk(clk),
+.clk_SDRAM(clk_SDRAM),
 .nreset(nreset),
 
 //HDMI
@@ -264,6 +266,7 @@ begin
     $dumpvars;
     
     clk = 0;
+    clk_SDRAM = 0;
     nreset = 1;
 
     SPI1_nint = 1;
@@ -283,11 +286,18 @@ begin
 
     GPI = 4'b1111;
 
-    DIPS = 4'b1111;
+    DIPS = 4'b1110;
 
 
     
-    repeat(5000) #20 clk = ~clk; //25MHz
+
+    repeat(70000)
+    begin
+        #5 clk_SDRAM = ~clk_SDRAM; clk = ~clk; //25MHz
+        #5 clk_SDRAM = ~clk_SDRAM; //100MHz
+        #5 clk_SDRAM = ~clk_SDRAM;
+        #5 clk_SDRAM = ~clk_SDRAM; 
+    end
 
 
     #1 $finish;

@@ -119,7 +119,7 @@ module mt48lc16m16a2 (Dq, Addr, Ba, Clk, Cke, Cs_n, Ras_n, Cas_n, We_n, Dqm);
     // Write Burst Mode
     wire      Write_burst_mode = Mode_reg[9];
 
-    wire      Debug            = 1'b1;                          // Debug messages : 1 = On
+    wire      Debug            = 1'b0;                          // Debug messages : 1 = On
     wire      Dq_chk           = Sys_clk & Data_in_enable;      // Check setup/hold time for DQ
     
     assign    Dq               = Dq_reg;                        // DQ buffer
@@ -135,14 +135,14 @@ module mt48lc16m16a2 (Dq, Addr, Ba, Clk, Cke, Cs_n, Ras_n, Cas_n, We_n, Dqm);
     `define   LMR       7
 
     // Timing Parameters for -7E PC133 CL2
-    parameter tAC  =   5.4;
-    parameter tHZ  =   5.4;
-    parameter tOH  =   3.0;
+    parameter tAC  =   6.0;
+    parameter tHZ  =   6.0;
+    parameter tOH  =   5.0;
     parameter tMRD =   2.0;     // 2 Clk Cycles
-    parameter tRAS =  37.0;
+    parameter tRAS =  42.0;
     parameter tRC  =  60.0;
     parameter tRCD =  15.0;
-    parameter tRFC =  66.0;
+    parameter tRFC =  64.0;
     parameter tRP  =  15.0;
     parameter tRRD =  14.0;
     parameter tWRa =   7.0;     // A2 Version - Auto precharge mode (1 Clk + 7 ns)

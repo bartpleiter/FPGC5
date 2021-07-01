@@ -1,22 +1,22 @@
 [*]
 [*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
-[*] Mon Jun 28 15:43:16 2021
+[*] Wed Jun 30 18:06:59 2021
 [*]
 [dumpfile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\wave.vcd"
-[dumpfile_mtime] "Mon Jun 28 15:37:43 2021"
-[dumpfile_size] 2126011
+[dumpfile_mtime] "Wed Jun 30 18:06:04 2021"
+[dumpfile_size] 35622262
 [savefile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\FPGC.gtkw"
-[timestart] 0
+[timestart] 1161240000
 [size] 1920 1027
-[pos] -9 1071
-*-16.687395 501300 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -1 -1
+*-22.987394 1177640000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] FPGC_tb.
 [treeopen] FPGC_tb.fpgc.
 [treeopen] FPGC_tb.fpgc.cpu.
 [treeopen] FPGC_tb.fpgc.fsx.
 [treeopen] FPGC_tb.fpgc.mu.
 [sst_width] 268
-[signals_width] 366
+[signals_width] 518
 [sst_expanded] 1
 [sst_vpaned_height] 531
 @28
@@ -42,7 +42,9 @@ FPGC_tb.fpgc.cpu.timer.reset
 @28
 FPGC_tb.fpgc.cpu.timer.fetch
 FPGC_tb.fpgc.cpu.timer.getRegs
+>-600
 FPGC_tb.fpgc.cpu.timer.readMem
+>0
 FPGC_tb.fpgc.cpu.timer.writeBack
 FPGC_tb.fpgc.cpu.timer.busy
 @24
@@ -56,7 +58,9 @@ FPGC_tb.fpgc.cpu.instDec.fetch
 FPGC_tb.fpgc.cpu.instDec.getRegs
 FPGC_tb.fpgc.cpu.instDec.q[31:0]
 FPGC_tb.fpgc.cpu.instDec.instructionReg[31:0]
+@22
 FPGC_tb.fpgc.cpu.instDec.instruction[31:0]
+@28
 FPGC_tb.fpgc.cpu.instDec.instrOP[3:0]
 FPGC_tb.fpgc.cpu.instDec.areg[3:0]
 FPGC_tb.fpgc.cpu.instDec.breg[3:0]
@@ -80,13 +84,6 @@ FPGC_tb.fpgc.cpu.cu.readMem
 FPGC_tb.fpgc.cpu.cu.writeBack
 @200
 -
-@22
-FPGC_tb.fpgc.cpu.cu.address[26:0]
-FPGC_tb.fpgc.cpu.cu.data[31:0]
-@28
-FPGC_tb.fpgc.cpu.cu.we
-@22
-FPGC_tb.fpgc.cpu.cu.q[31:0]
 @28
 FPGC_tb.fpgc.cpu.cu.read_mem
 FPGC_tb.fpgc.cpu.cu.busy
@@ -213,6 +210,11 @@ FPGC_tb.fpgc.cpu.pc.ext_int4_prev
 FPGC_tb.fpgc.cpu.pc.rising_ext_int4
 @200
 -
+@28
+FPGC_tb.fpgc.fsx.timingGenerator.frameDrawn
+@24
+FPGC_tb.fpgc.fsx.timingGenerator.v_count[11:0]
+@200
 -Stack
 @28
 FPGC_tb.fpgc.cpu.stack.clk
@@ -236,21 +238,65 @@ FPGC_tb.fpgc.cpu.timer.readMem
 FPGC_tb.fpgc.cpu.timer.writeBack
 @200
 -
-@29
+@28
 FPGC_tb.fpgc.cpu.timer.clk
 @22
-FPGC_tb.fpgc.mu.address[26:0]
+FPGC_tb.fpgc.mu.bus_addr[26:0]
+FPGC_tb.fpgc.mu.bus_data[31:0]
 @28
-FPGC_tb.fpgc.mu.busy
-@24
-FPGC_tb.fpgc.mu.data[31:0]
-@28
-FPGC_tb.fpgc.mu.initDone
+FPGC_tb.fpgc.mu.bus_we
+FPGC_tb.fpgc.mu.bus_start
 @22
-FPGC_tb.fpgc.mu.q[31:0]
+FPGC_tb.fpgc.mu.bus_q[31:0]
 @28
-FPGC_tb.fpgc.mu.start
-FPGC_tb.fpgc.mu.we
+FPGC_tb.fpgc.mu.bus_done_next
+FPGC_tb.fpgc.mu.bus_done
+FPGC_tb.fpgc.mu.sd_q_ready
+@200
+-
+-
+@28
+FPGC_tb.fpgc.mu.sd_start
+FPGC_tb.fpgc.mu.sd_we
+FPGC_tb.fpgc.mu.sd_q_ready
+@22
+FPGC_tb.fpgc.mu.sd_q[31:0]
+@28
+FPGC_tb.fpgc.mu.sd_initDone
+@22
+FPGC_tb.fpgc.mu.sd_d[31:0]
+@28
+FPGC_tb.fpgc.mu.sd_busy
+@22
+FPGC_tb.fpgc.mu.sd_addr[23:0]
+@200
+-
+@28
+FPGC_tb.fpgc.mu.sdramcontroller.clk
+FPGC_tb.fpgc.mu.sdramcontroller.isRefreshing
+@22
+FPGC_tb.fpgc.mu.sdramcontroller.q_high[15:0]
+FPGC_tb.fpgc.mu.sdramcontroller.q_low[15:0]
+FPGC_tb.fpgc.mu.sdramcontroller.q[31:0]
+@28
+FPGC_tb.fpgc.mu.sdramcontroller.q_ready_reg
+FPGC_tb.fpgc.mu.sdramcontroller.q_ready
+@22
+FPGC_tb.fpgc.mu.sdramcontroller.state[6:0]
+@28
+FPGC_tb.fpgc.mu.sdramcontroller.we
+@22
+FPGC_tb.fpgc.mu.sdramcontroller.addr[23:0]
+FPGC_tb.fpgc.mu.sdramcontroller.d[31:0]
+@200
+-
+-
+-ROM
+@28
+FPGC_tb.fpgc.rom.clk
+@22
+FPGC_tb.fpgc.rom.address[8:0]
+FPGC_tb.fpgc.rom.q[31:0]
 @200
 -
 -OSTimer1
@@ -262,6 +308,65 @@ FPGC_tb.fpgc.mu.we
 -GPIO
 -
 -SPI
+@22
+FPGC_tb.fpgc.mu.SPIflashReader_addr[23:0]
+@28
+FPGC_tb.fpgc.mu.SPIflashReader_cs
+FPGC_tb.fpgc.mu.SPIflashReader_write
+FPGC_tb.fpgc.mu.SPIflashReader_start
+FPGC_tb.fpgc.mu.SPIflashReader_reset
+@22
+FPGC_tb.fpgc.mu.SPIflashReader_q[31:0]
+@28
+FPGC_tb.fpgc.mu.SPIflashReader_initDone
+FPGC_tb.fpgc.mu.SPIflashReader_recvDone
+@200
+-
+@28
+FPGC_tb.fpgc.mu.sreader.clk
+@22
+FPGC_tb.fpgc.mu.sreader.a[23:0]
+FPGC_tb.fpgc.mu.sreader.address[23:0]
+FPGC_tb.fpgc.mu.sreader.counter[6:0]
+@28
+FPGC_tb.fpgc.mu.sreader.cs
+FPGC_tb.fpgc.mu.sreader.initDone
+@22
+FPGC_tb.fpgc.mu.sreader.instr[31:0]
+FPGC_tb.fpgc.mu.sreader.opcode[7:0]
+@28
+FPGC_tb.fpgc.mu.sreader.phase[2:0]
+FPGC_tb.fpgc.mu.sreader.recvDone
+FPGC_tb.fpgc.mu.sreader.recvDoneWire
+FPGC_tb.fpgc.mu.sreader.reset
+FPGC_tb.fpgc.mu.sreader.start
+FPGC_tb.fpgc.mu.sreader.write
+@200
+-
+@28
+FPGC_tb.fpgc.mu.SPIflash_clk
+FPGC_tb.fpgc.mu.SPIflash_cs
+FPGC_tb.fpgc.mu.SPIflash_data
+FPGC_tb.fpgc.mu.SPIflash_hold
+FPGC_tb.fpgc.mu.SPIflash_q
+FPGC_tb.fpgc.mu.SPIflash_wp
+@200
+-
+-MU
+@22
+FPGC_tb.fpgc.mu.bus_addr[26:0]
+>-600
+FPGC_tb.fpgc.mu.bus_data[31:0]
+@28
+>0
+FPGC_tb.fpgc.mu.bus_done
+FPGC_tb.fpgc.mu.bus_done_next
+@22
+FPGC_tb.fpgc.mu.bus_q[31:0]
+@28
+FPGC_tb.fpgc.mu.bus_start
+FPGC_tb.fpgc.mu.bus_we
+@200
 -
 -SDRAMcontroller
 @28
@@ -270,13 +375,34 @@ FPGC_tb.fpgc.mu.sdramcontroller.clk
 FPGC_tb.fpgc.mu.sd_addr[23:0]
 @28
 FPGC_tb.fpgc.mu.sd_busy
-@22
 FPGC_tb.fpgc.mu.sd_d[31:0]
+@22
 FPGC_tb.fpgc.mu.sd_q[31:0]
 @28
 FPGC_tb.fpgc.mu.sd_q_ready
 FPGC_tb.fpgc.mu.sd_start
 FPGC_tb.fpgc.mu.sd_we
+@24
+FPGC_tb.fpgc.mu.sdramcontroller.state[6:0]
+@200
+-
+-SDRAM
+@28
+FPGC_tb.fpgc.mu.clk
+FPGC_tb.fpgc.mu.clk_SDRAM
+@22
+FPGC_tb.fpgc.mu.SDRAM_A[12:0]
+@28
+FPGC_tb.fpgc.mu.SDRAM_BA[1:0]
+FPGC_tb.fpgc.mu.SDRAM_CKE
+FPGC_tb.fpgc.mu.SDRAM_CSn
+FPGC_tb.fpgc.mu.SDRAM_DQM[1:0]
+@22
+FPGC_tb.fpgc.mu.SDRAM_DQ[15:0]
+@28
+FPGC_tb.fpgc.mu.SDRAM_CASn
+FPGC_tb.fpgc.mu.SDRAM_RASn
+FPGC_tb.fpgc.mu.SDRAM_WEn
 @200
 -
 -SPIreader
@@ -300,35 +426,35 @@ FPGC_tb.fpgc.mu.sreader.write
 -
 -SPI3
 -
--SDRAM
-@22
-FPGC_tb.fpgc.mu.SDRAM_A[12:0]
-@28
-FPGC_tb.fpgc.mu.SDRAM_BA[1:0]
-FPGC_tb.fpgc.mu.SDRAM_CKE
-FPGC_tb.fpgc.mu.SDRAM_CSn
-FPGC_tb.fpgc.mu.SDRAM_DQM[1:0]
-@22
-FPGC_tb.fpgc.mu.SDRAM_DQ[15:0]
-@28
-FPGC_tb.fpgc.mu.SDRAM_CASn
-FPGC_tb.fpgc.mu.SDRAM_RASn
-FPGC_tb.fpgc.mu.SDRAM_WEn
-@200
 -
 -VRAM32
 @28
 FPGC_tb.fpgc.mu.clk
+@22
+FPGC_tb.fpgc.mu.VRAM32_cpu_addr[13:0]
+FPGC_tb.fpgc.mu.VRAM32_cpu_d[31:0]
+FPGC_tb.fpgc.mu.VRAM32_cpu_q[31:0]
+@28
+FPGC_tb.fpgc.mu.VRAM32_cpu_we
 @200
 -
 -VRAM8
 @28
 FPGC_tb.fpgc.mu.clk
+@22
+FPGC_tb.fpgc.mu.VRAM8_cpu_addr[13:0]
+FPGC_tb.fpgc.mu.VRAM8_cpu_d[7:0]
+FPGC_tb.fpgc.mu.VRAM8_cpu_q[7:0]
+@28
+FPGC_tb.fpgc.mu.VRAM8_cpu_we
 @200
 -
 -ROM
 @28
 FPGC_tb.fpgc.mu.clk
+@22
+FPGC_tb.fpgc.mu.ROM_addr[8:0]
+FPGC_tb.fpgc.mu.ROM_q[31:0]
 @200
 -
 -FSX

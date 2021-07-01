@@ -1,0 +1,52 @@
+[*]
+[*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
+[*] Tue Jun 29 09:41:11 2021
+[*]
+[dumpfile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\wave.vcd"
+[dumpfile_mtime] "Tue Jun 29 09:36:49 2021"
+[dumpfile_size] 3958
+[savefile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\WB.gtkw"
+[timestart] 0
+[size] 1902 1009
+[pos] -1 -1
+*-4.615577 25 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] WB_tb.
+[sst_width] 254
+[signals_width] 314
+[sst_expanded] 1
+[sst_vpaned_height] 290
+@28
+WB_tb.i_clk
+WB_tb.i_reset
+@24
+WB_tb.count[31:0]
+@28
+WB_tb.mstate
+@200
+-
+@24
+WB_tb.bus_start
+WB_tb.bus_addr[26:0]
+WB_tb.bus_data[31:0]
+WB_tb.bus_we
+WB_tb.bus_done
+WB_tb.bus_q[31:0]
+@200
+-
+@28
+WB_tb.busy
+WB_tb.start
+@24
+WB_tb.state[1:0]
+@29
+WB_tb.mstate
+@200
+-
+@24
+WB_tb.vram32.cpu_clk
+WB_tb.vram32.cpu_d[31:0]
+WB_tb.vram32.cpu_q[31:0]
+WB_tb.vram32.cpu_addr[13:0]
+WB_tb.vram32.cpu_we
+[pattern_trace] 1
+[pattern_trace] 0

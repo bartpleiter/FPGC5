@@ -5,9 +5,10 @@
 */
 module MemoryUnit(
     //clock
-    input           clk, reset,
+    input           clk, clk_SDRAM, reset,
 
     //CPU connection (bus)
+    /*
     input  [26:0]   address,
     input  [31:0]   data,
     input           we,
@@ -15,6 +16,15 @@ module MemoryUnit(
     output          initDone,       //High when initialization is done
     output reg      busy,
     output reg [31:0]  q,
+    */
+
+    // Bus
+    input [26:0]        bus_addr,
+    input [31:0]        bus_data,
+    input               bus_we,
+    input               bus_start,
+    output reg [31:0]   bus_q = 32'd0,
+    output reg          bus_done = 1'b0,
 
     /********
     * MEMORY
@@ -79,35 +89,35 @@ module MemoryUnit(
 
     //SPI1 (USB0/CH376T)
     output          SPI1_clk,
-    output reg      SPI1_cs,
+    output reg      SPI1_cs = 1'b1,
     output          SPI1_mosi,
     input           SPI1_miso,
     input           SPI1_nint,
 
     //SPI2 (USB1/CH376T)
     output          SPI2_clk,
-    output reg      SPI2_cs,
+    output reg      SPI2_cs = 1'b1,
     output          SPI2_mosi,
     input           SPI2_miso,
     input           SPI2_nint,
 
     //SPI3 (W5500)
     output          SPI3_clk,
-    output reg      SPI3_cs,
+    output reg      SPI3_cs = 1'b1,
     output          SPI3_mosi,
     input           SPI3_miso,
     input           SPI3_int,
 
     //SPI4 (EXT/GP)
     output          SPI4_clk,
-    output reg      SPI4_cs,
+    output reg      SPI4_cs = 1'b1,
     output          SPI4_mosi,
     input           SPI4_miso,
     input           SPI4_GP,
 
     //GPIO (Separated GPI and GPO until GPIO module is implemented)
     input [3:0]     GPI,
-    output reg [3:0]GPO,
+    output reg [3:0]GPO = 4'd0,
 
     //OStimers
     output          OST1_int,
@@ -169,7 +179,7 @@ module MemoryUnit(
     wire SPI0_clk;
     wire SPI0_mosi;
     reg  SPI0_cs;
-    reg  SPI0_enable; //high enables SPI0 and disables SPIreader
+    reg  SPI0_enable = 1'b0; //high enables SPI0 and disables SPIreader
     wire SPI0_start;
     wire [7:0] SPI0_in;
     wire [7:0] SPI0_out;
@@ -216,10 +226,10 @@ module MemoryUnit(
     //------------
     //SDRAM
     //------------
-    wire        sd_we;
-    wire        sd_start;
-    wire [31:0] sd_d; 
-    wire [23:0] sd_addr;
+    reg        sd_we = 1'b0;
+    reg        sd_start = 1'b0;
+    reg [31:0] sd_d = 32'd0; 
+    reg [23:0] sd_addr = 24'd0;
 
     wire        sd_busy;
     wire        sd_initDone;
@@ -227,15 +237,15 @@ module MemoryUnit(
     wire [31:0] sd_q;
 
     SDRAMcontroller sdramcontroller(
-    .clk        (clk),
-    .reset      (reset),
+    .clk        (clk_SDRAM), // now must be 100MHz
+    //.reset      (reset),
 
     .busy       (sd_busy),       // high if controller is busy
     .addr       (sd_addr),       // addr to read or write
     .d          (sd_d),          // data to write
     .we         (sd_we),         // high if write, low if read
     .q          (sd_q),          // read data output
-    .q_ready_delay(sd_q_ready),  // read data ready
+    .q_ready    (sd_q_ready),  // read data ready
     .start      (sd_start),
     .initDone   (sd_initDone),
 
@@ -280,7 +290,7 @@ module MemoryUnit(
     .o_Rx_Byte  (UART0_w_Rx_Byte)
     );
 
-
+    
     //------------
     //UART1
     //------------
@@ -522,405 +532,364 @@ module MemoryUnit(
 
 
 
+//TODO: remove address clauses for data and address lines, since these only matter during writes, and we is protected anyways.
 
-
-assign initDone         = (SPIflashReader_initDone && sd_initDone);
+//assign initDone         = (SPIflashReader_initDone && sd_initDone);
 
 //----
 //MEMORY
 //----
 
 //SDRAM
-assign sd_addr              = (address < 27'h800000)                            ? address                   : 24'd0;
-assign sd_d                 = (address < 27'h800000)                            ? data                      : 32'd0;
-assign sd_we                = (address < 27'h800000)                            ? we                        : 1'd0;
-assign sd_start             = (address < 27'h800000)                            ? start                     : 1'd0;
+/*
+assign sd_addr              = (bus_addr < 27'h800000)                            ? bus_addr                   : 24'd0;
+assign sd_d                 = (bus_addr < 27'h800000)                            ? bus_data                      : 32'd0;
+assign sd_we                = (bus_addr < 27'h800000)                            ? bus_we                        : 1'd0;
+assign sd_start             = (bus_addr < 27'h800000)                            ? bus_start                     : 1'd0;
+*/
 
 //SPI FLASH MEMORY
-assign SPIflashReader_addr  = (address >= 27'h800000 && address < 27'hC00000)   ? address - 27'h800000      : 24'd0;
-assign SPIflashReader_start = (address >= 27'h800000 && address < 27'hC00000)   ? start                     : 1'd0;
+assign SPIflashReader_addr  = (bus_addr >= 27'h800000 && bus_addr < 27'hC00000)   ? bus_addr - 27'h800000      : 24'd0;
+assign SPIflashReader_start = (bus_addr >= 27'h800000 && bus_addr < 27'hC00000)   ? bus_start                     : 1'd0;
 
 //VRAM32
-assign VRAM32_cpu_addr      = (address >= 27'hC00000 && address < 27'hC00420)   ? address - 27'hC00000      : 14'd0;
-assign VRAM32_cpu_d         = (address >= 27'hC00000 && address < 27'hC00420)   ? data                      : 32'd0;
-assign VRAM32_cpu_we        = (address >= 27'hC00000 && address < 27'hC00420)   ? we                        : 1'd0;
+assign VRAM32_cpu_addr      = (bus_addr >= 27'hC00000 && bus_addr < 27'hC00420)   ? bus_addr - 27'hC00000      : 14'd0;
+assign VRAM32_cpu_d         = (bus_addr >= 27'hC00000 && bus_addr < 27'hC00420)   ? bus_data                      : 32'd0;
+assign VRAM32_cpu_we        = (bus_addr >= 27'hC00000 && bus_addr < 27'hC00420)   ? bus_we                        : 1'd0;
 
 //VRAM8
-assign VRAM8_cpu_addr       = (address >= 27'hC00420 && address < 27'hC02422)   ? address - 27'hC00420      : 14'd0;
-assign VRAM8_cpu_d          = (address >= 27'hC00420 && address < 27'hC02422)   ? data                      : 8'd0;
-assign VRAM8_cpu_we         = (address >= 27'hC00420 && address < 27'hC02422)   ? we                        : 1'd0;
+assign VRAM8_cpu_addr       = (bus_addr >= 27'hC00420 && bus_addr < 27'hC02422)   ? bus_addr - 27'hC00420      : 14'd0;
+assign VRAM8_cpu_d          = (bus_addr >= 27'hC00420 && bus_addr < 27'hC02422)   ? bus_data                      : 8'd0;
+assign VRAM8_cpu_we         = (bus_addr >= 27'hC00420 && bus_addr < 27'hC02422)   ? bus_we                        : 1'd0;
 
 //VRAMspr
-assign VRAMspr_cpu_addr     = (address >= 27'hC02422 && address < 27'hC02522)   ? address - 27'hC02422      : 14'd0;
-assign VRAMspr_cpu_d        = (address >= 27'hC02422 && address < 27'hC02522)   ? data                      : 9'd0;
-assign VRAMspr_cpu_we       = (address >= 27'hC02422 && address < 27'hC02522)   ? we                        : 1'd0;
+assign VRAMspr_cpu_addr     = (bus_addr >= 27'hC02422 && bus_addr < 27'hC02522)   ? bus_addr - 27'hC02422      : 14'd0;
+assign VRAMspr_cpu_d        = (bus_addr >= 27'hC02422 && bus_addr < 27'hC02522)   ? bus_data                      : 9'd0;
+assign VRAMspr_cpu_we       = (bus_addr >= 27'hC02422 && bus_addr < 27'hC02522)   ? bus_we                        : 1'd0;
 
 //ROM
-assign ROM_addr             = (address >= 27'hC02522 && address < 27'hC02722)   ? address - 27'hC02522      : 9'd0;
+assign ROM_addr             = (bus_addr >= 27'hC02522 && bus_addr < 27'hC02722)   ? bus_addr - 27'hC02522      : 9'd0;
 
 //----
 //I/O
 //----
 
 //UART
-assign UART0_r_Tx_DV    = (address == 27'hC02723 && we)                     ? start                     : 1'b0;
-assign UART0_r_Tx_Byte  = (address == 27'hC02723)                           ? data                      : 8'd0;
+assign UART0_r_Tx_DV    = (bus_addr == 27'hC02723 && bus_we)                     ? bus_start                     : 1'b0;
+assign UART0_r_Tx_Byte  = (bus_addr == 27'hC02723)                           ? bus_data                      : 8'd0;
 
-assign UART1_r_Tx_DV    = (address == 27'hC02725 && we)                     ? start                     : 1'b0;
-assign UART1_r_Tx_Byte  = (address == 27'hC02725)                           ? data                      : 8'd0;
 
-assign UART2_r_Tx_DV    = (address == 27'hC02727 && we)                     ? start                     : 1'b0;
-assign UART2_r_Tx_Byte  = (address == 27'hC02727)                           ? data                      : 8'd0;
+assign UART1_r_Tx_DV    = (bus_addr == 27'hC02725 && bus_we)                     ? bus_start                     : 1'b0;
+assign UART1_r_Tx_Byte  = (bus_addr == 27'hC02725)                           ? bus_data                      : 8'd0;
+
+assign UART2_r_Tx_DV    = (bus_addr == 27'hC02727 && bus_we)                     ? bus_start                     : 1'b0;
+assign UART2_r_Tx_Byte  = (bus_addr == 27'hC02727)                           ? bus_data                      : 8'd0;
 
 //SPI
-assign SPI0_in          = (address == 27'hC02728)                           ? data                      : 8'd0;
-assign SPI0_start       = (address == 27'hC02728 && we)                     ? start                     : 1'b0;
+assign SPI0_in          = (bus_addr == 27'hC02728)                           ? bus_data                      : 8'd0;
+assign SPI0_start       = (bus_addr == 27'hC02728 && bus_we)                     ? bus_start                     : 1'b0;
 
-assign SPI1_in          = (address == 27'hC0272B)                           ? data                      : 8'd0;
-assign SPI1_start       = (address == 27'hC0272B && we)                     ? start                     : 1'b0;
+assign SPI1_in          = (bus_addr == 27'hC0272B)                           ? bus_data                      : 8'd0;
+assign SPI1_start       = (bus_addr == 27'hC0272B && bus_we)                     ? bus_start                     : 1'b0;
 
-assign SPI2_in          = (address == 27'hC0272E)                           ? data                      : 8'd0;
-assign SPI2_start       = (address == 27'hC0272E && we)                     ? start                     : 1'b0;
+assign SPI2_in          = (bus_addr == 27'hC0272E)                           ? bus_data                      : 8'd0;
+assign SPI2_start       = (bus_addr == 27'hC0272E && bus_we)                     ? bus_start                     : 1'b0;
 
-assign SPI3_in          = (address == 27'hC02731)                           ? data                      : 8'd0;
-assign SPI3_start       = (address == 27'hC02731 && we)                     ? start                     : 1'b0;
+assign SPI3_in          = (bus_addr == 27'hC02731)                           ? bus_data                      : 8'd0;
+assign SPI3_start       = (bus_addr == 27'hC02731 && bus_we)                     ? bus_start                     : 1'b0;
 
-assign SPI4_in          = (address == 27'hC02734)                           ? data                      : 8'd0;
-assign SPI4_start       = (address == 27'hC02734 && we)                     ? start                     : 1'b0;
+assign SPI4_in          = (bus_addr == 27'hC02734)                           ? bus_data                      : 8'd0;
+assign SPI4_start       = (bus_addr == 27'hC02734 && bus_we)                     ? bus_start                     : 1'b0;
 
 //OS Timers
-assign OST1_value       = (address == 27'hC02739 && we)                     ? data                      : 32'd0;
-assign OST1_set         = (address == 27'hC02739 && we);
-assign OST1_trigger     = (address == 27'hC0273A && we);
+assign OST1_value       = (bus_addr == 27'hC02739 && bus_we)                     ? bus_data                      : 32'd0;
+assign OST1_set         = (bus_addr == 27'hC02739 && bus_we);
+assign OST1_trigger     = (bus_addr == 27'hC0273A && bus_we);
 
-assign OST2_value       = (address == 27'hC0273B && we)                     ? data                      : 32'd0;
-assign OST2_set         = (address == 27'hC0273B && we);
-assign OST2_trigger     = (address == 27'hC0273C && we);
+assign OST2_value       = (bus_addr == 27'hC0273B && bus_we)                     ? bus_data                      : 32'd0;
+assign OST2_set         = (bus_addr == 27'hC0273B && bus_we);
+assign OST2_trigger     = (bus_addr == 27'hC0273C && bus_we);
 
-assign OST3_value       = (address == 27'hC0273D && we)                     ? data                      : 32'd0;
-assign OST3_set         = (address == 27'hC0273D && we);
-assign OST3_trigger     = (address == 27'hC0273E && we);
+assign OST3_value       = (bus_addr == 27'hC0273D && bus_we)                     ? bus_data                      : 32'd0;
+assign OST3_set         = (bus_addr == 27'hC0273D && bus_we);
+assign OST3_trigger     = (bus_addr == 27'hC0273E && bus_we);
 
+reg bus_done_next = 1'b0;
 
-// TODO: minimize statements/return values by removing unnecessary ones
-
-initial
-begin
-    busy        <= 0;
-    q           <= 32'd0;
-
-    GPO         <= 4'd0;
-    SPI0_enable <= 1'b0;
-end
-
-always @(negedge clk)
+always @(posedge clk)
 begin
     if (reset)
     begin
-        busy        <= 0;
-        q           <= 32'd0;
-
         GPO         <= 4'd0;
         SPI0_enable <= 1'b0;
+        bus_q <= 32'd0;
+        bus_done <= 1'b0;
+        bus_done_next = 1'b0;
     end
     else 
     begin
-        
-        if (start)
-            busy    <= 1;
 
+        if (bus_done_next)
+        begin
+            bus_done_next <= 1'b0;
+            bus_done <= 1'b1;
+        end
+        else 
+        begin
+            bus_done <= 1'b0;
+        end
+        
+        
 
         //------
         //MEMORY
         //------
 
         //SDRAM
-        if (busy && address < 27'h800000 && sd_q_ready)
+        if (bus_start && bus_addr < 27'h800000 && (!bus_done_next))
         begin
-            busy    <= 0;
-            q       <= sd_q;
+            sd_addr     <= bus_addr;
+            sd_d        <= bus_data;
+            sd_we       <= bus_we;
+            sd_start    <= bus_start;
+            if (sd_q_ready && sd_initDone)
+            begin
+                //bus_done <= 1'b1;
+                bus_done_next <= 1'b1;
+                sd_addr     <= 24'd0;
+                sd_d        <= 32'd0;
+                sd_we       <= 1'b0;
+                sd_start    <= 1'b0;
+                bus_q <= sd_q;
+            end
         end
 
         //SPI FLASH
-        if (busy && address >= 27'h800000 && address < 27'hC00000 && (SPIflashReader_recvDone || SPI0_enable))
+        if (bus_start && bus_addr >= 27'h800000 && bus_addr < 27'hC00000)
         begin
-            busy    <= 0;
-            q       <= SPIflashReader_q;
+            if (SPIflashReader_recvDone || SPI0_enable)
+            begin
+                if (!bus_done_next) bus_done_next <= 1'b1;
+                bus_q <= SPIflashReader_q;
+            end
         end
 
-        //VRAM32
-        if (busy && address >= 27'hC00000 && address < 27'hC00420)
-        begin
-            busy    <= 0;
-            q       <= VRAM32_cpu_q;
-        end
+        if (bus_addr >= 27'h800000 && bus_addr < 27'hC00000) bus_q <= SPIflashReader_q;
 
-        //VRAM8
-        if (busy && address >= 27'hC00420 && address < 27'hC02422)
-        begin
-            busy    <= 0;
-            q       <= {24'd0, VRAM8_cpu_q};
-        end
+        if (bus_addr >= 27'hC00000 && bus_addr < 27'hC00420) bus_q <= VRAM32_cpu_q;
 
-        //VRAMspr
-        if (busy && address >= 27'hC02422 && address < 27'hC02522)
-        begin
-            busy    <= 0;
-            q       <= {23'd0, VRAMspr_cpu_q};
-        end
+        if (bus_addr >= 27'hC00420 && bus_addr < 27'hC02422) bus_q <= {24'd0, VRAM8_cpu_q};
 
-        //ROM
-        if (busy && address >= 27'hC02522 && address < 27'hC02722)
-        begin
-            busy    <= 0;
-            q       <= ROM_q;
-        end
-
-
-        //------
-        //I/O
-        //------
-
-        //UART0 RX
-        if (busy && address == 27'hC02722)
-        begin
-            busy    <= 0;
-            q       <= UART0_w_Rx_Byte;
-        end
+        if (bus_addr >= 27'hC02422 && bus_addr < 27'hC02522) bus_q <= {23'd0, VRAMspr_cpu_q};
+        
+        if (bus_addr >= 27'hC02522 && bus_addr < 27'hC02722) bus_q <= ROM_q;
+                
+        if (bus_addr == 27'hC02722) bus_q <= UART0_w_Rx_Byte;
 
         //UART0 TX
-        if (busy && address == 27'hC02723)
+        if (bus_start && bus_addr == 27'hC02723)
         begin
             if (UART0_w_Tx_Done)
             begin
-                busy    <= 0;
-                q       <= 32'd0;
+                if (!bus_done_next) bus_done_next <= 1'b1;
+                bus_q <= 32'd0;
             end
         end
-
-        //UART1 RX
-        if (busy && address == 27'hC02724)
-        begin
-            busy    <= 0;
-            q       <= UART1_w_Rx_Byte;
-        end
+            
+        if (bus_addr == 27'hC02724) bus_q <= UART1_w_Rx_Byte;
 
         //UART1 TX
-        if (busy && address == 27'hC02725)
+        if (bus_start && bus_addr == 27'hC02725)
         begin
             if (UART1_w_Tx_Done)
             begin
-                busy    <= 0;
-                q       <= 32'd0;
+                if (!bus_done_next) bus_done_next <= 1'b1;
+                bus_q <= 32'd0;
             end
         end
 
-        //UART2 RX
-        if (busy && address == 27'hC02726)
-        begin
-            busy    <= 0;
-            q       <= UART2_w_Rx_Byte;
-        end
+        if (bus_addr == 27'hC02726) bus_q <= UART2_w_Rx_Byte;
 
         //UART2 TX
-        if (busy && address == 27'hC02727)
+        if (bus_start && bus_addr == 27'hC02727)
         begin
             if (UART2_w_Tx_Done)
             begin
-                busy    <= 0;
-                q       <= 32'd0;
+                if (!bus_done_next) bus_done_next <= 1'b1;
+                bus_q <= 32'd0;
             end
         end
 
 
         //SPI0
-        if (busy && address == 27'hC02728 && !SPI0_busy)
+        if (bus_start && bus_addr == 27'hC02728)
         begin
-            busy    <= 0;
-            q       <= SPI0_out;
+            if (!SPI0_busy)
+            begin
+                if (!bus_done_next) bus_done_next <= 1'b1;
+                bus_q <= SPI0_out;
+            end
         end
 
         //SPI0 CS
-        if (busy && address == 27'hC02729)
+        if (bus_start && bus_addr == 27'hC02729)
         begin
-            if (we)
+            if (bus_we)
             begin
-                SPI0_cs <= data[0];
+                SPI0_cs <= bus_data[0];
             end
-            busy    <= 0;
-            q       <= SPI0_cs;
+            if (!bus_done_next) bus_done_next <= 1'b1;
+            bus_q <= SPI0_cs;
         end
 
         //SPI0 enable
-        if (busy && address == 27'hC0272A)
+        if (bus_start && bus_addr == 27'hC0272A)
         begin
-            if (we)
+            if (bus_we)
             begin
-                SPI0_enable <= data[0];
+                SPI0_enable <= bus_data[0];
             end
-            busy    <= 0;
-            q       <= SPI0_enable;
+            if (!bus_done_next) bus_done_next <= 1'b1;
+            bus_q <= SPI0_enable;
         end
 
 
         //SPI1
-        if (busy && address == 27'hC0272B && !SPI1_busy)
+        if (bus_start && bus_addr == 27'hC0272B)
         begin
-            busy    <= 0;
-            q       <= SPI1_out;
+            if (!SPI1_busy)
+            begin
+                if (!bus_done_next) bus_done_next <= 1'b1;
+                bus_q <= SPI1_out;
+            end
         end
 
         //SPI1 CS
-        if (busy && address == 27'hC0272C)
+        if (bus_start && bus_addr == 27'hC0272C)
         begin
-            if (we)
+            if (bus_we)
             begin
-                SPI1_cs <= data[0];
+                SPI1_cs <= bus_data[0];
             end
-            busy    <= 0;
-            q       <= SPI1_cs;
+            if (!bus_done_next) bus_done_next <= 1'b1;
+            bus_q <= SPI1_cs;
         end
 
-        //SPI1 nInt
-        if (busy && address == 27'hC0272D)
-        begin
-            busy    <= 0;
-            q       <= SPI1_nint;
-        end
-
+        if (bus_addr == 27'hC0272D) bus_q <= SPI1_nint;
 
         //SPI2
-        if (busy && address == 27'hC0272E && !SPI2_busy)
+        if (bus_start && bus_addr == 27'hC0272E)
         begin
-            busy    <= 0;
-            q       <= SPI2_out;
+            if (!SPI2_busy)
+            begin
+                if (!bus_done_next) bus_done_next <= 1'b1;
+                bus_q <= SPI2_out;
+            end
         end
+
 
         //SPI2 CS
-        if (busy && address == 27'hC0272F)
+        if (bus_start && bus_addr == 27'hC0272F)
         begin
-            if (we)
+            if (bus_we)
             begin
-                SPI2_cs <= data[0];
+                SPI2_cs <= bus_data[0];
             end
-            busy    <= 0;
-            q       <= SPI2_cs;
+            if (!bus_done_next) bus_done_next <= 1'b1;
+            bus_q <= SPI2_cs;
         end
 
-        //SPI2 nInt
-        if (busy && address == 27'hC02730)
-        begin
-            busy    <= 0;
-            q       <= SPI2_nint;
-        end
-
+        if (bus_addr == 27'hC02730) bus_q <= SPI2_nint;
 
         //SPI3
-        if (busy && address == 27'hC02731 && !SPI3_busy)
+        if (bus_start && bus_addr == 27'hC02731)
         begin
-            busy    <= 0;
-            q       <= SPI3_out;
+            if (!SPI3_busy)
+            begin
+                if (!bus_done_next) bus_done_next <= 1'b1;
+                bus_q <= SPI3_out;
+            end
         end
 
         //SPI3 CS
-        if (busy && address == 27'hC02732)
+        if (bus_start && bus_addr == 27'hC02732)
         begin
-            if (we)
+            if (bus_we)
             begin
-                SPI3_cs <= data[0];
+                SPI3_cs <= bus_data[0];
             end
-            busy    <= 0;
-            q       <= SPI3_cs;
+            if (!bus_done_next) bus_done_next <= 1'b1;
+            bus_q <= SPI3_cs;
         end
 
-        //SPI3 int
-        if (busy && address == 27'hC02733)
-        begin
-            busy    <= 0;
-            q       <= SPI3_int;
-        end
-
+        if (bus_addr == 27'hC02733) bus_q <= SPI3_int;
 
         //SPI4
-        if (busy && address == 27'hC02734 && !SPI4_busy)
+        if (bus_start && bus_addr == 27'hC02734)
         begin
-            busy    <= 0;
-            q       <= SPI4_out;
+            if (!SPI4_busy)
+            begin
+                if (!bus_done_next) bus_done_next <= 1'b1;
+                bus_q <= SPI4_out;
+            end
         end
 
         //SPI4 CS
-        if (busy && address == 27'hC02735)
+        if (bus_start && bus_addr == 27'hC02735)
         begin
-            if (we)
+            if (bus_we)
             begin
-                SPI4_cs <= data[0];
+                SPI4_cs <= bus_data[0];
             end
-            busy    <= 0;
-            q       <= SPI4_cs;
+            if (!bus_done_next) bus_done_next <= 1'b1;
+            bus_q <= SPI4_cs;
         end
 
-        //SPI4 GP (currently input)
-        if (busy && address == 27'hC02736)
-        begin
-            busy    <= 0;
-            q       <= SPI4_GP;
-        end
-
+        if (bus_addr == 27'hC02736) bus_q <= SPI4_GP;
 
         //GPIO TODO: implement true GPIO
-        if (busy && address == 27'hC02737)
+        if (bus_start && bus_addr == 27'hC02737)
         begin
-            if (we)
+            if (bus_we)
             begin
-                GPO <= data[7:4];
+                GPO <= bus_data[7:4];
             end
-            busy    <= 0;
-            q       <= {24'd0, GPO, GPI};
+            if (!bus_done_next) bus_done_next <= 1'b1;
+            bus_q <= {24'd0, GPO, GPI};
         end
 
         //GPIO Direction TODO: implement
-        if (busy && address >= 27'hC02738)
+        if (bus_start && bus_addr >= 27'hC02738)
         begin
-            busy    <= 0;
-            q       <= 32'd0;
+            if (!bus_done_next) bus_done_next <= 1'b1;
+            bus_q <= 32'd0;
         end
 
-        //OS Timers (do not return anything)
-        if (busy && address >= 27'hC02738 && address < 27'hC0273F)
+        if (bus_addr == 27'hC02737) bus_q <= {24'd0, GPO, GPI};
+
+        if (bus_addr == 27'hC0273F) bus_q <= {16'd0, SNES_state};
+
+        if (bus_addr == 27'hC02740) bus_q <= {24'd0, PS2_scanCode};
+        
+        if (bus_addr == 27'hC02741) bus_q <= {31'd0, boot_mode};
+
+        //Instant return addresses
+        if (bus_start)
         begin
-            busy    <= 0;
-            q       <= 32'd0;
-        end
+            //VRAM & ROM
+            if (bus_addr >= 27'hC00000 && bus_addr < 27'hC02722)
+                if (!bus_done_next) bus_done_next <= 1'b1;
+            if (bus_addr == 27'hC02722 || 
+                bus_addr == 27'hC02724 || 
+                bus_addr == 27'hC02726 || 
+                bus_addr == 27'hC0272D || 
+                bus_addr == 27'hC02730 || 
+                bus_addr == 27'hC02733 || 
+                bus_addr == 27'hC02736)
+                if (!bus_done_next) bus_done_next <= 1'b1;
+            if (bus_addr > 27'hC02738)
+                if (!bus_done_next) bus_done_next <= 1'b1;
 
-
-        //SNESpad
-        if (busy && address == 27'hC0273F)
-        begin
-            busy    <= 0;
-            q       <= {16'd0, SNES_state};
-        end
-
-        //PS/2 Keyboard
-        if (busy && address == 27'hC02740)
-        begin
-            busy    <= 0;
-            q       <= {24'd0, PS2_scanCode};
-        end
-
-
-        //Boot mode
-        if (busy && address == 27'hC02741)
-        begin
-            busy    <= 0;
-            q       <= {31'd0, boot_mode};
-        end
-
-
-        //Prevent lockups
-        if (busy && address > 27'hC02741)
-        begin
-            busy    <= 0;
-            q       <= 32'd0;
         end
 
     end

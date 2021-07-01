@@ -2,7 +2,7 @@
 * SDRAM controller
 */
 module SDRAMcontroller(
-    input clk, reset,
+    input clk,
 
     // read
     output busy,                // high if controller is busy
@@ -11,7 +11,8 @@ module SDRAMcontroller(
     input we,                   // high if write, low if read
     input start,                // high when controller should start reading/writing
     output [31:0] q,            // read data output
-    output reg q_ready_delay,   // read data ready
+    //output reg q_ready_reg_delay,   // read data ready
+    output q_ready,   // read data ready
     output initDone,            // high when initialization done
 
     // SDRAM
@@ -22,6 +23,10 @@ module SDRAMcontroller(
     output reg [1:0] SDRAM_DQM,
     inout [15:0] SDRAM_DQ
 );
+
+reg q_ready_reg;
+
+assign q_ready = (start && q_ready_reg);
 
 assign busy = (state != s_idle);
 assign initDone = (state != s_init);
@@ -43,7 +48,7 @@ assign {SDRAM_CSn, SDRAM_RASn, SDRAM_CASn, SDRAM_WEn} = SDRAM_CMD;
 parameter sdram_column_bits    = 10; 
 parameter sdram_address_width  = 25; 
 parameter sdram_startup_cycles = 10100; // -- 100us, plus a little more, @ 100MHz
-parameter cycles_per_refresh   = 195;  // (64000*100)/8192-1 Cycled as (64ms @100MHz)/8192 rows (780 for 100mhz)
+parameter cycles_per_refresh   = 780; // 25MHz -> 195;  // (64000*100)/8192-1 Cycled as (64ms @100MHz)/8192 rows (780 for 100mhz)
 
 // bit indexes used when splitting the address into row/colum/bank.
 parameter start_of_col  = 0;
@@ -122,14 +127,16 @@ assign refresh = (SDRAM_CMD == SDRAM_CMD_REFRESH);
 // 1.600.000 / 8192 auto refreshes -> refresh after 196 cycles
 // for 50mhz this should be 196*2 cycles and for 100mhz this should be 196*4 cycles
 
-reg [8:0] InitCounter = 0;
+reg [31:0] InitCounter = 0;
+
+reg isRefreshing = 1'b0;
 
 always @(negedge clk)
 begin
 
-    if (reset)
+    /*if (reset)
     begin
-        SDRAM_BA      <= 2'b00;                       //we will only use bank 0 for now
+        SDRAM_BA      <= 2'b00;
         SDRAM_DQM     <= 2'b11;
         SDRAM_A       <= 0;  
         SDRAM_CMD     <= SDRAM_CMD_UNSELECTED;
@@ -137,12 +144,12 @@ begin
         SDRAM_DQ_OE   <= 0;
         state         <= 0;
         WrData        <= 0;
-        q_ready       <= 0;
+        q_ready_reg       <= 0;
         q_low         <= 0;
         q_high        <= 0;
         startup_refresh_count <= 0;
     end
-    else 
+    else */
     begin
      
         startup_refresh_count <= startup_refresh_count+1;
@@ -150,24 +157,25 @@ begin
         case(state)
             s_init: 
             begin
+                    q_ready_reg <= 1'b0;
                 SDRAM_CKE <= 1'b1;
                 SDRAM_DQM <= 2'b00;
                 case(InitCounter)
-                    10: begin
+                    1010: begin
                         SDRAM_CMD <= SDRAM_CMD_PRECHARGE;
                         SDRAM_A <= 1024;
                     end
-                    15: begin
+                    1015: begin
                         SDRAM_CMD <= SDRAM_CMD_REFRESH;
                     end
-                    25: begin
+                    1025: begin
                         SDRAM_CMD <= SDRAM_CMD_REFRESH;
                     end
-                    35: begin
+                    1035: begin
                         SDRAM_CMD <= SDRAM_CMD_LOADMODE;
                         SDRAM_A <= 6'b100001; //cas = 2, and burst length = 2, burst type = sequenctial
                     end
-                    36: begin
+                    1036: begin
                         SDRAM_CMD <= SDRAM_CMD_NOP;
                         SDRAM_A <= 0;
                         state <= s_idle;
@@ -180,17 +188,18 @@ begin
             end
             s_idle:
             begin
-                q_ready <= 1'b0;
+                q_ready_reg <= 1'b0;
 
                 if (startup_refresh_count > cycles_per_refresh) //refresh has priority!
                     begin
                         state       <= s_idle_in_6;
+                        isRefreshing <= 1'b1;
                         SDRAM_CMD   <= SDRAM_CMD_REFRESH;
                         startup_refresh_count <= 0;
                     end
                 else 
                 begin     
-                    if (start == 1)
+                    if (start)
                     begin
                         //--------------------------------
                         //-- Start the read or write cycle. 
@@ -218,7 +227,7 @@ begin
             s_open_in_1:
             begin
                 // if write command
-                if (we == 1'b1)
+                if (we)
                 begin
                     state <= s_write_1;
                     WrData <= data_low;
@@ -253,7 +262,7 @@ begin
             end
             s_precharge:
             begin
-                q_ready                     <= 1'b1;
+                q_ready_reg                     <= 1'b1;
                 state                       <= s_idle_in_3;
                 SDRAM_CMD                   <= SDRAM_CMD_PRECHARGE;
                 SDRAM_A[prefresh_cmd]       <= 1'b1; // A10 actually matters - it selects all banks or just one
@@ -267,12 +276,24 @@ begin
             s_idle_in_4: state <= s_idle_in_3;
             s_idle_in_3: 
             begin
-                q_ready         <= 1'b0;
+                if (!start) q_ready_reg <= 1'b0;
                 state           <= s_idle_in_2;
                 SDRAM_CMD       <= SDRAM_CMD_NOP;
             end
-            s_idle_in_2: state <= s_idle_in_1;
-            s_idle_in_1: state <= s_idle;
+            s_idle_in_2: 
+            begin
+                state <= s_idle_in_1;
+                if (!start) q_ready_reg <= 1'b0;
+            end
+            s_idle_in_1: 
+            begin
+                if (!start || isRefreshing || !q_ready_reg)
+                begin
+                    q_ready_reg     <= 1'b0;
+                    state       <= s_idle;
+                    isRefreshing <= 1'b0;
+                end
+            end
             s_read_1: 
             begin
                 state           <= s_read_2;
@@ -288,17 +309,20 @@ begin
             end   
             s_read_3: begin
                 state <= s_read_4;
-                q_low                       <= SDRAM_Q;
+                     
             end
 
             s_read_4: 
             begin
                 state <= s_read_precharge;
-                q_high                      <= SDRAM_Q;
+                     q_low                       <= SDRAM_Q;
+                
+                
             end
             s_read_precharge:
             begin
-                q_ready                     <= 1'b1;
+                q_high                      <= SDRAM_Q;
+                q_ready_reg                     <= 1'b1;
                 state                       <= s_idle_in_3;
                 SDRAM_CMD                   <= SDRAM_CMD_PRECHARGE;
                 SDRAM_A[prefresh_cmd]       <= 1'b1; // A10 actually matters - it selects all banks or just one
@@ -312,30 +336,32 @@ begin
    
 end
 
-reg q_ready;
+
+/*
+reg q_ready_reg;
 
 always @(posedge clk)
 begin
     if (reset)
     begin
-        q_ready_delay <= 0;
+        q_ready_reg_delay <= 0;
     end
     else 
     begin
-        q_ready_delay <= q_ready;
-        /*
-        if (state == s_read_4)
-            q_low <= SDRAM_Q;
-        if (state == s_read_precharge)
-            q_high <= SDRAM_Q;
-        */
+        q_ready_reg_delay <= q_ready_reg;
+        
+        //if (state == s_read_4)
+        //    q_low <= SDRAM_Q;
+        //if (state == s_read_precharge)
+        //    q_high <= SDRAM_Q;
     end
 end
+*/
 
 
 initial
 begin
-  SDRAM_BA      <= 2'b00;                       //we will only use bank 0 for now
+  SDRAM_BA      <= 2'b00;
   SDRAM_DQM     <= 2'b11;
   SDRAM_A       <= 0;  
   SDRAM_CMD     <= SDRAM_CMD_UNSELECTED;
@@ -343,11 +369,11 @@ begin
   SDRAM_DQ_OE   <= 0;
   state         <= 0;
   WrData        <= 0;
-  q_ready       <= 0;
+  q_ready_reg       <= 0;
   q_low         <= 0;
   q_high        <= 0;
   startup_refresh_count <= 0;
-  q_ready_delay <= 0;
+  //q_ready_reg_delay <= 0;
 end
 
 endmodule

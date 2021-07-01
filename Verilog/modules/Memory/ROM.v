@@ -11,7 +11,7 @@ module ROM(
 
 reg [31:0] rom [0:511];
 
-always @(negedge clk) 
+always @(posedge clk) 
 begin
     q <= rom[address];
 end

@@ -18,9 +18,9 @@ module SPIreader (
 
 
 wire recvDoneWire;
-assign recvDoneWire = (initDone && phase == 2 && counter == 2);
+assign recvDoneWire = (initDone && phase == 2 && (counter == 2 || counter == 3));
 
-always @(negedge clk)
+always @(posedge clk)
 begin
   if (reset)
   begin

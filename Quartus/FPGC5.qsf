@@ -205,6 +205,7 @@ set_global_assignment -name IOBANK_VCCIO 2.5V -section_id 6
 set_instance_assignment -name IO_STANDARD "2.5 V" -to vga_clk
 set_instance_assignment -name IO_STANDARD "2.5 V" -to vga_hs
 set_instance_assignment -name IO_STANDARD "2.5 V" -to vga_vs
+set_global_assignment -name OPTIMIZATION_MODE BALANCED
 set_global_assignment -name VERILOG_FILE modules/FPGC5.v
 set_global_assignment -name VERILOG_FILE modules/GPU/HDMI/TMDSenc.v
 set_global_assignment -name VERILOG_FILE modules/GPU/HDMI/RGB2HDMI.v
