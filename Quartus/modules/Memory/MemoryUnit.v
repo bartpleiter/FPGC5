@@ -23,7 +23,7 @@ module MemoryUnit(
     input [31:0]        bus_data,
     input               bus_we,
     input               bus_start,
-    output reg [31:0]   bus_q = 32'd0,
+    output [31:0]       bus_q,
     output reg          bus_done = 1'b0,
 
     /********
@@ -530,7 +530,8 @@ module MemoryUnit(
     );
 
 
-
+reg [31:0] bus_d_reg = 32'd0;
+reg [31:0] bus_q_reg = 32'd0;
 
 //TODO: remove address clauses for data and address lines, since these only matter during writes, and we is protected anyways.
 
@@ -554,7 +555,7 @@ assign SPIflashReader_start = (bus_addr >= 27'h800000 && bus_addr < 27'hC00000) 
 
 //VRAM32
 assign VRAM32_cpu_addr      = (bus_addr >= 27'hC00000 && bus_addr < 27'hC00420)   ? bus_addr - 27'hC00000      : 14'd0;
-assign VRAM32_cpu_d         = (bus_addr >= 27'hC00000 && bus_addr < 27'hC00420)   ? bus_data                      : 32'd0;
+assign VRAM32_cpu_d         = (bus_addr >= 27'hC00000 && bus_addr < 27'hC00420)   ? bus_d_reg                      : 32'd0;
 assign VRAM32_cpu_we        = (bus_addr >= 27'hC00000 && bus_addr < 27'hC00420)   ? bus_we                        : 1'd0;
 
 //VRAM8
@@ -638,6 +639,13 @@ assign OST3_value       = (bus_addr == 27'hC0273D && bus_we)                    
 assign OST3_set         = (bus_addr == 27'hC0273D && bus_we);
 assign OST3_trigger     = (bus_addr == 27'hC0273E && bus_we);
 
+
+assign bus_q =      //(bus_start && bus_addr >= 27'hC00000 && bus_addr < 27'hC00420) ? VRAM32_cpu_q:
+                    //(bus_start && bus_addr >= 27'hC00420 && bus_addr < 27'hC02422) ? {24'd0, VRAM8_cpu_q}:
+                    //(bus_start && bus_addr >= 27'hC02422 && bus_addr < 27'hC02522) ? {23'd0, VRAMspr_cpu_q}:
+                    (bus_addr >= 27'hC02522 && bus_addr < 27'hC02722) ? ROM_q:
+                    bus_q_reg;
+
 reg bus_done_next = 1'b0;
 
 always @(posedge clk)
@@ -646,16 +654,19 @@ begin
     begin
         GPO         <= 4'd0;
         SPI0_enable <= 1'b0;
-        bus_q <= 32'd0;
+        bus_q_reg <= 32'd0;
         bus_done <= 1'b0;
         bus_done_next <= 1'b0;
         sd_addr     <= 27'd0;
         sd_d        <= 32'd0;
         sd_we       <= 1'b0;
         sd_start    <= 1'b0;
+        bus_d_reg <= 32'd0;
     end
     else 
     begin
+        bus_d_reg <= bus_data; // latch for copy instructions to SRAM/regs
+
 
         if (bus_done_next)
         begin
@@ -688,7 +699,7 @@ begin
                 sd_d        <= 32'd0;
                 sd_we       <= 1'b0;
                 sd_start    <= 1'b0;
-                bus_q       <= sd_q;
+                bus_q_reg       <= sd_q;
             end
         end
 
@@ -699,21 +710,21 @@ begin
             begin
                 bus_done <= 1'b1;
                 //if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q <= SPIflashReader_q;
+                bus_q_reg <= SPIflashReader_q;
             end
         end
 
-        if (bus_addr >= 27'h800000 && bus_addr < 27'hC00000) bus_q <= SPIflashReader_q;
+        if (bus_addr >= 27'h800000 && bus_addr < 27'hC00000) bus_q_reg <= SPIflashReader_q;
 
-        if (bus_addr >= 27'hC00000 && bus_addr < 27'hC00420) bus_q <= VRAM32_cpu_q;
+        if (bus_addr >= 27'hC00000 && bus_addr < 27'hC00420) bus_q_reg <= VRAM32_cpu_q;
 
-        if (bus_addr >= 27'hC00420 && bus_addr < 27'hC02422) bus_q <= {24'd0, VRAM8_cpu_q};
+        if (bus_addr >= 27'hC00420 && bus_addr < 27'hC02422) bus_q_reg <= {24'd0, VRAM8_cpu_q};
 
-        if (bus_addr >= 27'hC02422 && bus_addr < 27'hC02522) bus_q <= {23'd0, VRAMspr_cpu_q};
+        if (bus_addr >= 27'hC02422 && bus_addr < 27'hC02522) bus_q_reg <= {23'd0, VRAMspr_cpu_q};
         
-        if (bus_addr >= 27'hC02522 && bus_addr < 27'hC02722) bus_q <= ROM_q;
+        if (bus_addr >= 27'hC02522 && bus_addr < 27'hC02722) bus_q_reg <= ROM_q;
                 
-        if (bus_addr == 27'hC02722) bus_q <= UART0_w_Rx_Byte;
+        if (bus_addr == 27'hC02722) bus_q_reg <= UART0_w_Rx_Byte;
 
         //UART0 TX
         if (bus_start && bus_addr == 27'hC02723)
@@ -721,11 +732,11 @@ begin
             if (UART0_w_Tx_Done)
             begin
                 if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q <= 32'd0;
+                bus_q_reg <= 32'd0;
             end
         end
             
-        if (bus_addr == 27'hC02724) bus_q <= UART1_w_Rx_Byte;
+        if (bus_addr == 27'hC02724) bus_q_reg <= UART1_w_Rx_Byte;
 
         //UART1 TX
         if (bus_start && bus_addr == 27'hC02725)
@@ -733,11 +744,11 @@ begin
             if (UART1_w_Tx_Done)
             begin
                 if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q <= 32'd0;
+                bus_q_reg <= 32'd0;
             end
         end
 
-        if (bus_addr == 27'hC02726) bus_q <= UART2_w_Rx_Byte;
+        if (bus_addr == 27'hC02726) bus_q_reg <= UART2_w_Rx_Byte;
 
         //UART2 TX
         if (bus_start && bus_addr == 27'hC02727)
@@ -745,7 +756,7 @@ begin
             if (UART2_w_Tx_Done)
             begin
                 if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q <= 32'd0;
+                bus_q_reg <= 32'd0;
             end
         end
 
@@ -756,7 +767,7 @@ begin
             if (!SPI0_busy)
             begin
                 if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q <= SPI0_out;
+                bus_q_reg <= SPI0_out;
             end
         end
 
@@ -768,7 +779,7 @@ begin
                 SPI0_cs <= bus_data[0];
             end
             if (!bus_done_next) bus_done_next <= 1'b1;
-            bus_q <= SPI0_cs;
+            bus_q_reg <= SPI0_cs;
         end
 
         //SPI0 enable
@@ -779,7 +790,7 @@ begin
                 SPI0_enable <= bus_data[0];
             end
             if (!bus_done_next) bus_done_next <= 1'b1;
-            bus_q <= SPI0_enable;
+            bus_q_reg <= SPI0_enable;
         end
 
 
@@ -789,7 +800,7 @@ begin
             if (!SPI1_busy)
             begin
                 if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q <= SPI1_out;
+                bus_q_reg <= SPI1_out;
             end
         end
 
@@ -801,10 +812,10 @@ begin
                 SPI1_cs <= bus_data[0];
             end
             if (!bus_done_next) bus_done_next <= 1'b1;
-            bus_q <= SPI1_cs;
+            bus_q_reg <= SPI1_cs;
         end
 
-        if (bus_addr == 27'hC0272D) bus_q <= SPI1_nint;
+        if (bus_addr == 27'hC0272D) bus_q_reg <= SPI1_nint;
 
         //SPI2
         if (bus_start && bus_addr == 27'hC0272E)
@@ -812,7 +823,7 @@ begin
             if (!SPI2_busy)
             begin
                 if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q <= SPI2_out;
+                bus_q_reg <= SPI2_out;
             end
         end
 
@@ -825,10 +836,10 @@ begin
                 SPI2_cs <= bus_data[0];
             end
             if (!bus_done_next) bus_done_next <= 1'b1;
-            bus_q <= SPI2_cs;
+            bus_q_reg <= SPI2_cs;
         end
 
-        if (bus_addr == 27'hC02730) bus_q <= SPI2_nint;
+        if (bus_addr == 27'hC02730) bus_q_reg <= SPI2_nint;
 
         //SPI3
         if (bus_start && bus_addr == 27'hC02731)
@@ -836,7 +847,7 @@ begin
             if (!SPI3_busy)
             begin
                 if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q <= SPI3_out;
+                bus_q_reg <= SPI3_out;
             end
         end
 
@@ -848,10 +859,10 @@ begin
                 SPI3_cs <= bus_data[0];
             end
             if (!bus_done_next) bus_done_next <= 1'b1;
-            bus_q <= SPI3_cs;
+            bus_q_reg <= SPI3_cs;
         end
 
-        if (bus_addr == 27'hC02733) bus_q <= SPI3_int;
+        if (bus_addr == 27'hC02733) bus_q_reg <= SPI3_int;
 
         //SPI4
         if (bus_start && bus_addr == 27'hC02734)
@@ -859,7 +870,7 @@ begin
             if (!SPI4_busy)
             begin
                 if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q <= SPI4_out;
+                bus_q_reg <= SPI4_out;
             end
         end
 
@@ -871,10 +882,10 @@ begin
                 SPI4_cs <= bus_data[0];
             end
             if (!bus_done_next) bus_done_next <= 1'b1;
-            bus_q <= SPI4_cs;
+            bus_q_reg <= SPI4_cs;
         end
 
-        if (bus_addr == 27'hC02736) bus_q <= SPI4_GP;
+        if (bus_addr == 27'hC02736) bus_q_reg <= SPI4_GP;
 
         //GPIO TODO: implement true GPIO
         if (bus_start && bus_addr == 27'hC02737)
@@ -884,30 +895,35 @@ begin
                 GPO <= bus_data[7:4];
             end
             if (!bus_done_next) bus_done_next <= 1'b1;
-            bus_q <= {24'd0, GPO, GPI};
+            bus_q_reg <= {24'd0, GPO, GPI};
         end
 
         //GPIO Direction TODO: implement
         if (bus_start && bus_addr >= 27'hC02738)
         begin
             if (!bus_done_next) bus_done_next <= 1'b1;
-            bus_q <= 32'd0;
+            bus_q_reg <= 32'd0;
         end
 
-        if (bus_addr == 27'hC02737) bus_q <= {24'd0, GPO, GPI};
+        if (bus_addr == 27'hC02737) bus_q_reg <= {24'd0, GPO, GPI};
 
-        if (bus_addr == 27'hC0273F) bus_q <= {16'd0, SNES_state};
+        if (bus_addr == 27'hC0273F) bus_q_reg <= {16'd0, SNES_state};
 
-        if (bus_addr == 27'hC02740) bus_q <= {24'd0, PS2_scanCode};
+        if (bus_addr == 27'hC02740) bus_q_reg <= {24'd0, PS2_scanCode};
         
-        if (bus_addr == 27'hC02741) bus_q <= {31'd0, boot_mode};
+        if (bus_addr == 27'hC02741) bus_q_reg <= {31'd0, boot_mode};
 
         //Instant return addresses
         if (bus_start)
         begin
             //VRAM & ROM
-            if (bus_addr >= 27'hC00000 && bus_addr < 27'hC02722)
-                if (!bus_done_next) bus_done_next <= 1'b1;
+            if (bus_addr >= 27'hC00000 && bus_addr < 27'hC02522) // VRAM
+                if (bus_we)
+                    bus_done <= 1'b1;
+                else
+                    if (!bus_done_next) bus_done_next <= 1'b1;
+            if (bus_addr >= 27'hC02522 && bus_addr < 27'hC02722) // ROM
+                    bus_done <= 1'b1;
             if (bus_addr == 27'hC02722 || 
                 bus_addr == 27'hC02724 || 
                 bus_addr == 27'hC02726 || 
