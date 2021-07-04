@@ -277,7 +277,7 @@ module MemoryUnit(
     .i_Tx_Byte  (UART0_r_Tx_Byte),
     .o_Tx_Active(),
     .o_Tx_Serial(UART0_out),
-    .o_Tx_Done_l(UART0_w_Tx_Done)
+    .o_Tx_Done  (UART0_w_Tx_Done)
     );
 
     wire [7:0] UART0_w_Rx_Byte;
@@ -304,7 +304,7 @@ module MemoryUnit(
     .i_Tx_Byte  (UART1_r_Tx_Byte),
     .o_Tx_Active(),
     .o_Tx_Serial(UART1_out),
-    .o_Tx_Done_l(UART1_w_Tx_Done)
+    .o_Tx_Done  (UART1_w_Tx_Done)
     );
 
     wire [7:0] UART1_w_Rx_Byte;
@@ -331,7 +331,7 @@ module MemoryUnit(
     .i_Tx_Byte  (UART2_r_Tx_Byte),
     .o_Tx_Active(),
     .o_Tx_Serial(UART2_out),
-    .o_Tx_Done_l(UART2_w_Tx_Done)
+    .o_Tx_Done  (UART2_w_Tx_Done)
     );
 
     wire [7:0] UART2_w_Rx_Byte;
@@ -521,8 +521,7 @@ module MemoryUnit(
 
     Keyboard PS2Keyboard (
     .clk            (clk), 
-    .reset          (reset), 
-    .rx_en          (1'b1), 
+    .reset          (reset),
     .ps2d           (PS2_data), 
     .ps2c           (PS2_clk), 
     .rx_done_tick   (PS2_int), 
@@ -643,7 +642,7 @@ assign OST3_trigger     = (bus_addr == 27'hC0273E && bus_we);
 assign bus_q =      //(bus_start && bus_addr >= 27'hC00000 && bus_addr < 27'hC00420) ? VRAM32_cpu_q:
                     //(bus_start && bus_addr >= 27'hC00420 && bus_addr < 27'hC02422) ? {24'd0, VRAM8_cpu_q}:
                     //(bus_start && bus_addr >= 27'hC02422 && bus_addr < 27'hC02522) ? {23'd0, VRAMspr_cpu_q}:
-                    (bus_addr >= 27'hC02522 && bus_addr < 27'hC02722) ? ROM_q:
+                    (bus_addr >= 27'hC02522 && bus_addr < 27'hC02722) ? ROM_q: // safe because ROM cannot be the destination of a copy instruction
                     bus_q_reg;
 
 reg bus_done_next = 1'b0;

@@ -18,19 +18,19 @@ module UARTtx(
     input [7:0] i_Tx_Byte,
     output      o_Tx_Active,
     output  reg o_Tx_Serial,
-    output  reg o_Tx_Done_l
+    output  o_Tx_Done
     );
 
-parameter CLKS_PER_BIT   = 217;
-parameter s_IDLE = 3'b000;
-parameter s_TX_START_BIT = 3'b001;
-parameter s_TX_DATA_BITS = 3'b010;
-parameter s_TX_STOP_BIT = 3'b011;
-parameter s_CLEANUP = 3'b100;
+localparam CLKS_PER_BIT   = 217;
+localparam s_IDLE = 3'b000;
+localparam s_TX_START_BIT = 3'b001;
+localparam s_TX_DATA_BITS = 3'b010;
+localparam s_TX_STOP_BIT = 3'b011;
+localparam s_CLEANUP = 3'b100;
 
 
 reg [2:0] r_SM_Main;
-reg [7:0] r_Clock_Count;
+reg [8:0] r_Clock_Count;
 reg [2:0] r_Bit_Index;
 reg [7:0] r_Tx_Data;
 reg r_Tx_Done;
@@ -39,15 +39,15 @@ reg r_Tx_Active;
 initial
 begin
     r_SM_Main = 3'd0;
-    r_Clock_Count = 8'd0;
+    r_Clock_Count = 9'd0;
     r_Bit_Index = 3'd0;
     r_Tx_Data = 8'd0;
     r_Tx_Done = 1'b0;
     r_Tx_Active = 1'b0;
     o_Tx_Serial = 1'b0;
-    o_Tx_Done_l = 1'b0;
 end
 
+/*
 always @(posedge i_Clock)
 begin
     if (reset)
@@ -59,14 +59,14 @@ begin
         o_Tx_Done_l <= o_Tx_Done;
     end
 end
+*/
 
-
-always @(negedge i_Clock)
+always @(posedge i_Clock)
 begin
     if (reset)
     begin
         r_SM_Main <= 3'd0;
-        r_Clock_Count <= 8'd0;
+        r_Clock_Count <= 9'd0;
         r_Bit_Index <= 3'd0;
         r_Tx_Data <= 8'd0;
         r_Tx_Done <= 1'b0;

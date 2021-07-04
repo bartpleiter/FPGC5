@@ -5,19 +5,9 @@
 module Keyboard
 (
     input wire clk, reset, 
-    input wire ps2d, ps2c, rx_en,    // ps2 data and clock inputs, receive enable input
+    input wire ps2d, ps2c,            // ps2 data and clock inputs
     output reg rx_done_tick,         // ps2 receive done tick
     output wire [7:0] rx_data        // data received 
-);
-
-//get 1MHz clock from 25MHz clock
-wire slow_clk;
-ClockDivider #(
-.DIVISOR(25))
- clkDivNES(
-.clk_in(clk),
-.reset(reset),
-.clk_out(slow_clk)
 );
 
 // FSMD state declaration
@@ -36,11 +26,11 @@ reg [10:0] d_reg, d_next;           // register to shift in rx data
 wire neg_edge;                      // negative edge of ps2c clock filter value
 
 // register for ps2c filter register and filter value
-always @(posedge slow_clk, posedge reset)
+always @(posedge clk)
     if (reset)
         begin
-        filter_reg <= 0;
-        f_val_reg  <= 0;
+        filter_reg <= 8'd0;
+        f_val_reg  <= 1'b0;
         end
     else
         begin
@@ -60,12 +50,12 @@ assign f_val_next = (filter_reg == 8'b11111111) ? 1'b1 :
 assign neg_edge = f_val_reg & ~f_val_next;
 
 // FSMD state, bit number, and data registers
-always @(posedge slow_clk, posedge reset)
+always @(posedge clk)
     if (reset)
         begin
         state_reg <= idle;
-        n_reg <= 0;
-        d_reg <= 0;
+        n_reg <= 4'd0;
+        d_reg <= 11'd0;
         end
     else
         begin
@@ -87,7 +77,7 @@ always @*
     case (state_reg)
         
         idle:
-            if (neg_edge & rx_en)                 // start bit received
+            if (neg_edge)                 // start bit received
                 begin
                 n_next = 4'b1010;             // set bit count down to 10
                 state_next = rx;              // go to rx state
@@ -98,10 +88,10 @@ always @*
             if (neg_edge)                         // if ps2c negative edge...
                 begin
                 d_next = {ps2d, d_reg[10:1]}; // sample ps2d, right shift into data register
-                n_next = n_reg - 1;           // decrement bit count
+                n_next = n_reg - 1'b1;           // decrement bit count
                 end
         
-            if (n_reg==0)                         // after 10 bits shifted in, go to done state
+            if (n_reg == 4'd0)                         // after 10 bits shifted in, go to done state
                  begin
                  rx_done_tick = 1'b1;         // assert dat received done tick
                  state_next = idle;           // go back to idle

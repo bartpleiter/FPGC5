@@ -7,32 +7,21 @@ module OStimer(
     input [31:0] timerValue,
     input trigger,
     input setValue,
-    output reg interrupt
+    output reg interrupt = 1'b0
 );
 
-reg [31:0] counterValue;                // 32 bits for timerValue
-reg [31:0] delayCounter;                // counter for timer delay
-reg [3:0] keepInterruptHighCounter;     // we want to keep the interrupt high for multiple cycles
-reg [1:0] state;                        // state of timer
-
 // States
-parameter s_idle        = 0;
-parameter s_start       = 1;
-parameter s_done        = 2;
+localparam s_idle        = 0;
+localparam s_start       = 1;
+localparam s_done        = 2;
 
 parameter delay         = 24999; // Clock cycles delay per timerValue, could eventually become programmable, should then default to 1ms
 
+reg [31:0] counterValue = 32'd0;            // 32 bits for timerValue
+reg [31:0] delayCounter = 32'd0;            // counter for timer delay
+reg [1:0] state = s_idle;                     // state of timer
 
-initial
-begin
-    counterValue                <= 32'd0;
-    delayCounter                <= 32'd0;
-    state                       <= s_idle;
-    keepInterruptHighCounter    <= 4'd0;
-    interrupt                   <= 1'b0;
-end
-
-always @(negedge clk)
+always @(posedge clk)
 begin
     if (reset)
     begin
@@ -40,73 +29,58 @@ begin
         delayCounter                <= 32'd0;
         state                       <= s_idle;
         interrupt                   <= 1'd0;  
-        keepInterruptHighCounter    <= 4'd0;
     end
     else
     begin
-        case (state)
-            s_idle:
-            begin
-                if (trigger)
+        if (setValue)
+        begin
+            counterValue <= timerValue;
+        end
+        else 
+        begin
+            
+            case (state)
+                s_idle:
                 begin
-                    state <= s_start;
-                    delayCounter <= delay;
-                end
-                if (setValue)
-                begin
-                    counterValue <= timerValue;
-                end
-            end
-            s_start:
-            begin
-                if (setValue)
-                begin
-                    counterValue <= timerValue;
-                end
-                else if (counterValue == 0)
-                begin
-                    state <= s_done;
-                    interrupt <= 1'b1;
-                    keepInterruptHighCounter <= 0;
-                end
-                else 
-                begin
-
-                    if (delayCounter == 0)
+                    if (trigger)
                     begin
-                        counterValue <= counterValue - 1'b1;
+                        state <= s_start;
                         delayCounter <= delay;
+                    end
+                    
+                end
+                s_start:
+                begin
+                    if (counterValue == 32'd0)
+                    begin
+                        state <= s_done;
+                        interrupt <= 1'b1;
                     end
                     else 
                     begin
-                        delayCounter <= delayCounter - 1'b1;    
+
+                        if (delayCounter == 32'd0)
+                        begin
+                            counterValue <= counterValue - 1'b1;
+                            delayCounter <= delay;
+                        end
+                        else 
+                        begin
+                            delayCounter <= delayCounter - 1'b1;    
+                        end
                     end
                 end
-            end
-            s_done:
-            begin
-                if (setValue)
+                s_done:
                 begin
-                    counterValue <= timerValue;
-                end
-                else if (trigger)
-                begin
-                    state <= s_start;
-                    delayCounter <= delay;
-                    interrupt <= 0;
-                end
-                else if (keepInterruptHighCounter == 4'b1111)
-                begin
-                    interrupt <= 0;
+                    interrupt <= 1'b0;
                     state <= s_idle;
                 end
-                else 
-                begin
-                    keepInterruptHighCounter <= keepInterruptHighCounter + 1'b1;
-                end
-            end
 
-        endcase
+            endcase
+
+        end
+
+        
     end
 end
 
