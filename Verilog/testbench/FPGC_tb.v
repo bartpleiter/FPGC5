@@ -45,7 +45,6 @@
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/UARTtx.v"
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/UARTrx.v"
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/SimpleSPI.v"
-`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/SimpleFastSPI.v"
 
 //Define testmodule
 module FPGC_tb;
@@ -259,6 +258,7 @@ FPGC5 fpgc (
 );
 
 
+
 initial
 begin
     //Dump everything for GTKwave
@@ -287,9 +287,6 @@ begin
     GPI = 4'b1111;
 
     DIPS = 4'b1110;
-
-
-    
 
     repeat(70000)
     begin

@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
-[*] Sun Jul 04 16:02:08 2021
+[*] Mon Jul 05 19:36:32 2021
 [*]
 [dumpfile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\wave.vcd"
-[dumpfile_mtime] "Sun Jul 04 15:45:44 2021"
-[dumpfile_size] 36221143
+[dumpfile_mtime] "Mon Jul 05 19:36:24 2021"
+[dumpfile_size] 35334860
 [savefile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\FPGC.gtkw"
-[timestart] 946200000
+[timestart] 1015795000
 [size] 1920 1027
 [pos] -1 -1
-*-24.487400 1028500000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-20.887402 1021381000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] FPGC_tb.
 [treeopen] FPGC_tb.fpgc.
 [treeopen] FPGC_tb.fpgc.cpu.
@@ -464,6 +464,25 @@ FPGC_tb.fpgc.mu.bus_q[31:0]
 @28
 FPGC_tb.fpgc.mu.bus_start
 FPGC_tb.fpgc.mu.bus_we
+@200
+-
+-
+-SPI1
+@28
+FPGC_tb.fpgc.mu.SPI1.clk
+FPGC_tb.fpgc.mu.SPI1.done
+@22
+FPGC_tb.fpgc.mu.SPI1.in_byte[7:0]
+@28
+FPGC_tb.fpgc.mu.SPI1.start
+FPGC_tb.fpgc.mu.SPI1.spi_clk
+FPGC_tb.fpgc.mu.SPI1.r_RX_Bit_Count[2:0]
+>3100
+FPGC_tb.fpgc.mu.SPI1.r_Leading_Edge
+>0
+FPGC_tb.fpgc.mu.SPI1.mosi
+@24
+FPGC_tb.fpgc.mu.SPI1.r_SPI_clk_Edges[4:0]
 @200
 -
 -SDRAMcontroller

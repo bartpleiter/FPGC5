@@ -183,18 +183,20 @@ module MemoryUnit(
     wire SPI0_start;
     wire [7:0] SPI0_in;
     wire [7:0] SPI0_out;
-    wire SPI0_busy;
+    wire SPI0_done;
 
-    SimpleFastSPI SPI0(
+    SimpleSPI #(
+    .CLKS_PER_HALF_BIT(1))
+    SPI0(
     .clk        (clk),
     .reset      (reset),
-    .t_start    (SPI0_start),
-    .d_in       (SPI0_in),
-    .d_out      (SPI0_out),
+    .in_byte    (SPI0_in),
+    .start      (SPI0_start),
+    .done       (SPI0_done),
+    .out_byte   (SPI0_out),
     .spi_clk    (SPI0_clk),
     .miso       (SPIflash_q),
-    .mosi       (SPI0_mosi),
-    .busy       (SPI0_busy)
+    .mosi       (SPI0_mosi)
     );
 
     //Tri-state signals
@@ -353,20 +355,20 @@ module MemoryUnit(
     wire SPI1_start;
     wire [7:0] SPI1_in;
     wire [7:0] SPI1_out;
-    wire SPI1_busy;
+    wire SPI1_done;
 
     SimpleSPI #(
-    .CLKDIV(4))
+    .CLKS_PER_HALF_BIT(2))
     SPI1(
     .clk        (clk),
     .reset      (reset),
-    .t_start    (SPI1_start),
-    .d_in       (SPI1_in),
-    .d_out      (SPI1_out),
+    .in_byte    (SPI1_in),
+    .start      (SPI1_start),
+    .done       (SPI1_done),
+    .out_byte   (SPI1_out),
     .spi_clk    (SPI1_clk),
     .miso       (SPI1_miso),
-    .mosi       (SPI1_mosi),
-    .busy       (SPI1_busy)
+    .mosi       (SPI1_mosi)
     );
 
 
@@ -376,20 +378,20 @@ module MemoryUnit(
     wire SPI2_start;
     wire [7:0] SPI2_in;
     wire [7:0] SPI2_out;
-    wire SPI2_busy;
+    wire SPI2_done;
 
     SimpleSPI #(
-    .CLKDIV(4))
+    .CLKS_PER_HALF_BIT(2))
     SPI2(
     .clk        (clk),
     .reset      (reset),
-    .t_start    (SPI2_start),
-    .d_in       (SPI2_in),
-    .d_out      (SPI2_out),
+    .in_byte    (SPI2_in),
+    .start      (SPI2_start),
+    .done       (SPI2_done),
+    .out_byte   (SPI2_out),
     .spi_clk    (SPI2_clk),
     .miso       (SPI2_miso),
-    .mosi       (SPI2_mosi),
-    .busy       (SPI2_busy)
+    .mosi       (SPI2_mosi)
     );
 
 
@@ -399,18 +401,20 @@ module MemoryUnit(
     wire SPI3_start;
     wire [7:0] SPI3_in;
     wire [7:0] SPI3_out;
-    wire SPI3_busy;
+    wire SPI3_done;
 
-    SimpleFastSPI SPI3(
+    SimpleSPI #(
+    .CLKS_PER_HALF_BIT(1))
+    SPI3(
     .clk        (clk),
     .reset      (reset),
-    .t_start    (SPI3_start),
-    .d_in       (SPI3_in),
-    .d_out      (SPI3_out),
+    .in_byte    (SPI3_in),
+    .start      (SPI3_start),
+    .done       (SPI3_done),
+    .out_byte   (SPI3_out),
     .spi_clk    (SPI3_clk),
     .miso       (SPI3_miso),
-    .mosi       (SPI3_mosi),
-    .busy       (SPI3_busy)
+    .mosi       (SPI3_mosi)
     );
 
 
@@ -420,20 +424,20 @@ module MemoryUnit(
     wire SPI4_start;
     wire [7:0] SPI4_in;
     wire [7:0] SPI4_out;
-    wire SPI4_busy;
+    wire SPI4_done;
 
     SimpleSPI #(
-    .CLKDIV(4))
+    .CLKS_PER_HALF_BIT(2))
     SPI4(
     .clk        (clk),
     .reset      (reset),
-    .t_start    (SPI4_start),
-    .d_in       (SPI4_in),
-    .d_out      (SPI4_out),
+    .in_byte    (SPI4_in),
+    .start      (SPI4_start),
+    .done       (SPI4_done),
+    .out_byte   (SPI4_out),
     .spi_clk    (SPI4_clk),
     .miso       (SPI4_miso),
-    .mosi       (SPI4_mosi),
-    .busy       (SPI4_busy)
+    .mosi       (SPI4_mosi)
     );
 
 
@@ -770,7 +774,7 @@ begin
         //SPI0
         if (bus_start && bus_addr == 27'hC02728)
         begin
-            if (!SPI0_busy)
+            if (SPI0_done)
             begin
                 if (!bus_done_next) bus_done_next <= 1'b1;
                 bus_q_reg <= SPI0_out;
@@ -803,7 +807,7 @@ begin
         //SPI1
         if (bus_start && bus_addr == 27'hC0272B)
         begin
-            if (!SPI1_busy)
+            if (SPI1_done)
             begin
                 if (!bus_done_next) bus_done_next <= 1'b1;
                 bus_q_reg <= SPI1_out;
@@ -826,7 +830,7 @@ begin
         //SPI2
         if (bus_start && bus_addr == 27'hC0272E)
         begin
-            if (!SPI2_busy)
+            if (SPI2_done)
             begin
                 if (!bus_done_next) bus_done_next <= 1'b1;
                 bus_q_reg <= SPI2_out;
@@ -850,7 +854,7 @@ begin
         //SPI3
         if (bus_start && bus_addr == 27'hC02731)
         begin
-            if (!SPI3_busy)
+            if (SPI3_done)
             begin
                 if (!bus_done_next) bus_done_next <= 1'b1;
                 bus_q_reg <= SPI3_out;
@@ -873,7 +877,7 @@ begin
         //SPI4
         if (bus_start && bus_addr == 27'hC02734)
         begin
-            if (!SPI4_busy)
+            if (SPI4_done)
             begin
                 if (!bus_done_next) bus_done_next <= 1'b1;
                 bus_q_reg <= SPI4_out;

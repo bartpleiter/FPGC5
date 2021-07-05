@@ -1,136 +1,174 @@
 module SimpleSPI
-#(
-    parameter CLKDIV = 4
-) 
+#(parameter CLKS_PER_HALF_BIT = 1)
 (
-    // System side
-    input reset,
-    input clk,
-    input t_start,
-    input [7:0] d_in,
-    output reg [7:0] d_out,
-    output reg busy,
+    // Control/Data Signals,
+    input       reset,
+    input       clk,
 
-    // SPI side
-    input miso,
-    output wire mosi,
-    output wire spi_clk
+    // TX (MOSI) Signals
+    input [7:0] in_byte,
+    input       start,
+
+    // RX (MISO) Signals
+    output      done,
+    output reg [7:0] out_byte = 8'd0,
+
+    // SPI Interface
+    output reg  spi_clk = 1'b0,
+    input       miso,
+    output      mosi
 );
 
-    //get slower clock from 25MHz clock
-    wire slow_clk;
-    //assign slow_clk = clk;
+reg o_SPI_MOSI = 1'b0;
 
-    
-    ClockDivider #(
-    .DIVISOR(CLKDIV))
-     clkDivSPI(
-    .clk_in(clk),
-    .reset(reset),
-    .clk_out(slow_clk)
-    );
+reg [$clog2(CLKS_PER_HALF_BIT*2)-1:0] r_SPI_clk_Count = 0;
+reg r_SPI_clk = 1'b0;
+reg [4:0] r_SPI_clk_Edges = 1'b0;
+reg r_Leading_Edge = 1'b0;
+reg r_Trailing_Edge = 1'b0;
+reg       r_TX_DV = 1'b0;
+reg [7:0] r_TX_Byte = 1'b0;
 
-    parameter rst = 0, idle = 1, load = 2, transact = 3, unload = 4, cooldown = 5; // states
+reg [2:0] r_RX_Bit_Count = 1'b0;
+reg [2:0] r_TX_Bit_Count = 1'b0;
 
-    reg [7:0] mosi_d;
-    reg [7:0] miso_d;
-    reg [3:0] count;
-    reg [2:0] state;
-    reg [2:0] cooldownCounter;
+reg o_TX_Ready = 1'b0;
 
 
-    always @(negedge slow_clk)
+assign mosi = (o_TX_Ready) ? 1'bz : o_SPI_MOSI;
+assign done = o_TX_Ready;
+
+
+// Purpose: Generate SPI Clock correct number of times when DV pulse comes
+always @(posedge clk)
+begin
+    if (reset)
+    begin
+        o_TX_Ready      <= 1'b0;
+        r_SPI_clk_Edges <= 1'b0;
+        r_Leading_Edge  <= 1'b0;
+        r_Trailing_Edge <= 1'b0;
+        r_SPI_clk       <= 1'b0; // assign default state to idle state
+        r_SPI_clk_Count <= 1'b0;
+        r_TX_Byte <= 8'h00;
+        r_TX_DV   <= 1'b0;
+    end
+    else
     begin
 
-        case (state)
-            rst:
-            begin
-            end
-            idle:
-            begin
-                count <= 0;
-            end
-            load:
-            begin
-                mosi_d <= d_in;
-                count <= 8;
-            end
-            transact:
-            begin
-                mosi_d <= {mosi_d[7-1:0], 1'b0};
-                count <= count-1;
-            end
-            unload:
-            begin
-            end
+        // Default assignments
+        r_Leading_Edge  <= 1'b0;
+        r_Trailing_Edge <= 1'b0;
 
-        endcase
-    end
+        r_TX_DV <= start;
 
-    // read on rising clock
-    always @(posedge spi_clk)
+        if (r_SPI_clk_Edges == 0)
+            begin
+            if (start)
+            begin
+                r_TX_Byte <= in_byte;
+                o_TX_Ready      <= 1'b0;
+                r_SPI_clk_Edges <= 16;  // Total # edges in one byte ALWAYS 16
+            end
+            else
+            begin
+                o_TX_Ready <= 1'b1;
+            end
+        end
+        else
+        begin
+            o_TX_Ready <= 1'b0;
+
+            if (r_SPI_clk_Count == CLKS_PER_HALF_BIT*2-1)
+            begin
+                r_SPI_clk_Edges <= r_SPI_clk_Edges - 1'b1;
+                r_Trailing_Edge <= 1'b1;
+                r_SPI_clk_Count <= 0;
+                r_SPI_clk       <= ~r_SPI_clk;
+            end
+            else if (r_SPI_clk_Count == CLKS_PER_HALF_BIT-1)
+            begin
+                r_SPI_clk_Edges <= r_SPI_clk_Edges - 1'b1;
+                r_Leading_Edge  <= 1'b1;
+                r_SPI_clk_Count <= r_SPI_clk_Count + 1'b1;
+                r_SPI_clk       <= ~r_SPI_clk;
+            end
+            else
+            begin
+                r_SPI_clk_Count <= r_SPI_clk_Count + 1'b1;
+            end
+        end  
+    end // else: !if(reset)
+end // always @ (posedge clk)
+
+
+// Purpose: Generate MOSI data
+// Works with both CPHA=0 and CPHA=1
+always @(posedge clk)
+begin
+    if (reset)
     begin
-        miso_d <= {miso_d[7-1:0], miso};
+        o_SPI_MOSI     <= 1'b0;
+        r_TX_Bit_Count <= 3'b111; // send MSb first
     end
-    
-    always @(negedge clk)
+    else
     begin
-        case (state)
-            rst:
-            begin
-                state <= idle;
-                d_out <= 0;
-            end
-            idle:
-            begin
-                if (t_start)
-                begin
-                    busy <= 1;
-                    state <= load;
-                end
-            end
-            load:
-            begin
-                if (count != 0)
-                    state <= transact;
-            end
-            transact:
-            begin
-                if (count == 0)
-                    state <= unload;
-            end
-            unload:
-            begin
-                state <= cooldown;
-                cooldownCounter <= 1;
-                d_out <= miso_d;
-            end
-            cooldown:
-            begin
-                busy <= 0;
-                if (cooldownCounter == 0)
-                    state <= idle;
-                else
-                    cooldownCounter <= cooldownCounter - 1;
-            end
-        endcase
+        // If ready is high, reset bit counts to default
+        if (o_TX_Ready)
+        begin
+            r_TX_Bit_Count <= 3'b111;
+        end
+        // Catch the case where we start transaction and CPHA = 0
+        else if (r_SPI_clk_Edges == 5'd16)
+        begin
+            o_SPI_MOSI     <= r_TX_Byte[7];
+            r_TX_Bit_Count <= 3'b110;
+        end
+        else
+        if (r_Trailing_Edge)
+        begin
+            r_TX_Bit_Count <= r_TX_Bit_Count - 1'b1;
+            o_SPI_MOSI     <= r_TX_Byte[r_TX_Bit_Count];
+        end
     end
-    // end state machine
+end
 
-    // begin SPI logic
-    assign mosi = ( state == transact || state == load) ? mosi_d[7] : 1'bz;
-    assign spi_clk = ( state == transact ) ? slow_clk : 1'b0;
-    // end SPI logic
 
-    initial
+// Purpose: Read in MISO data.
+always @(posedge clk)
+begin
+    if (reset)
     begin
-        d_out <= 0;
-        mosi_d <= 0;
-        miso_d <= 0;
-        state <= 0;
-        count <= 0;
-        busy <= 0;
-        cooldownCounter <= 0;
+        out_byte      <= 8'h00;
+        r_RX_Bit_Count <= 3'b111;
     end
+    else
+    begin
+        if (o_TX_Ready) // Check if ready is high, if so reset bit count to default
+        begin
+            r_RX_Bit_Count <= 3'b111;
+        end
+        else if (r_Leading_Edge)
+        begin
+            out_byte[r_RX_Bit_Count] <= miso;  // Sample data
+            r_RX_Bit_Count            <= r_RX_Bit_Count - 1'b1;
+        end
+    end
+end
 
-endmodule
+
+// Purpose: Add clock delay to signals for alignment.
+always @(posedge clk)
+begin
+    if (reset)
+    begin
+        spi_clk  <= 1'd0;
+    end
+    else
+    begin
+        spi_clk <= r_SPI_clk;
+    end // else: !if(reset)
+end // always @ (posedge clk)
+
+
+endmodule // SPI_Master
