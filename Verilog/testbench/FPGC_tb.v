@@ -282,7 +282,7 @@ begin
     PS2_clk = 1;
     PS2_data = 0;
 
-    SNES_data = 0;
+    SNES_data = 1;
 
     GPI = 4'b1111;
 

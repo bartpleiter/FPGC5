@@ -501,6 +501,8 @@ module MemoryUnit(
     //SNES controller
     //------------
     wire [15:0] SNES_state;
+    wire SNES_done;
+    wire SNES_start;
 
     NESpadReader npr (
     .clk(clk),
@@ -508,7 +510,9 @@ module MemoryUnit(
     .nesc(SNES_clk),
     .nesl(SNES_latch),
     .nesd(SNES_data),
-    .nesState(SNES_state)
+    .nesState(SNES_state),
+    .frame(SNES_start),
+    .done(SNES_done)
     );
 
 
@@ -637,6 +641,9 @@ assign OST2_trigger     = (bus_addr == 27'hC0273C && bus_we);
 assign OST3_value       = (bus_addr == 27'hC0273D && bus_we)                     ? bus_data                      : 32'd0;
 assign OST3_set         = (bus_addr == 27'hC0273D && bus_we);
 assign OST3_trigger     = (bus_addr == 27'hC0273E && bus_we);
+
+//SNES
+assign SNES_start       = (bus_addr == 27'hC0273F)                              ? bus_start                     : 1'b0;
 
 
 assign bus_q =      //(bus_start && bus_addr >= 27'hC00000 && bus_addr < 27'hC00420) ? VRAM32_cpu_q:
@@ -898,15 +905,21 @@ begin
         end
 
         //GPIO Direction TODO: implement
-        if (bus_start && bus_addr >= 27'hC02738)
+        if (bus_start && bus_addr == 27'hC02738)
         begin
             if (!bus_done_next) bus_done_next <= 1'b1;
             bus_q_reg <= 32'd0;
         end
 
-        if (bus_addr == 27'hC02737) bus_q_reg <= {24'd0, GPO, GPI};
 
-        if (bus_addr == 27'hC0273F) bus_q_reg <= {16'd0, SNES_state};
+        if (bus_start && bus_addr == 27'hC0273F) 
+        begin
+            if (SNES_done)
+                begin
+                    if (!bus_done_next) bus_done_next <= 1'b1;
+                    bus_q_reg <= {16'd0, SNES_state};
+                end
+        end
 
         if (bus_addr == 27'hC02740) bus_q_reg <= {24'd0, PS2_scanCode};
         
@@ -923,17 +936,21 @@ begin
                     if (!bus_done_next) bus_done_next <= 1'b1;
             if (bus_addr >= 27'hC02522 && bus_addr < 27'hC02722) // ROM
                     bus_done <= 1'b1;
-            if (bus_addr == 27'hC02722 || 
-                bus_addr == 27'hC02724 || 
-                bus_addr == 27'hC02726 || 
-                bus_addr == 27'hC0272D || 
-                bus_addr == 27'hC02730 || 
-                bus_addr == 27'hC02733 || 
-                bus_addr == 27'hC02736)
+            if (bus_addr == 27'hC02722 ||
+                bus_addr == 27'hC02724 ||
+                bus_addr == 27'hC02726 ||
+                bus_addr == 27'hC0272D ||
+                bus_addr == 27'hC02730 ||
+                bus_addr == 27'hC02733 ||
+                bus_addr == 27'hC02736 ||
+                bus_addr == 27'hC02739 ||
+                bus_addr == 27'hC0273A ||
+                bus_addr == 27'hC0273B ||
+                bus_addr == 27'hC0273C ||
+                bus_addr == 27'hC0273D ||
+                bus_addr == 27'hC0273E ||
+                bus_addr > 27'hC0273F)
                 if (!bus_done_next) bus_done_next <= 1'b1;
-            if (bus_addr > 27'hC02738)
-                if (!bus_done_next) bus_done_next <= 1'b1;
-
         end
 
     end

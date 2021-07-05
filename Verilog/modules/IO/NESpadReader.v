@@ -1,107 +1,127 @@
 /*
-* Communicates with NES (and probably also SNES) controller
-* Stores button values in nesState
-* Code mostly copied
+* Communicates with SNES (and probably also NES) controller
+* Based on https://opencores.org/projects/nescontroller by Yvo Zoer
+*  with modifications to make it work for a single SNES controller
+*  and to make the interface work nicer with the MU
 */
 
-module NESpadReader(
-    clk,
-    reset,
-    nesc,
-    nesl,
-    nesd,
-    nesState
-);
+module NESpadReader (
+    input clk,
+    input reset,
+    input frame, //start
+    output reg nesl = 1'b0,
+    output reg nesc = 1'b0,
+    input nesd,
+    output reg [15:0] nesState = 16'd0,
+    output done
+    );
 
-//General I/O
-input clk;                      //clock for reading in controller
-input reset;
+    
+ 
+    // states for state-machine
+    parameter STATE_IDLE        = 3'd0;
+    parameter STATE_LATCH_HI    = 3'd1; 
+    parameter STATE_LATCH_LO    = 3'd2;
+    parameter STATE_CLOCK_LO    = 3'd3;
+    parameter STATE_CLOCK_HI    = 3'd4;
+    parameter STATE_DONE        = 3'd5;
 
-//get slower clock from 25MHz clock
-wire slow_clk;
-ClockDivider #(
-.DIVISOR(128))
- clkDivNES(
-.clk_in(clk),
-.reset(reset),
-.clk_out(slow_clk)
-);
+    assign done = (state == STATE_DONE);
+ 
+    // start bit to catch single clock frame event
+    reg start = 1'b0;
+    always @(posedge clk)
+        if (reset)
+            start <= 1'b0;
+        else if ( frame )
+            start <= 1'b1;
+        else if ( state != STATE_IDLE )
+            start <= 1'b0;
+ 
+    // clock divider / enable -- clock needs to be around 1.5mhz or lower
+    reg [4:0] clkdiv = 5'd0;
+    always @(posedge clk)
+        if (reset)
+            clkdiv <= 5'd0;
+        else
+            clkdiv <= clkdiv + 5'd1;
+ 
+    wire enable = &clkdiv;
+ 
+    // main state machine
+    reg [2:0] state = 3'd0;
+    reg [2:0] next_state = 3'd0;
+    always @(*)
+        case (state)
+            STATE_IDLE : begin
+                if ( start )
+                    next_state = STATE_LATCH_HI;
+                else
+                    next_state = STATE_IDLE;
+                end
+            STATE_LATCH_HI : next_state = STATE_LATCH_LO;
+            STATE_LATCH_LO : next_state = STATE_CLOCK_LO;
+            STATE_CLOCK_LO : next_state = STATE_CLOCK_HI;
+            STATE_CLOCK_HI : begin
+                if ( &count )
+                begin
+                    next_state = STATE_DONE;
+                end
+                else
+                    next_state = STATE_CLOCK_LO;
+                end
+            STATE_DONE : begin
+                next_state = STATE_IDLE;
+                end
+            default : begin
+                next_state = STATE_IDLE;
+                end
+        endcase
+ 
 
-//Inintialization code
-initial
-begin
-    state <= WAIT_STATE;
-    button_index <= 4'd0;
-    button_state <= 16'hFFFF;
-    nesState <= 16'd0;
-end
-
-//Controller I/O
-input   nesd;                   //data from controller
-output wire nesc;               //clock to controller
-output wire nesl;               //latch to controller
-output reg [15:0] nesState;     //contains button values from controller
-
-//NESpadReader vars
-reg  [1:0]  state;              //current state
-reg  [3:0]  button_index;       //button index
-reg [15:0]  button_state;       //button state
-
-//States
-parameter WAIT_STATE    = 0;    
-parameter LATCH_STATE   = 1;
-parameter READ_STATE    = 2;
-
-
-//State transitions at positive edge of 1.2KHz clock
-always @(posedge slow_clk or posedge reset) 
-begin
-    if (reset)
-    begin
-        state <= WAIT_STATE;
-    end
-    else
-    begin
-        if (state == WAIT_STATE)
-            state <= LATCH_STATE;
-        else if (state == LATCH_STATE)
-            state <= READ_STATE;
-        else if (state == READ_STATE) 
-        begin
-            if (button_index == 15) //if all 16 button bits are read
-                state <= WAIT_STATE;
-        end
-    end
-end
-  
-
-//Button reading at negative edge of 1.2KHz clock,
-//to give values from the controller time to settle.
-always @(negedge slow_clk or posedge reset) 
-begin
-    if (reset)
-    begin
-        button_index <= 4'd0;
-        button_state <= 16'hFFFF;
-        nesState <= 16'd0;
-    end
-    else
-    begin
-        if (state == WAIT_STATE)
-        begin
-            button_index <= 4'b0;   //reset
-            nesState <= {4'd0, ~button_state[11:0]}; //Write button data to reg
-        end
-        else if (state == READ_STATE) 
-        begin
-            button_state[button_index] <= nesd;
-            button_index <= button_index + 1;
-        end
-    end
-end
-
-assign nesl = (state == LATCH_STATE) ? 1'b1 : 1'b0;
-assign nesc = (state == READ_STATE) ? slow_clk : 1'b1;
-
-
+    always @(posedge clk)
+        if (reset)
+            nesl <= 1'b0;
+        else
+            nesl <= (state == STATE_LATCH_HI);
+ 
+    always @(posedge clk)
+        if (reset)
+            nesc <= 1'b1;
+        else
+            nesc = (state == STATE_CLOCK_LO ) ? 1'b0 : 1'b1;
+ 
+    reg [3:0] count = 4'd0;
+    reg [3:0] next_count = 4'd0;
+    always @(*)
+        if ( state == STATE_CLOCK_HI )
+            next_count = count + 4'd1;
+        else
+            next_count = count;
+ 
+    reg [15:0] next_nesState = 16'd0;
+    always @(*)
+        if ( state == STATE_CLOCK_LO )
+            begin
+                next_nesState = { nesState[14:0], nesd };
+            end
+        else
+            begin
+                next_nesState = nesState;
+            end
+ 
+    always @(posedge clk)
+        if (reset)
+            begin
+                state <= STATE_IDLE;
+                count <= 4'd0;
+                nesState <= 16'd0;
+            end
+        else if ( enable )
+            begin
+                state <= next_state;
+                count <= next_count;
+                nesState <= next_nesState;
+            end
+ 
 endmodule

@@ -21,6 +21,12 @@ int main()
                 BDOS_PrintcConsole(c);
             }
         }
+
+        int *o = (int *) 0xC0273F;
+        int *p = (int *) 0xC01600;
+        *p = *o;
+        *(p+1) = (*o) >> 8;
+
     }
 
     return 'q';
