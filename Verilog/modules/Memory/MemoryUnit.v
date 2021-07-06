@@ -151,6 +151,7 @@ module MemoryUnit(
     wire        SPIflashReader_recvDone;        //recvdone of SPIreader TODO might change this to busy
     wire        SPIflashReader_reset;           //reset SPIreader
     wire        SPIflashReader_write;           //output mode of inout pins (high when writing to SPI flash)
+    wire        SPIflashReader_clk;             //clk for spi flash
 
     wire io0_out, io1_out, io2_out, io3_out;    //d, q wp, hold output
     wire io0_in,  io1_in,  io2_in,  io3_in;     //d, q wp, hold input
@@ -165,6 +166,7 @@ module MemoryUnit(
     .initDone   (SPIflashReader_initDone), 
     .recvDone   (SPIflashReader_recvDone),
     .write      (SPIflashReader_write),
+    .spi_clk    (SPIflashReader_clk),
     .io0_out    (io0_out),
     .io1_out    (io1_out),
     .io2_out    (io2_out),
@@ -202,7 +204,7 @@ module MemoryUnit(
     //Tri-state signals
     wire SPIcombined_d, SPIcombined_q, SPIcombined_wp, SPIcombined_hold, SPIcombined_OutputEnable;
 
-    assign SPIflash_clk             = (SPI0_enable) ? SPI0_clk  : clk;
+    assign SPIflash_clk             = (SPI0_enable) ? SPI0_clk  : SPIflashReader_clk;
     assign SPIflash_cs              = (SPI0_enable) ? SPI0_cs   : SPIflashReader_cs;
     assign SPIflashReader_reset     = (SPI0_enable) ? 1'b1      : reset;    
 

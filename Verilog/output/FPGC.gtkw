@@ -1,22 +1,22 @@
 [*]
 [*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
-[*] Mon Jul 05 19:36:32 2021
+[*] Tue Jul 06 10:25:22 2021
 [*]
 [dumpfile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\wave.vcd"
-[dumpfile_mtime] "Mon Jul 05 19:36:24 2021"
-[dumpfile_size] 35334860
+[dumpfile_mtime] "Tue Jul 06 09:58:40 2021"
+[dumpfile_size] 39362920
 [savefile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\FPGC.gtkw"
-[timestart] 1015795000
+[timestart] 508770000
 [size] 1920 1027
 [pos] -1 -1
-*-20.887402 1021381000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-19.687405 511083000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] FPGC_tb.
 [treeopen] FPGC_tb.fpgc.
 [treeopen] FPGC_tb.fpgc.cpu.
 [treeopen] FPGC_tb.fpgc.fsx.
 [treeopen] FPGC_tb.fpgc.mu.
 [sst_width] 268
-[signals_width] 518
+[signals_width] 337
 [sst_expanded] 1
 [sst_vpaned_height] 531
 @28
@@ -421,30 +421,32 @@ FPGC_tb.fpgc.mu.SPIflashReader_recvDone
 -
 @28
 FPGC_tb.fpgc.mu.sreader.clk
-@22
+@24
 FPGC_tb.fpgc.mu.sreader.a[23:0]
 FPGC_tb.fpgc.mu.sreader.address[23:0]
-@24
 FPGC_tb.fpgc.mu.sreader.counter[6:0]
-@28
 FPGC_tb.fpgc.mu.sreader.cs
 FPGC_tb.fpgc.mu.sreader.initDone
-@24
+@23
 FPGC_tb.fpgc.mu.sreader.instr[31:0]
-@22
-FPGC_tb.fpgc.mu.sreader.opcode[7:0]
 @24
+FPGC_tb.fpgc.mu.sreader.opcode[7:0]
 FPGC_tb.fpgc.mu.sreader.phase[2:0]
-@28
 FPGC_tb.fpgc.mu.sreader.recvDone
-FPGC_tb.fpgc.mu.sreader.recvDoneWire
 FPGC_tb.fpgc.mu.sreader.reset
 FPGC_tb.fpgc.mu.sreader.start
 FPGC_tb.fpgc.mu.sreader.write
 @200
 -
+@24
+FPGC_tb.fpgc.mu.sreader.clk
+FPGC_tb.fpgc.mu.sreader.clkDiv
+FPGC_tb.fpgc.mu.sreader.rising
+FPGC_tb.fpgc.mu.sreader.falling
 @28
 FPGC_tb.fpgc.mu.SPIflash_clk
+@24
+FPGC_tb.fpgc.mu.sreader.spi_clk
 FPGC_tb.fpgc.mu.SPIflash_cs
 FPGC_tb.fpgc.mu.SPIflash_data
 FPGC_tb.fpgc.mu.SPIflash_hold

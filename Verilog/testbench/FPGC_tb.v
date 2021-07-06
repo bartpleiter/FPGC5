@@ -288,7 +288,28 @@ begin
 
     DIPS = 4'b1110;
 
-    repeat(70000)
+
+    repeat(10)
+    begin
+        #5 clk_SDRAM = ~clk_SDRAM; clk = ~clk; //25MHz
+        #5 clk_SDRAM = ~clk_SDRAM; //100MHz
+        #5 clk_SDRAM = ~clk_SDRAM;
+        #5 clk_SDRAM = ~clk_SDRAM; 
+    end
+
+    nreset = 0;
+
+    repeat(10)
+    begin
+        #5 clk_SDRAM = ~clk_SDRAM; clk = ~clk; //25MHz
+        #5 clk_SDRAM = ~clk_SDRAM; //100MHz
+        #5 clk_SDRAM = ~clk_SDRAM;
+        #5 clk_SDRAM = ~clk_SDRAM; 
+    end
+
+    nreset = 1;
+
+    repeat(80000)
     begin
         #5 clk_SDRAM = ~clk_SDRAM; clk = ~clk; //25MHz
         #5 clk_SDRAM = ~clk_SDRAM; //100MHz
