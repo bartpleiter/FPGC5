@@ -19,7 +19,7 @@ output o_Rx_DV,
 output [7:0] o_Rx_Byte
 );
 
-parameter CLKS_PER_BIT   = 217;
+parameter CLKS_PER_BIT   = 434;
 parameter s_IDLE = 3'b000;
 parameter s_RX_START_BIT = 3'b001;
 parameter s_RX_DATA_BITS = 3'b010;
@@ -29,7 +29,7 @@ parameter s_CLEANUP = 3'b100;
 reg r_Rx_Data_R;
 reg r_Rx_Data;
 
-reg [7:0] r_Clock_Count;
+reg [8:0] r_Clock_Count;
 reg [2:0] r_Bit_Index ; //8 bits total
 reg [7:0] r_Rx_Byte;
 reg r_Rx_DV;

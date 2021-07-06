@@ -74,7 +74,7 @@ begin
     $dumpfile("/home/bart/Documents/FPGA/FPGC5/Verilog/output/wave.vcd");
     $dumpvars;
     
-    repeat(5000) #20 clk = ~clk; //25MHz
+    repeat(5000) #10 clk = ~clk; //50MHz
 
 
     #1 $finish;

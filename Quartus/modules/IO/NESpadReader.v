@@ -1,5 +1,8 @@
 /*
 * Communicates with SNES (and probably also NES) controller
+* Based on https://opencores.org/projects/nescontroller by Yvo Zoer
+*  with modifications to make it work for a single SNES controller
+*  and to make the interface work nicer with the MU
 */
 
 module NESpadReader (
@@ -36,12 +39,12 @@ module NESpadReader (
             start <= 1'b0;
  
     // clock divider / enable -- clock needs to be around 1.5mhz or lower
-    reg [4:0] clkdiv = 5'd0;
+    reg [5:0] clkdiv = 6'd0;
     always @(posedge clk)
         if (reset)
-            clkdiv <= 5'd0;
+            clkdiv <= 6'd0;
         else
-            clkdiv <= clkdiv + 5'd1;
+            clkdiv <= clkdiv + 1'd1;
  
     wire enable = &clkdiv;
  

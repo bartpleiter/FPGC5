@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
-[*] Tue Jul 06 10:25:22 2021
+[*] Tue Jul 06 15:25:31 2021
 [*]
 [dumpfile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\wave.vcd"
-[dumpfile_mtime] "Tue Jul 06 09:58:40 2021"
-[dumpfile_size] 39362920
+[dumpfile_mtime] "Tue Jul 06 15:25:24 2021"
+[dumpfile_size] 37766154
 [savefile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\FPGC.gtkw"
-[timestart] 508770000
+[timestart] 0
 [size] 1920 1027
 [pos] -1 -1
-*-19.687405 511083000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-27.487408 421405000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] FPGC_tb.
 [treeopen] FPGC_tb.fpgc.
 [treeopen] FPGC_tb.fpgc.cpu.
@@ -44,8 +44,9 @@ FPGC_tb.fpgc.cpu.timer.fetch
 FPGC_tb.fpgc.cpu.timer.getRegs
 >-600
 FPGC_tb.fpgc.cpu.timer.readMem
->0
+>505000
 FPGC_tb.fpgc.cpu.timer.writeBack
+>0
 FPGC_tb.fpgc.cpu.timer.busy
 @24
 FPGC_tb.fpgc.cpu.timer.state[2:0]
@@ -427,7 +428,7 @@ FPGC_tb.fpgc.mu.sreader.address[23:0]
 FPGC_tb.fpgc.mu.sreader.counter[6:0]
 FPGC_tb.fpgc.mu.sreader.cs
 FPGC_tb.fpgc.mu.sreader.initDone
-@23
+@22
 FPGC_tb.fpgc.mu.sreader.instr[31:0]
 @24
 FPGC_tb.fpgc.mu.sreader.opcode[7:0]
