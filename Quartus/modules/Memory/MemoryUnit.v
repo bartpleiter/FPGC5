@@ -128,6 +128,46 @@ module MemoryUnit(
 
 );
 
+// Address select parameters
+localparam 
+    A_SDRAM = 0,
+    A_FLASH = 1,
+    A_VRAM32 = 2,
+    A_VRAM8 = 3,
+    A_VRAMSPR = 4,
+    A_ROM = 5,
+    A_UART0RX = 6,
+    A_UART0TX = 7,
+    A_UART1RX = 8,
+    A_UART1TX = 9,
+    A_UART2RX = 10,
+    A_UART2TX = 11,
+    A_SPI0 = 12,
+    A_SPI0CS = 13,
+    A_SPI0EN = 14,
+    A_SPI1 = 15,
+    A_SPI1CS = 16,
+    A_SPI1NINT = 17,
+    A_SPI2 = 18,
+    A_SPI2CS = 19,
+    A_SPI2NINT = 20,
+    A_SPI3 = 21,
+    A_SPI3CS = 22,
+    A_SPI3INT = 23,
+    A_SPI4 = 24,
+    A_SPI4CS = 25,
+    A_SPI4GP = 26,
+    A_GPIO = 27,
+    A_GPIODIR = 28,
+    A_TIMER1VAL = 29,
+    A_TIMER1CTRL = 30,
+    A_TIMER2VAL = 31,
+    A_TIMER2CTRL = 32,
+    A_TIMER3VAL = 33,
+    A_TIMER3CTRL = 34,
+    A_SNESPAD = 35,
+    A_PS2 = 36,
+    A_BOOTMODE = 37;
 
 //------------
 //SPI0 (flash) TODO: move this to a separate module
@@ -531,7 +571,6 @@ Keyboard PS2Keyboard (
 
 
 reg [31:0] bus_d_reg = 32'd0;
-reg [31:0] bus_q_reg = 32'd0;
 
 //----
 //MEMORY
@@ -608,13 +647,122 @@ assign OST3_trigger     = (bus_addr == 27'hC0273E && bus_we);
 assign SNES_start       = bus_addr == 27'hC0273F && bus_start;
 
 
-assign bus_q =      //(bus_start && bus_addr >= 27'hC00000 && bus_addr < 27'hC00420) ? VRAM32_cpu_q:
-                    //(bus_start && bus_addr >= 27'hC00420 && bus_addr < 27'hC02422) ? {24'd0, VRAM8_cpu_q}:
-                    //(bus_start && bus_addr >= 27'hC02422 && bus_addr < 27'hC02522) ? {23'd0, VRAMspr_cpu_q}:
-                    (bus_addr >= 27'hC02522 && bus_addr < 27'hC02722) ? ROM_q: // safe because ROM cannot be the destination of a copy instruction
-                    bus_q_reg;
+
+reg [5:0] a_sel;
+
+// Address selection
+always @(bus_addr)
+begin
+    a_sel = 6'd0;
+    if (bus_addr < 27'h800000) a_sel = A_SDRAM;
+    if (bus_addr >= 27'h800000 && bus_addr < 27'hC00000) a_sel = A_FLASH;
+    if (bus_addr >= 27'hC00000 && bus_addr < 27'hC00420) a_sel = A_VRAM32;
+    if (bus_addr >= 27'hC00420 && bus_addr < 27'hC02422) a_sel = A_VRAM8;
+    if (bus_addr >= 27'hC02422 && bus_addr < 27'hC02522) a_sel = A_VRAMSPR;
+    if (bus_addr >= 27'hC02522 && bus_addr < 27'hC02722) a_sel = A_ROM;
+    if (bus_addr == 27'hC02722) a_sel = A_UART0RX;
+    if (bus_addr == 27'hC02723) a_sel = A_UART0TX;
+    if (bus_addr == 27'hC02724) a_sel = A_UART1RX;
+    if (bus_addr == 27'hC02725) a_sel = A_UART1TX;
+    if (bus_addr == 27'hC02726) a_sel = A_UART2RX;
+    if (bus_addr == 27'hC02727) a_sel = A_UART2TX;
+    if (bus_addr == 27'hC02728) a_sel = A_SPI0;
+    if (bus_addr == 27'hC02729) a_sel = A_SPI0CS;
+    if (bus_addr == 27'hC0272A) a_sel = A_SPI0EN;
+    if (bus_addr == 27'hC0272B) a_sel = A_SPI1;
+    if (bus_addr == 27'hC0272C) a_sel = A_SPI1CS;
+    if (bus_addr == 27'hC0272D) a_sel = A_SPI1NINT;
+    if (bus_addr == 27'hC0272E) a_sel = A_SPI2;
+    if (bus_addr == 27'hC0272F) a_sel = A_SPI2CS;
+    if (bus_addr == 27'hC02730) a_sel = A_SPI2NINT;
+    if (bus_addr == 27'hC02731) a_sel = A_SPI3;
+    if (bus_addr == 27'hC02732) a_sel = A_SPI3CS;
+    if (bus_addr == 27'hC02733) a_sel = A_SPI3INT;
+    if (bus_addr == 27'hC02734) a_sel = A_SPI4;
+    if (bus_addr == 27'hC02735) a_sel = A_SPI4CS;
+    if (bus_addr == 27'hC02736) a_sel = A_SPI4GP;
+    if (bus_addr == 27'hC02737) a_sel = A_GPIO;
+    if (bus_addr == 27'hC02738) a_sel = A_GPIODIR;
+    if (bus_addr == 27'hC02739) a_sel = A_TIMER1VAL;
+    if (bus_addr == 27'hC0273A) a_sel = A_TIMER1CTRL;
+    if (bus_addr == 27'hC0273B) a_sel = A_TIMER2VAL;
+    if (bus_addr == 27'hC0273C) a_sel = A_TIMER2CTRL;
+    if (bus_addr == 27'hC0273D) a_sel = A_TIMER3VAL;
+    if (bus_addr == 27'hC0273E) a_sel = A_TIMER3CTRL;
+    if (bus_addr == 27'hC0273F) a_sel = A_SNESPAD;
+    if (bus_addr == 27'hC02740) a_sel = A_PS2;
+    if (bus_addr == 27'hC02741) a_sel = A_BOOTMODE;
+end
+
+reg [31:0] bus_q_wire;
+reg [31:0] bus_q_wire_reg = 32'd0;
+always @(*)
+begin
+    case (a_sel)
+        A_SDRAM:        bus_q_wire = sd_q;
+        A_FLASH:        bus_q_wire = SPIflashReader_q;
+        A_VRAM32:       bus_q_wire = VRAM32_cpu_q;
+        A_VRAM8:        bus_q_wire = VRAM8_cpu_q;
+        A_VRAMSPR:      bus_q_wire = VRAMspr_cpu_q;
+        A_ROM:          bus_q_wire = ROM_q;
+        A_UART0RX:      bus_q_wire = UART0_w_Rx_Byte;
+        //A_UART0TX:      bus_q_wire = 
+        A_UART1RX:      bus_q_wire = UART1_w_Rx_Byte;
+        //A_UART1TX:      bus_q_wire = 
+        A_UART2RX:      bus_q_wire = UART2_w_Rx_Byte;
+        //A_UART2TX:      bus_q_wire = 
+        A_SPI0:         bus_q_wire = SPI0_out;
+        A_SPI0CS:       bus_q_wire = SPI0_cs;
+        A_SPI0EN:       bus_q_wire = SPI0_enable;
+        A_SPI1:         bus_q_wire = SPI1_out;
+        A_SPI1CS:       bus_q_wire = SPI1_cs;
+        A_SPI1NINT:     bus_q_wire = SPI1_nint;
+        A_SPI2:         bus_q_wire = SPI2_out;
+        A_SPI2CS:       bus_q_wire = SPI2_cs;
+        A_SPI2NINT:     bus_q_wire = SPI2_nint;
+        A_SPI3:         bus_q_wire = SPI3_out;
+        A_SPI3CS:       bus_q_wire = SPI3_cs;
+        A_SPI3INT:      bus_q_wire = SPI3_int;
+        A_SPI4:         bus_q_wire = SPI4_out;
+        A_SPI4CS:       bus_q_wire = SPI4_cs;
+        A_SPI4GP:       bus_q_wire = SPI4_GP;
+        A_GPIO:         bus_q_wire = {24'd0, GPO, GPI};
+        //A_GPIODIR:      bus_q_wire = 
+        //A_TIMER1VAL:    bus_q_wire = 
+        //A_TIMER1CTRL:   bus_q_wire = 
+        //A_TIMER2VAL:    bus_q_wire = 
+        //A_TIMER2CTRL:   bus_q_wire = 
+        //A_TIMER3VAL:    bus_q_wire = 
+        //A_TIMER3CTRL:   bus_q_wire = 
+        A_SNESPAD:      bus_q_wire = {16'd0, SNES_state};
+        A_PS2:          bus_q_wire = {24'd0, PS2_scanCode};
+        A_BOOTMODE:     bus_q_wire = {31'd0, boot_mode};
+        default:        bus_q_wire = 32'd0;
+    endcase
+end
+
+always @(posedge clk)
+begin
+    if (reset)
+    begin
+        bus_q_wire_reg <= 32'd0;
+        bus_d_reg <= 32'd0;
+    end
+    else
+    begin
+        bus_d_reg <= bus_data; // latch for copy instructions to SRAM/regs
+
+        // latch output
+        if (bus_done || sd_q_ready) // TODO: Should probably add more ready statements here
+            bus_q_wire_reg <= bus_q_wire;
+    end
+end
 
 reg bus_done_next = 1'b0;
+
+assign bus_q =      (a_sel == A_ROM) ? ROM_q: // safe because ROM cannot be the destination of a copy instruction
+                    bus_q_wire_reg;
+
 
 always @(posedge clk)
 begin
@@ -622,19 +770,16 @@ begin
     begin
         GPO         <= 4'd0;
         SPI0_enable <= 1'b0;
-        bus_q_reg <= 32'd0;
         bus_done <= 1'b0;
         bus_done_next <= 1'b0;
         sd_addr     <= 27'd0;
         sd_d        <= 32'd0;
         sd_we       <= 1'b0;
         sd_start    <= 1'b0;
-        bus_d_reg <= 32'd0;
+        
     end
     else
     begin
-        bus_d_reg <= bus_data; // latch for copy instructions to SRAM/regs
-
 
         if (bus_done_next)
         begin
@@ -646,273 +791,170 @@ begin
             bus_done <= 1'b0;
         end
 
-
-
-        //------
-        //MEMORY
-        //------
-
-        //SDRAM
-        if (bus_start && bus_addr < 27'h800000 && (!bus_done_next))
-        begin
-            sd_addr     <= bus_addr;
-            sd_d        <= bus_data;
-            sd_we       <= bus_we;
-            sd_start    <= bus_start;
-            if (sd_q_ready && sd_initDone)
-            begin
-                bus_done <= 1'b1;
-                //bus_done_next <= 1'b1;
-                sd_addr     <= 24'd0;
-                sd_d        <= 32'd0;
-                sd_we       <= 1'b0;
-                sd_start    <= 1'b0;
-                bus_q_reg       <= sd_q;
-            end
-        end
-
-        //SPI FLASH
-        if (bus_start && bus_addr >= 27'h800000 && bus_addr < 27'hC00000)
-        begin
-            if (SPIflashReader_recvDone || SPI0_enable)
-            begin
-                bus_done <= 1'b1;
-                //if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q_reg <= SPIflashReader_q;
-            end
-        end
-
-        if (bus_addr >= 27'h800000 && bus_addr < 27'hC00000) bus_q_reg <= SPIflashReader_q;
-
-        if (bus_addr >= 27'hC00000 && bus_addr < 27'hC00420) bus_q_reg <= VRAM32_cpu_q;
-
-        if (bus_addr >= 27'hC00420 && bus_addr < 27'hC02422) bus_q_reg <= {24'd0, VRAM8_cpu_q};
-
-        if (bus_addr >= 27'hC02422 && bus_addr < 27'hC02522) bus_q_reg <= {23'd0, VRAMspr_cpu_q};
-
-        if (bus_addr >= 27'hC02522 && bus_addr < 27'hC02722) bus_q_reg <= ROM_q;
-
-        if (bus_addr == 27'hC02722) bus_q_reg <= UART0_w_Rx_Byte;
-
-        //UART0 TX
-        if (bus_start && bus_addr == 27'hC02723)
-        begin
-            if (UART0_w_Tx_Done)
-            begin
-                if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q_reg <= 32'd0;
-            end
-        end
-
-        if (bus_addr == 27'hC02724) bus_q_reg <= UART1_w_Rx_Byte;
-
-        //UART1 TX
-        if (bus_start && bus_addr == 27'hC02725)
-        begin
-            if (UART1_w_Tx_Done)
-            begin
-                if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q_reg <= 32'd0;
-            end
-        end
-
-        if (bus_addr == 27'hC02726) bus_q_reg <= UART2_w_Rx_Byte;
-
-        //UART2 TX
-        if (bus_start && bus_addr == 27'hC02727)
-        begin
-            if (UART2_w_Tx_Done)
-            begin
-                if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q_reg <= 32'd0;
-            end
-        end
-
-
-        //SPI0
-        if (bus_start && bus_addr == 27'hC02728)
-        begin
-            if (SPI0_done)
-            begin
-                if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q_reg <= SPI0_out;
-            end
-        end
-
-        //SPI0 CS
-        if (bus_start && bus_addr == 27'hC02729)
-        begin
-            if (bus_we)
-            begin
-                SPI0_cs <= bus_data[0];
-            end
-            if (!bus_done_next) bus_done_next <= 1'b1;
-            bus_q_reg <= SPI0_cs;
-        end
-
-        //SPI0 enable
-        if (bus_start && bus_addr == 27'hC0272A)
-        begin
-            if (bus_we)
-            begin
-                SPI0_enable <= bus_data[0];
-            end
-            if (!bus_done_next) bus_done_next <= 1'b1;
-            bus_q_reg <= SPI0_enable;
-        end
-
-
-        //SPI1
-        if (bus_start && bus_addr == 27'hC0272B)
-        begin
-            if (SPI1_done)
-            begin
-                if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q_reg <= SPI1_out;
-            end
-        end
-
-        //SPI1 CS
-        if (bus_start && bus_addr == 27'hC0272C)
-        begin
-            if (bus_we)
-            begin
-                SPI1_cs <= bus_data[0];
-            end
-            if (!bus_done_next) bus_done_next <= 1'b1;
-            bus_q_reg <= SPI1_cs;
-        end
-
-        if (bus_addr == 27'hC0272D) bus_q_reg <= SPI1_nint;
-
-        //SPI2
-        if (bus_start && bus_addr == 27'hC0272E)
-        begin
-            if (SPI2_done)
-            begin
-                if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q_reg <= SPI2_out;
-            end
-        end
-
-
-        //SPI2 CS
-        if (bus_start && bus_addr == 27'hC0272F)
-        begin
-            if (bus_we)
-            begin
-                SPI2_cs <= bus_data[0];
-            end
-            if (!bus_done_next) bus_done_next <= 1'b1;
-            bus_q_reg <= SPI2_cs;
-        end
-
-        if (bus_addr == 27'hC02730) bus_q_reg <= SPI2_nint;
-
-        //SPI3
-        if (bus_start && bus_addr == 27'hC02731)
-        begin
-            if (SPI3_done)
-            begin
-                if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q_reg <= SPI3_out;
-            end
-        end
-
-        //SPI3 CS
-        if (bus_start && bus_addr == 27'hC02732)
-        begin
-            if (bus_we)
-            begin
-                SPI3_cs <= bus_data[0];
-            end
-            if (!bus_done_next) bus_done_next <= 1'b1;
-            bus_q_reg <= SPI3_cs;
-        end
-
-        if (bus_addr == 27'hC02733) bus_q_reg <= SPI3_int;
-
-        //SPI4
-        if (bus_start && bus_addr == 27'hC02734)
-        begin
-            if (SPI4_done)
-            begin
-                if (!bus_done_next) bus_done_next <= 1'b1;
-                bus_q_reg <= SPI4_out;
-            end
-        end
-
-        //SPI4 CS
-        if (bus_start && bus_addr == 27'hC02735)
-        begin
-            if (bus_we)
-            begin
-                SPI4_cs <= bus_data[0];
-            end
-            if (!bus_done_next) bus_done_next <= 1'b1;
-            bus_q_reg <= SPI4_cs;
-        end
-
-        if (bus_addr == 27'hC02736) bus_q_reg <= SPI4_GP;
-
-        //GPIO TODO: implement true GPIO
-        if (bus_start && bus_addr == 27'hC02737)
-        begin
-            if (bus_we)
-            begin
-                GPO <= bus_data[7:4];
-            end
-            if (!bus_done_next) bus_done_next <= 1'b1;
-            bus_q_reg <= {24'd0, GPO, GPI};
-        end
-
-        //GPIO Direction TODO: implement
-        if (bus_start && bus_addr == 27'hC02738)
-        begin
-            if (!bus_done_next) bus_done_next <= 1'b1;
-            bus_q_reg <= 32'd0;
-        end
-
-
-        if (bus_start && bus_addr == 27'hC0273F)
-        begin
-            if (SNES_done)
-                begin
-                    if (!bus_done_next) bus_done_next <= 1'b1;
-                    bus_q_reg <= {16'd0, SNES_state};
-                end
-        end
-
-        if (bus_addr == 27'hC02740) bus_q_reg <= {24'd0, PS2_scanCode};
-
-        if (bus_addr == 27'hC02741) bus_q_reg <= {31'd0, boot_mode};
-
-        //Instant return addresses
         if (bus_start)
         begin
-            //VRAM & ROM
-            if (bus_addr >= 27'hC00000 && bus_addr < 27'hC02522) // VRAM
-                if (bus_we)
+            case (a_sel)
+                A_SDRAM:
+                begin
+                    if (sd_q_ready && sd_initDone)
+                    begin
+                        bus_done <= 1'b1;
+                        sd_addr     <= 24'd0;
+                        sd_d        <= 32'd0;
+                        sd_we       <= 1'b0;
+                        sd_start    <= 1'b0;
+                    end
+                    else begin
+                        sd_addr     <= bus_addr;
+                        sd_d        <= bus_data;
+                        sd_we       <= bus_we;
+                        sd_start    <= bus_start;
+                    end
+                end
+                A_FLASH:
+                begin
+                    if (SPIflashReader_recvDone || SPI0_enable)
+                        bus_done <= 1'b1;
+                end
+
+                A_UART0TX:
+                begin
+                    if (UART0_w_Tx_Done)
+                        bus_done <= 1'b1;
+                end
+
+                A_UART1TX:
+                begin
+                    if (UART1_w_Tx_Done)
+                        bus_done <= 1'b1;
+                end
+
+                A_UART2TX:
+                begin
+                    if (UART2_w_Tx_Done)
+                        bus_done <= 1'b1;
+                end
+
+                A_SPI0:
+                begin
+                    if (SPI0_done)
+                        bus_done <= 1'b1;
+                end
+
+                A_SPI0CS:
+                begin
+                    if (bus_we)
+                    begin
+                        SPI0_cs <= bus_data[0];
+                    end
                     bus_done <= 1'b1;
-                else
+                end
+
+                A_SPI0EN:
+                begin
+                    if (bus_we)
+                    begin
+                        SPI0_enable <= bus_data[0];
+                    end
+                    bus_done <= 1'b1;
+                end
+
+                A_SPI1:
+                begin
+                    if (SPI1_done)
+                        bus_done <= 1'b1;
+                end
+
+                A_SPI1CS:
+                begin
+                    if (bus_we)
+                    begin
+                        SPI1_cs <= bus_data[0];
+                    end
+                    bus_done <= 1'b1;
+                end
+
+                A_SPI2:
+                begin
+                    if (SPI2_done)
+                        bus_done <= 1'b1;
+                end
+
+                A_SPI2CS:
+                begin
+                    if (bus_we)
+                    begin
+                        SPI2_cs <= bus_data[0];
+                    end
+                    bus_done <= 1'b1;
+                end
+
+                A_SPI3:
+                begin
+                    if (SPI3_done)
+                        bus_done <= 1'b1;
+                end
+
+                A_SPI3CS:
+                begin
+                    if (bus_we)
+                    begin
+                        SPI3_cs <= bus_data[0];
+                    end
+                    bus_done <= 1'b1;
+                end
+
+                A_SPI4:
+                begin
+                    if (SPI4_done)
+                        bus_done <= 1'b1;
+                end
+
+                A_SPI4CS:
+                begin
+                    if (bus_we)
+                    begin
+                        SPI4_cs <= bus_data[0];
+                    end
+                    bus_done <= 1'b1;
+                end
+
+                A_GPIO:
+                begin
+                    if (bus_we)
+                    begin
+                        GPO <= bus_data[7:4];
+                    end
+                        bus_done <= 1'b1;
+                end
+
+                A_SNESPAD:
+                begin
+                    if (SNES_done)
+                        bus_done <= 1'b1;
+                end
+
+                A_VRAM8, A_VRAM32, A_VRAMSPR:
+                begin
+                    if (bus_we)
+                        bus_done <= 1'b1;
+                    else
+                        if (!bus_done_next) bus_done_next <= 1'b1;
+                end
+
+                A_ROM:
+                begin
+                    bus_done <= 1'b1;
+                end
+
+                default:
+                begin
                     if (!bus_done_next) bus_done_next <= 1'b1;
-            if (bus_addr >= 27'hC02522 && bus_addr < 27'hC02722) // ROM
-                    bus_done <= 1'b1;
-            if (bus_addr == 27'hC02722 ||
-                bus_addr == 27'hC02724 ||
-                bus_addr == 27'hC02726 ||
-                bus_addr == 27'hC0272D ||
-                bus_addr == 27'hC02730 ||
-                bus_addr == 27'hC02733 ||
-                bus_addr == 27'hC02736 ||
-                bus_addr == 27'hC02739 ||
-                bus_addr == 27'hC0273A ||
-                bus_addr == 27'hC0273B ||
-                bus_addr == 27'hC0273C ||
-                bus_addr == 27'hC0273D ||
-                bus_addr == 27'hC0273E ||
-                bus_addr > 27'hC0273F)
-                if (!bus_done_next) bus_done_next <= 1'b1;
+                end
+
+            endcase
+
+                
         end
 
     end
