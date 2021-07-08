@@ -5,8 +5,6 @@
 ; 0x400_0001     Frame counter previous
 
 
-; for debugging to pc
-`include lib/UART.asm
 ; for basic functions
 `include lib/STD.asm
 ; for graphics operations
@@ -42,20 +40,6 @@ Main:
     jump CopyLevelToBG
 
 
-
-    ; Sprite test
-    load32 0xC02632 r1
-
-    load 64 r2
-    write 0 r1 r2
-    load 196 r2
-    write 1 r1 r2
-    load 21 r2
-    write 2 r1 r2
-    load 0 r2
-    shiftl r2 4 r2
-    write 3 r1 r2
-
     ; Reset RAM
     load32 0x400000 r1
     write 0 r1 r0
@@ -68,19 +52,6 @@ Main:
 
 
 GameLoop:
-    ; SNES controller address
-    load32 0xC02622 r1      ; r1 = Controller address 0xC02622
-    read 0 r1 r2            ; r2 = button data
-
-    and r2 0b10000000 r3
-    beq r3 r0 5
-        load32 0xC02632 r1
-        read 0 r1 r2
-        add r2 1 r2
-        write 0 r1 r2
-
-
-
 
     WaitNewFrame:
         load32 0x400000 r1
@@ -107,7 +78,7 @@ CopyLevelToBG:
     ; vram address
     load32 0xC00420 r2              ; r2 = vram addr 1056+4096 0xC01420          
 
-    add r2 256 r2                 ; start at 4th line
+    add r2 0 r2                 ; start at 4th line
 
     CopyLevelToBG_Line:
         ; loop variables
@@ -183,20 +154,6 @@ CopyLevelToBG:
 
 
 
-
-
-
-
-WINDOWTEXT:
-.ds "Graphics printing test :O"
-
-BACKGROUNDTILES:
-.db 176 176 177 177 178 178
-
-
-
-
-
 Int1:
     reti
 
@@ -210,6 +167,9 @@ Int4:
     ; backup regs
     push r1
     push r2
+    push r3
+    push r4
+    push r5
 
     load32 0x400000 r1      ; r1 = frame counter address
 
@@ -217,7 +177,38 @@ Int4:
     add r2 1 r2             ; increase frame counter
     write 0 r1 r2           ; write new frame counter back
 
+
+
+
+
+    ; x fine address 0xC02421
+    load 0x2421 r1
+    loadhi 0xC0 r1
+
+    ; x offset address 0xC02420
+    load 0x2420 r2
+    loadhi 0xC0 r2
+
+    read 0 r1 r3 ; fine value
+    read 0 r2 r4 ; offset value
+
+    ; check if we have to increase tile offset
+    and r3 0b111 r5
+    sub r5 0b111 r5
+    bne r5 r0 3
+        add r4 1 r4
+        write 0 r2 r4
+
+
+    add r3 1 r3
+    write 0 r1 r3
+
+    
+
     ; restore regs
+    pop r5
+    pop r4
+    pop r3
     pop r2
     pop r1
 

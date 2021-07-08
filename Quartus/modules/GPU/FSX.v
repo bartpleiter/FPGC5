@@ -118,9 +118,9 @@ wire [7:0] rByte;
 wire [7:0] gByte;
 wire [7:0] bByte;
 
-assign rByte = r[0] ? {r, 5'b11111} : {r, 5'b00000};
-assign gByte = g[0] ? {g, 5'b11111} : {g, 5'b00000};
-assign bByte = b[0] ? {b, 6'b111111} : {b, 6'b000000};
+assign rByte = (r == 3'd0) ?  {r, 5'b00000} : {r, 5'b11111};
+assign gByte = (g == 3'd0) ?  {g, 5'b00000} : {g, 5'b11111};
+assign bByte = (b == 2'd0) ?  {b, 6'b000000} : {b, 6'b111111};
 
 
 // Convert VGA signal to HDMI signals
