@@ -8,9 +8,14 @@ import sys
 from time import sleep
 
 # read file to send
-filename = "code.bin" #default filename to send
+filename = "code.bin" # default file to send
 if len(sys.argv) >= 2:
     filename = sys.argv[1]
+
+outname = filename # name of the file on FPGC
+
+if len(sys.argv) >= 3:
+    outname = sys.argv[2]
 
 with open(filename, "rb") as f:
     binfile = f.read()
@@ -31,7 +36,7 @@ for attempt in range(5):
         # notify write USB operation
         bdata = b"USB\n"
         # add path to frame
-        bdata = bdata + filename.encode('utf-8') + b"\0"
+        bdata = bdata + outname.encode('utf-8') + b"\0"
         s.send(bdata)
         rcv = s.recv(1024)
 
