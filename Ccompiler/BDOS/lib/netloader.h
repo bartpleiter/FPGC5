@@ -320,6 +320,8 @@ int NETLOADER_checkDone()
         //char* p = (char*) RUN_ADDR;
         //GFX_PrintConsole(p);
 
+        BDOS_Backup();
+
         // Indicate that a user program is running
         UserprogramRunning = 1;
 

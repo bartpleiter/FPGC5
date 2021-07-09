@@ -26,6 +26,15 @@ int main()
         GFX_printBGColored(((int)testTiles) + 4, 4, GFX_BackgroundPosFromXY(x*4, y+2), x + 1);
     }
 
+    // Any key to quit
+    while (1)
+    {
+        if (HID_FifoAvailable())
+        {
+            int c = HID_FifoRead();
+            return 'q';
+        }
+    }
 
     return 'q';
 }

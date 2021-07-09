@@ -57,7 +57,7 @@ void SHELL_init()
 }
 
 
-// Checks if p starts with cmd, followed by a space or a 0 terminator
+// Checks if p starts with cmd, followed by a space or a \0
 // Returns 1 if true, 0 otherwise
 int SHELL_commandCompare(char* p, char* cmd)
 {
@@ -120,7 +120,7 @@ int SHELL_numberOfArguments(char* p)
 
 // Implementation of ldir command
 // Lists directory given in arg
-// Argument is passed in arg and should end with a 0 terminator (not space)
+// Argument is passed in arg and should end with a \0 (not space)
 void SHELL_ldir(char* arg)
 {
     // backup current path
@@ -151,16 +151,25 @@ void SHELL_ldir(char* arg)
 
 // Implementation of run command
 // Loads file to memory at RUN_ADDR and jumps to it
-// Argument is passed in arg and should end with a 0 terminator (not space)
-void SHELL_runFile(char* arg)
+// Argument is passed in arg and should end with a \0 (not space)
+// If useBin is set, it will look for the file in the /BIN folder
+void SHELL_runFile(char* arg, int useBin)
 {
     // backup current path
     char* p = (char *) FS_PATH_ADDR;
     char* pb = (char *) SHELL_PATH_BACKUP;
     strcpy(pb, p);
 
-    // create full path using arg
-    FS_getFullPath(arg);
+    if (useBin)
+    {
+        strcpy(p, "/BIN/");
+        strcat(p, arg);
+    }
+    else
+    {
+        // create full path using arg
+        FS_getFullPath(arg);
+    }
 
     // if the resulting path is correct (can be file or directory)
     if (FS_sendFullPath(p) == ANSW_USB_INT_SUCCESS)
@@ -208,6 +217,8 @@ void SHELL_runFile(char* arg)
                     // end with a newline for the next shell prompt
                     GFX_PrintConsole("done!\n");
 
+                    BDOS_Backup();
+
                     // Indicate that a user program is running
                     UserprogramRunning = 1;
 
@@ -250,6 +261,8 @@ void SHELL_runFile(char* arg)
 
                     // Indicate that no user program is running anymore
                     UserprogramRunning = 0;
+
+                    BDOS_Restore();
                 
                 }
                 else
@@ -259,10 +272,20 @@ void SHELL_runFile(char* arg)
                 GFX_PrintConsole("E: Program is too large\n");
         }
         else
-            GFX_PrintConsole("E: Could not open file\n");
+        {
+            if (useBin)
+                GFX_PrintConsole("E: Unknown command\n");
+            else
+                GFX_PrintConsole("E: Could not open file\n");
+        }
     }
     else
-        GFX_PrintConsole("E: Invalid path\n");
+    {
+        if (useBin)
+            GFX_PrintConsole("E: Unknown command\n");
+        else
+            GFX_PrintConsole("E: Invalid path\n");
+    }
 
     // restore path
     strcpy(p, pb);
@@ -271,7 +294,7 @@ void SHELL_runFile(char* arg)
 
 // Implementation of print command
 // Prints file to screen
-// Argument is passed in arg and should end with a 0 terminator (not space)
+// Argument is passed in arg and should end with a \0 (not space)
 void SHELL_printFile(char* arg)
 {
     // backup current path
@@ -447,7 +470,7 @@ void SHELL_parseCommand(char* p)
         }
         else
         {
-            SHELL_runFile(p+4); // pointer to start of first arg, which ends with \0
+            SHELL_runFile(p+4, 0); // pointer to start of first arg, which ends with \0
         }
     }
 
@@ -562,117 +585,8 @@ void SHELL_parseCommand(char* p)
     }
     else
     {
-        // Check for file in /BIN directory
-
-        // backup current path
-        char* x = (char *) FS_PATH_ADDR;
-        char* pb = (char *) SHELL_PATH_BACKUP;
-        strcpy(pb, x);
-
-        // create full path using argument
-        // TODO: replace space in p by \0
-        strcpy(x, "/BIN/");
-        strcat(x, p);
-
-        // if the resulting path is correct (can be file or directory)
-        if (FS_sendFullPath(x) == ANSW_USB_INT_SUCCESS)
-        {
-
-            // if we can successfully open the file (not directory)
-            if (FS_open() == ANSW_USB_INT_SUCCESS)
-            {
-                int fileSize = FS_getFileSize();
-
-                if (fileSize <= 0x300000)
-                {
-                    if (FS_setCursor(0) == ANSW_USB_INT_SUCCESS)
-                    {
-                        // read the file in chunks
-                        char *b = (char *) RUN_ADDR;  
-
-                        int bytesSent = 0;
-
-                        // loop until all bytes are sent
-                        while (bytesSent != fileSize)
-                        {
-                            int partToSend = fileSize - bytesSent;
-                            // send in parts of SHELL_PROGRAM_READ_CHUNK_SIZE
-                            if (partToSend > SHELL_PROGRAM_READ_CHUNK_SIZE)
-                            partToSend = SHELL_PROGRAM_READ_CHUNK_SIZE;
-
-                            // read from usb to buffer in word mode
-                            if (FS_readFile(b, partToSend, 1) != ANSW_USB_INT_SUCCESS)
-                                uprintln("W: Error reading file\n");
-
-                            // Update the amount of bytes sent
-                            bytesSent += partToSend;
-                            b += MATH_div(partToSend, 4); // divide by 4 because one address is 4 bytes
-                        }
-
-                        // close file after done
-                        FS_close();
-
-                        // Indicate that a user program is running
-                        UserprogramRunning = 1;
-
-                        // jump to the program
-                        ASM("\
-                        push r1 ;\
-                        push r2 ;\
-                        push r3 ;\
-                        push r4 ;\
-                        push r5 ;\
-                        push r6 ;\
-                        push r7 ;\
-                        push r8 ;\
-                        push r9 ;\
-                        push r10 ;\
-                        push r11 ;\
-                        push r12 ;\
-                        push r13 ;\
-                        push rbp ;\
-                        push rsp ;\
-                        savpc r1 ;\
-                        push r1 ;\
-                        jump 0x400000 ;\
-                        pop rsp ;\
-                        pop rbp ;\
-                        pop r13 ;\
-                        pop r12 ;\
-                        pop r11 ;\
-                        pop r10 ;\
-                        pop r9 ;\
-                        pop r8 ;\
-                        pop r7 ;\
-                        pop r6 ;\
-                        pop r5 ;\
-                        pop r4 ;\
-                        pop r3 ;\
-                        pop r2 ;\
-                        pop r1 ;\
-                        ");
-
-                        // Indicate that no user program is running anymore
-                        UserprogramRunning = 0;
-
-                        // restore path
-                        strcpy(x, pb);
-
-                        // return on successful execution
-                        return;
-                    
-                    }
-                   
-                }
-               
-            }
-           
-        }
-
-        // restore path
-        strcpy(x, pb);
-
-        GFX_PrintConsole("E: Unknown command\n");
+        SHELL_runFile(p, 1);
+        return;
     }
 }
 

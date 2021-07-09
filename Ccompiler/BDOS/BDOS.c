@@ -1,13 +1,16 @@
 // Bart's Drive Operating System(BDOS)
 /* TODO:
-- Implement Syscalls
-- More shell functionality
-- VRAM8 backup and restore (for when loading a program from shell)
+- Implement more Syscalls (network?)
+- More shell functionality (folders, copy, move, etc.)
 */
 
 // Flag that indicates whether a user program is running
 // Defined above the defines, so netloader and shell can also access it
 int UserprogramRunning = 0;
+
+// These functions are used by some of the other libraries
+void BDOS_Backup();
+void BDOS_Restore();
 
 // Note that these directories are relative to the directory from this file
 #include "lib/math.h"
@@ -68,14 +71,19 @@ void BDOS_Reinit_VRAM()
     GFX_cursor = 0;
 }
 
-void BDOS_Backup_VRAM()
+void BDOS_Backup()
 {
-    // TODO
+    // TODO look into what to backup
 }
 
-void BDOS_Restore_VRAM()
+void BDOS_Restore()
 {
-    // TODO
+    // Restore graphics (minimally)
+    GFX_copyPaletteTable((int)DATA_PALETTE_DEFAULT);
+    GFX_copyPatternTable((int)DATA_ASCII_DEFAULT);
+
+    // Restore netloader
+    NETLOADER_init(NETLOADER_SOCKET);
 }
 
 
@@ -133,6 +141,7 @@ int main()
         // If we received a program, run it and print shell prompt afterwards
         if (NETLOADER_checkDone())
         {
+            BDOS_Restore();
             SHELL_print_prompt();
         }
     }

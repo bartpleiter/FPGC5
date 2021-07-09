@@ -527,7 +527,7 @@ int wizReadRecvData(int s, char* buf, int buflen)
     wizCmd(s, CR_RECV);
 
   // Terminate buffer for printing in case the data was a string
-  //*(buf + buflen) = 0;
+  *(buf + buflen) = 0;
 
   return 1;
 }
