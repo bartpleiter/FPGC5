@@ -1,5 +1,5 @@
 # Progress
-Here I keep a list of my latest progress and a TODO list
+Here I keep a list of my latest progress and a TODO list (outdated, do not feel to update anymore)
 
 ## Big Progress log (truncated to latest progress, last entry at the bottom of the list)
 - Reimplemented SPI module. Now uses 6.25MHz SPI clock (verified stable for CH376)
