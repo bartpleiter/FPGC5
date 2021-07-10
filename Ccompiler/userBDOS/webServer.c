@@ -340,50 +340,51 @@ int main()
 
     while(1)
     {
-        if (HID_FifoAvailable())
-        {
-            return 'q';
-        }
-        // handle all sockets
-        for (int s = 0; s < 8; s++)
-        {
-          // Get status for socket s
-          sxStatus = wizGetSockReg8(s, SnSR);
+      if (HID_FifoAvailable())
+      {
+        HID_FifoRead(); // remove it from the buffer
+        return 'q';
+      }
+      // handle all sockets
+      for (int s = 0; s < 8; s++)
+      {
+        // Get status for socket s
+        sxStatus = wizGetSockReg8(s, SnSR);
 
-          if (sxStatus == SOCK_CLOSED)
-          { 
-            // Open the socket when closed
-            if (WIZNET_DEBUG)
-              uprintln("Socket closed");
-            // Set socket s in TCP Server mode at port 80
-            wizInitSocketTCP(s, 80);
-          }
-          else if (sxStatus == SOCK_ESTABLISHED)
-          {
-            // Handle session when a connection is established
-            // Also reinitialize socket
-            if (WIZNET_DEBUG)
-              uprintln("Got connection");
-            wizHandleSession(s);
-            // Set socket s in TCP Server mode at port 80
-            wizInitSocketTCP(s, 80);
-          }
-          else if (sxStatus == SOCK_LISTEN || sxStatus == SOCK_SYNSENT || sxStatus == SOCK_SYNRECV)
-          {
-            // Do nothing in these cases
-          }
-          else
-          {
-            // In other cases, reset the socket
-            // Set socket s in TCP Server mode at port 80
-            if (WIZNET_DEBUG)
-              uprintln("Resetting socket");
-            wizInitSocketTCP(s, 80);
-          }
+        if (sxStatus == SOCK_CLOSED)
+        { 
+          // Open the socket when closed
+          if (WIZNET_DEBUG)
+            uprintln("Socket closed");
+          // Set socket s in TCP Server mode at port 80
+          wizInitSocketTCP(s, 80);
         }
-        // Delay a few milliseconds
-        // Should (could) eventually be replaced by an interrupt checker
-        delay(10);
+        else if (sxStatus == SOCK_ESTABLISHED)
+        {
+          // Handle session when a connection is established
+          // Also reinitialize socket
+          if (WIZNET_DEBUG)
+            uprintln("Got connection");
+          wizHandleSession(s);
+          // Set socket s in TCP Server mode at port 80
+          wizInitSocketTCP(s, 80);
+        }
+        else if (sxStatus == SOCK_LISTEN || sxStatus == SOCK_SYNSENT || sxStatus == SOCK_SYNRECV)
+        {
+          // Do nothing in these cases
+        }
+        else
+        {
+          // In other cases, reset the socket
+          // Set socket s in TCP Server mode at port 80
+          if (WIZNET_DEBUG)
+            uprintln("Resetting socket");
+          wizInitSocketTCP(s, 80);
+        }
+      }
+      // Delay a few milliseconds
+      // Should (could) eventually be replaced by an interrupt checker
+      delay(10);
     }
 
     return 'q';

@@ -363,8 +363,8 @@ void SHELL_printFile(char* arg)
 }
 
 
-// Removes file
-void SHELL_removeFile(char* arg)
+// Removes file/dir
+void SHELL_remove(char* arg)
 {
     // backup current path
     char* p = (char *) FS_PATH_ADDR;
@@ -379,7 +379,8 @@ void SHELL_removeFile(char* arg)
     {
 
         // if we can successfully open the file (not directory)
-        if (FS_open() == ANSW_USB_INT_SUCCESS)
+        int retval = FS_open();
+        if (retval == ANSW_USB_INT_SUCCESS)
         {
             if (FS_delete() == ANSW_USB_INT_SUCCESS)
             {
@@ -388,8 +389,17 @@ void SHELL_removeFile(char* arg)
             else
                 GFX_PrintConsole("E: Could not delete file\n");
         }
+        else if (retval == ANSW_ERR_OPEN_DIR)
+        {
+            if (FS_delete() == ANSW_USB_INT_SUCCESS)
+            {
+                GFX_PrintConsole("Dir removed\n");
+            }
+            else
+                GFX_PrintConsole("E: Could not delete dir\n");
+        }
         else
-            GFX_PrintConsole("E: Could not find file\n");
+            GFX_PrintConsole("E: Could not find file or dir\n");
     }
     else
         GFX_PrintConsole("E: Invalid path\n");
@@ -443,6 +453,51 @@ void SHELL_createFile(char* arg)
     strcpy(p, pb);
 }
 
+
+// Creates directory in current directory
+void SHELL_createDir(char* arg)
+{
+    // backup current path
+    char* p = (char *) FS_PATH_ADDR;
+    char* pb = (char *) SHELL_PATH_BACKUP;
+    strcpy(pb, p);
+
+    // if current path is correct (can be file or directory)
+    if (FS_sendFullPath(p) == ANSW_USB_INT_SUCCESS)
+    {
+        int retval = FS_open();
+        // check that we can open the path
+        if (retval == ANSW_USB_INT_SUCCESS || retval == ANSW_ERR_OPEN_DIR)
+        {
+            // check length of directory, must be 8
+            if (strlen(arg) <= 8)
+            {
+                // uppercase filename
+                strToUpper(arg);
+                // send filename
+                FS_sendSinglePath(arg);
+
+                // create the directory
+                if (FS_createDir() == ANSW_USB_INT_SUCCESS)
+                {
+                    GFX_PrintConsole("Dir created\n");
+                }
+                else
+                    GFX_PrintConsole("E: Could not create dir\n");
+            }
+            else
+                GFX_PrintConsole("E: Filename too long\n");
+        }
+        else
+            GFX_PrintConsole("E: Invalid path\n");
+    }
+    else
+        GFX_PrintConsole("E: Invalid path\n");
+
+    // restore path
+    strcpy(p, pb);
+}
+
 // Parses command line buffer and executes command if found
 // Commands to parse:
 // [x] RUN
@@ -451,10 +506,9 @@ void SHELL_createFile(char* arg)
 // [] HELP/?
 // [x] CLEAR
 // [x] PRINT
-// [] MKDIR
-// [] RMDIR
+// [x] MKDIR
 // [x] MKFILE
-// [x] RMFILE
+// [x] RM
 // [] DUMP (print from memory address)
 void SHELL_parseCommand(char* p)
 {
@@ -546,8 +600,8 @@ void SHELL_parseCommand(char* p)
         }
     }
 
-    // RMFILE
-    else if (SHELL_commandCompare(p, "rmfile"))
+    // RM
+    else if (SHELL_commandCompare(p, "rm"))
     {
         int args = SHELL_numberOfArguments(p);
         // if incorrect number of arguments
@@ -558,7 +612,7 @@ void SHELL_parseCommand(char* p)
         }
         else
         {
-            SHELL_removeFile(p+7); // pointer to start of first arg, which ends with \0
+            SHELL_remove(p+3); // pointer to start of first arg, which ends with \0
         }
     }
 
@@ -575,6 +629,22 @@ void SHELL_parseCommand(char* p)
         else
         {
             SHELL_createFile(p+7); // pointer to start of first arg, which ends with \0
+        }
+    }
+
+    // MKDIR
+    else if (SHELL_commandCompare(p, "mkdir"))
+    {
+        int args = SHELL_numberOfArguments(p);
+        // if incorrect number of arguments
+        if (args != 1)
+        {
+            GFX_PrintConsole("E: Expected 1 argument\n");
+            return;
+        }
+        else
+        {
+            SHELL_createDir(p+6); // pointer to start of first arg, which ends with \0
         }
     }
 
