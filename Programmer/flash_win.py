@@ -35,7 +35,7 @@ parser.add_argument('-l', type=int, dest='length', default=4096,
 parser.add_argument('-a', type=int, dest='address', default=0,
                     help='address offset (TBI)')
 
-parser.add_argument('--rate', type=int, dest='baud_rate', default=115200,
+parser.add_argument('--rate', type=int, dest='baud_rate', default=1000000,
                     help='baud-rate of serial connection')
 
 parser.add_argument('-v', dest='verify', default=None,

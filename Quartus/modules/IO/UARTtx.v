@@ -21,7 +21,7 @@ module UARTtx(
     output  o_Tx_Done
     );
 
-localparam CLKS_PER_BIT   = 434;
+localparam CLKS_PER_BIT   = 50; //1MBaud
 localparam s_IDLE = 3'b000;
 localparam s_TX_START_BIT = 3'b001;
 localparam s_TX_DATA_BITS = 3'b010;

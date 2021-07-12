@@ -319,7 +319,7 @@ int16_t produceSample()
 // Things to do at bootup
 void setup() 
 {
-  MidiSerial.begin(115200); // setup serial for MIDI and PC communication
+  MidiSerial.begin(1000000); // setup serial for MIDI and PC communication
 
   //initialize i2s
   i2s_driver_install(I2S_PORT, &i2s_config, 0, NULL);

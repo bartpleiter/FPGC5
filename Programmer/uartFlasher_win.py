@@ -17,7 +17,7 @@ if len(sys.argv) > 1:
     if (sys.argv[1] == "testMode"):
         testReturnMode = True
 
-port = serial.Serial("COM3", baudrate=115200, timeout=None)
+port = serial.Serial("COM3", baudrate=1000000, timeout=None)
 
 sleep(0.1) # give the FPGC time to reset, even though it also works without this delay
 

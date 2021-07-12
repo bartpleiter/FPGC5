@@ -498,17 +498,80 @@ void SHELL_createDir(char* arg)
     strcpy(p, pb);
 }
 
+
+// Copies a file. TODO: add dir (recursive) support
+void SHELL_copy(char* src, char* dst)
+{
+    // backup current path
+    char* p = (char *) FS_PATH_ADDR;
+    char* pb = (char *) SHELL_PATH_BACKUP;
+    strcpy(pb, p);
+
+    // if current path is correct (can be file or directory)
+    if (FS_sendFullPath(p) == ANSW_USB_INT_SUCCESS)
+    {
+        int retval = FS_open();
+        // check that we can open the path
+        if (retval == ANSW_USB_INT_SUCCESS || retval == ANSW_ERR_OPEN_DIR)
+        {
+            /*
+            [] check src file is valid
+            [] create dst file using SHELL_createFile (check on success)
+            [] in chunks of ?KiB,
+                [] open src
+                [] set cursor to start of chunk
+                [] read chunk into buffer
+                [] close src
+                [] open dst
+                [] set cursor to start of chunk
+                [] write buffer into dst
+                [] close dst
+            */
+        }
+        else
+            GFX_PrintConsole("E: Invalid path\n");
+    }
+    else
+        GFX_PrintConsole("E: Invalid path\n");
+
+    // restore path
+    strcpy(p, pb);
+}
+
+
+// Print help text
+void SHELL_printHelp()
+{
+    GFX_PrintConsole("BDOS for FPGC\n");
+    GFX_PrintConsole("Currently supported commands:\n");
+    GFX_PrintConsole("- RUN    [arg1]\n");
+    GFX_PrintConsole("- CD     [arg1]\n");
+    GFX_PrintConsole("- LS     [arg1]\n");
+    GFX_PrintConsole("- CLEAR\n");
+    GFX_PrintConsole("- PRINT  [arg1]\n");
+    GFX_PrintConsole("- MKDIR  [arg1]\n");
+    GFX_PrintConsole("- MKFILE [arg1]\n");
+    GFX_PrintConsole("- RM     [arg1]\n");
+    GFX_PrintConsole("- HELP\n");
+
+    GFX_PrintConsole("\nExtra info:\n");
+    GFX_PrintConsole("Paths can be relative or absolute\n");
+    GFX_PrintConsole("Unrecognized commands will be looked\n up in the /BIN dir, if a file matches\n the command then it will be executed\n");
+}
+
+
 // Parses command line buffer and executes command if found
 // Commands to parse:
 // [x] RUN
 // [x] CD
 // [x] LS
-// [] HELP/?
 // [x] CLEAR
 // [x] PRINT
 // [x] MKDIR
 // [x] MKFILE
 // [x] RM
+// [x] HELP
+// [] CP
 // [] DUMP (print from memory address)
 void SHELL_parseCommand(char* p)
 {
@@ -645,6 +708,29 @@ void SHELL_parseCommand(char* p)
         else
         {
             SHELL_createDir(p+6); // pointer to start of first arg, which ends with \0
+        }
+    }
+
+    // HELP
+    else if (SHELL_commandCompare(p, "help"))
+    {
+        SHELL_printHelp();
+    }
+
+    // CP
+    else if (SHELL_commandCompare(p, "cp"))
+    {
+        int args = SHELL_numberOfArguments(p);
+        // if incorrect number of arguments
+        if (args != 2)
+        {
+            GFX_PrintConsole("E: Expected 2 argument\n");
+            return;
+        }
+        else
+        {
+            char* secondArgLocation = p+0; // TODO: find pointer location of second space
+            SHELL_copy(p+3, secondArgLocation); // pointer first arg, which ends with space, and second arg which ends with \0
         }
     }
 
