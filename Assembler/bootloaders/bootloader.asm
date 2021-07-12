@@ -27,7 +27,7 @@ Main:
 
 
     ; copy window tile table
-    load32 0xC015E4 r3      ; r3 = data dest: window tile address 0xC01420 + position offset
+    load32 0xC015E5 r3      ; r3 = data dest: window tile address 0xC01420 + position offset
     addr2reg TILETABLE r2   ; r2 = data source
 
     load 0 r4               ; r4 = loop counter
@@ -252,9 +252,9 @@ UARTBOOTLOADERDATAPART2:
 TILETABLE:
 .db 0  1  2  3  4  5  0  0  0  0  0  0  0  0  0  0
 .db 6  7  8  9  10 11 12 0  0  0  0  0  0  0  0  0
-.db 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28
-.db 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44
-.db 45 46 47 48 49 50 51 0  0  52 53 54 55 56 0  57
+.db 13 14 15 16 17 18 19 20 21 22 23 24 25 26 0  0
+.db 29 30 31 32 33 34 35 36 37 38 39 40 41 42 0  0
+.db 45 46 47 48 49 50 51 0  0  52 53 54 55 56 0  0
 .db 58 59 60 61 62 63 0  0  0  0  0  0  0  0  0  0
 
 LOGOTABLE: ; 252 words long
