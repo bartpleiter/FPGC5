@@ -20,3 +20,4 @@ Verilog/output/*.ppm
 **/*.pyc
 Quartus/*.ipregen.rpt
 C/B32C/.depend
+C/B32C/*.o
