@@ -5,7 +5,7 @@
 echo "Processing: $1"
 # compile and send
 echo "Compiling C code to B332 ASM"
-if (python3 B322_shivyC.py $1 --bdos > ../Assembler/code.asm) # compile c code with BDOS flag and write compiled code to code.asm in Assembler folder
+if (pypy3 B322_shivyC.py $1 --bdos > ../Assembler/code.asm) # compile c code with BDOS flag and write compiled code to code.asm in Assembler folder
 then
     echo "C code successfully compiled"
 
@@ -27,5 +27,5 @@ then
     fi
 else # compile failed, run again to show error
     echo "Failed to compile C code"
-    python3 B322_shivyC.py $1 --bdos
+    pypy3 B322_shivyC.py $1 --bdos
 fi

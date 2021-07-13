@@ -7,7 +7,7 @@ do
     echo "Processing: $filename"
     # for each c file, compile and run
     echo "Compiling C code to B332 ASM"
-    if (python3 B322_shivyC.py $filename > ../Assembler/code.asm) # compile c code and write compiled code to code.asm in Assembler folder
+    if (pypy3 B322_shivyC.py $filename > ../Assembler/code.asm) # compile c code and write compiled code to code.asm in Assembler folder
     then
         echo "C code successfully compiled"
 
@@ -18,10 +18,10 @@ do
                 # convert list to binary files and send to FPGC
 
                 # WSL1/linux version
-                #(cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC" && python3 uartFlasher.py testMode)
+                (cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC" && python3 uartFlasher.py testMode)
 
                 # WSL2/windows version
-                (cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC" && python.exe uartFlasher_win.py testMode)
+                #(cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC" && python.exe uartFlasher_win.py testMode)
 
                 retVal="$?"
                 echo "$filename exited with code: $retVal"
@@ -33,7 +33,7 @@ do
         fi
     else # compile failed, run again to show error
         echo "Failed to compile C code"
-        python3 B322_shivyC.py $filename
+        pypy3 B322_shivyC.py $filename
     fi
 
     # sleep alternative since it is broken in WSL1

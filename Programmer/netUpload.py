@@ -20,7 +20,7 @@ if len(sys.argv) >= 3:
 with open(filename, "rb") as f:
     binfile = f.read()
 
-for attempt in range(5):
+for attempt in range(10):
     if attempt != 0:
         sleep(1)
 
