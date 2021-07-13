@@ -133,8 +133,7 @@ void SHELL_ldir(char* arg)
     {
         // do listdir
         char *b = (char *) TEMP_ADDR;
-        int outputLength = 0;
-        if (FS_listDir(p, b, &outputLength) == ANSW_USB_INT_SUCCESS)
+        if (FS_listDir(p, b) == ANSW_USB_INT_SUCCESS)
         {
             GFX_PrintConsole(b);
         }

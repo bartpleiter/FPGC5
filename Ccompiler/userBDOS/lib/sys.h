@@ -74,6 +74,7 @@ int HID_FifoRead()
     return p[0];
 }
 
+
 void BDOS_PrintcConsole(char c)
 {
     int* p = (int*) SYSCALL_RETVAL_ADDR;
@@ -93,4 +94,19 @@ void BDOS_PrintConsole(char* str)
         str++;                  // go to next character address
         chr = *str;             // get character from address
     }
+}
+
+void BDOS_PrintDecConsole(int i)
+{
+    char buffer[11];
+    itoa(i, &buffer[0]);
+    BDOS_PrintConsole(&buffer[0]);
+}
+
+
+void BDOS_PrintHexConsole(int i)
+{
+    char buffer[11];
+    itoah(i, &buffer[0]);
+    BDOS_PrintConsole(&buffer[0]);
 }

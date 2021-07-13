@@ -596,6 +596,14 @@ int FS_sendFullPath(char* f)
         i += 1;
     }
 
+    // remove (single) trailing slash if exists
+    // we reuse i here since it points
+    if (i > 1) // ignore the root path
+    {
+        if (f[i-1] == '/')
+            f[i-1] = 0;
+    }
+
     // if first char is a /, then we go back to root
     if (f[0] == '/')
     {
@@ -794,9 +802,12 @@ void FS_readFATdata(char* b, int* bufLen)
 // f needs to start with / and not end with /
 // Returns ANSW_USB_INT_SUCCESS if successful
 // Writes parsed result to address b
-// Length of output buffer is returned in bufLen
-int FS_listDir(char* f, char* b, int* bufLen)
+// Result is terminated with a \0
+int FS_listDir(char* f, char* b)
 {
+    int bufLen = 0;
+    int* pBuflen = &bufLen;
+
     int retval = FS_sendFullPath(f);
     // Return on failure
     if (retval != ANSW_USB_INT_SUCCESS)
@@ -815,11 +826,11 @@ int FS_listDir(char* f, char* b, int* bufLen)
         return retval;
 
     // Init length of output buffer
-    *bufLen = 0;
+    *pBuflen = 0;
 
     while (retval == ANSW_USB_INT_DISK_READ)
     {
-        FS_readFATdata(b, bufLen);
+        FS_readFATdata(b, pBuflen);
         FS_spiBeginTransfer();
         FS_spiTransfer(CMD_FILE_ENUM_GO);
         FS_spiEndTransfer();
@@ -827,8 +838,8 @@ int FS_listDir(char* f, char* b, int* bufLen)
     }
 
     // Terminate buffer
-    b[*bufLen] = 0;
-    *bufLen += 1;
+    b[*pBuflen] = 0;
+    *pBuflen += 1;
 
     return ANSW_USB_INT_SUCCESS;
 }

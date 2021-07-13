@@ -5,6 +5,8 @@
 
 #define WIZNET_DEBUG 0
 
+#define HEAP_LOCATION 0x500000
+
 #define FILE_BUFFER_SIZE 1024 // buffer size for reading files from USB storage
 char fileBuffer[FILE_BUFFER_SIZE] = 0;
 
@@ -173,11 +175,42 @@ int wizGetFilePath(char* rbuf, char* pbuf)
 }
 
 
+void wizListDir(int s, char* path)
+{
+  char *b = (char *) HEAP_LOCATION;
+
+  if (FS_listDir(path, b) == ANSW_USB_INT_SUCCESS)
+  {
+    int listSize = 0;
+    while (b[listSize] != 0)
+      listSize++;
+
+    if (listSize == 0)
+      listSize = 1;
+
+    wizWriteResponseFromMemory(s, b, listSize-1);
+  }
+}
+
+
 void wizServeFile(int s, char* path)
 {
   BDOS_PrintConsole("Request: ");
   BDOS_PrintConsole(&path[0]);
   BDOS_PrintConsole("\n");
+
+  // Remove trailing slashes
+  // remove (single) trailing slash if exists
+
+  int i = 0;
+  while (path[i] != 0)
+    i++;
+
+  if (i > 1) // ignore the root path
+  {
+    if (path[i-1] == '/')
+      path[i-1] = 0;
+  }
 
   // Redirect "/" to "/INDEX.HTM"
   if (path[0] == 47 && path[1] == 0)
@@ -192,25 +225,29 @@ void wizServeFile(int s, char* path)
   }
 
   int error = 0;
+  int listDir = 0;
 
   if (FS_sendFullPath(&path[0]) != ANSW_USB_INT_SUCCESS) // automatically upercases the path
     error = 404;
 
   if (!error)
-    if (FS_open() != ANSW_USB_INT_SUCCESS)
+  {
+    int openStatus = FS_open();
+    if (openStatus == ANSW_ERR_OPEN_DIR)
+      listDir = 1;
+    else if (openStatus != ANSW_USB_INT_SUCCESS)
       error = 404;
+  }
 
-  int fileSize;
-  if (!error)
+  int fileSize = 0;
+  if (!error && !listDir)
     fileSize = FS_getFileSize();
 
-  if (!error)
+  if (!error && !listDir)
+  {
     if (fileSize == 0)
       error = 404; // handle empty files as if they do not exist
-
-  if (!error)
-    if (fileSize + 1 == 0)
-      error = 404; // we get a file size of 0xFFFFFFFF on opened folders
+  }
 
   // send error response on error
   if (error)
@@ -246,9 +283,17 @@ void wizServeFile(int s, char* path)
     char* header = "HTTP/1.1 200 OK\nServer: FPGC4/1.0\n\n";
     wizWriteResponseFromMemory(s, header, 35);
 
-    // write the response from USB
-    wizWriteResponseFromUSB(s, fileSize);
-    BDOS_PrintConsole("Done\n");
+    if (listDir)
+    {
+      wizListDir(s, path);
+      BDOS_PrintConsole("\n");
+    }
+    else
+    {
+      // write the response from USB
+      wizWriteResponseFromUSB(s, fileSize);
+      BDOS_PrintConsole("Done\n");
+    }
   }
 
   // Disconnect after sending a response
