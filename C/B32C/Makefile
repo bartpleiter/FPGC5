@@ -23,4 +23,8 @@ clean:
 dist-clean: clean
 	rm -f *~ .depend
 
+test: $(objects)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(appname) $(objects) $(LDLIBS)
+	./b32c ../compilerTests/a.c
+
 include .depend

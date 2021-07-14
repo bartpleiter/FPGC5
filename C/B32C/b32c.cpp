@@ -34,13 +34,39 @@ SOFTWARE.
 #include <vector>
 #include <fstream>
 #include <string>
-#include "InputParser.cpp"
+#include "asm_cmd.cpp"
+#include "compare.cpp"
+#include "errors.cpp"
 #include "lexer.cpp"
+#include "parser_utils.cpp"
+#include "tokens.cpp"
+#include "asm_gen.cpp"
+#include "control.cpp"
+#include "expression.cpp"
+#include "preproc.cpp"
+#include "tree_utils.cpp"
+#include "ctypes.cpp"
+#include "expr_nodes.cpp"
+#include "math.cpp"
+#include "spots.cpp"
+#include "value.cpp"
+#include "declaration.cpp"
+#include "il_gen.cpp"
+#include "nodes.cpp"
+#include "statement.cpp"
+#include "base.cpp"
+#include "decl_nodes.cpp"
+#include "InputParser.cpp"
+#include "parser.cpp"
+#include "token_kinds.cpp"
+
 
 using namespace std;
 
 
-
+void test()
+{
+}
 
 void process_file(string filename, bool bdos, bool os)
 {
@@ -53,11 +79,13 @@ void process_file(string filename, bool bdos, bool os)
     string fileContent( (istreambuf_iterator<char>(ifs) ),
                        (istreambuf_iterator<char>()    ) );
 
-    cout << fileContent;
+    //cout << fileContent;
 }
 
 int main(int argc, char* argv[])
 {
+    test();
+
     InputParser input(argc, argv);
 
     bool bdos = input.cmdOptionExists("--bdos");
