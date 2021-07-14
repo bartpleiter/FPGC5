@@ -35,8 +35,12 @@ SOFTWARE.
 #include <fstream>
 #include <string>
 #include "InputParser.cpp"
+#include "lexer.cpp"
 
 using namespace std;
+
+
+
 
 void process_file(string filename, bool bdos, bool os)
 {

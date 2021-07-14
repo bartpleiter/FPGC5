@@ -606,12 +606,16 @@ int FS_sendFullPath(char* f)
         i += 1;
     }
 
+    int removedSlash = 0; // to restore removed slash
     // remove (single) trailing slash if exists
-    // we reuse i here since it points
+    // we reuse i here since it points to the end of the path
     if (i > 1) // ignore the root path
     {
         if (f[i-1] == '/')
+        {
             f[i-1] = 0;
+            removedSlash = 1;
+        }
     }
 
     // if first char is a /, then we go back to root
@@ -659,6 +663,12 @@ int FS_sendFullPath(char* f)
         }
         i++;
     }
+    if (removedSlash) // restore removed slash if there
+    {
+        f[i] = '/';
+        f[i+1] = 0;
+    }
+
     // handle filename itself (if any)
     // add null to end of buf
     buf[bufi] = 0;

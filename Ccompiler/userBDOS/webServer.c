@@ -3,12 +3,167 @@
 #include "lib/fs.h"
 #include "lib/wiz5500.h"
 
-#define WIZNET_DEBUG 0
-
 #define HEAP_LOCATION 0x500000
 
 #define FILE_BUFFER_SIZE 1024 // buffer size for reading files from USB storage
 char fileBuffer[FILE_BUFFER_SIZE] = 0;
+
+
+//-------------------
+//LIST DIR CUSTOM FUNCTIONS
+//-------------------
+
+// Parses and writes name.extension and filesize on one line
+void wiz_parseFATdata(int datalen, char* fatBuffer, char* b, int* bufLen)
+{
+    if (datalen != 32)
+    {
+        BDOS_PrintConsole("Unexpected FAT table length\n");
+        return;
+    }
+
+    // start HTML link tag
+    int catLen = strcpy(b + *bufLen, "<tr><td style=\"padding:0 15px 0 15px;\"><a href=\"");
+    *bufLen += catLen;
+
+    // parse filename
+    int printLen = FS_parseFATstring(fatBuffer, 8, b, bufLen);
+
+    // add '.' and parse extension
+    if (fatBuffer[8] != ' ' || fatBuffer[9] != ' ' || fatBuffer[10] != ' ')
+    {
+        b[*bufLen] = '.';
+        *bufLen += 1;
+        printLen += FS_parseFATstring(fatBuffer+8, 3, b, bufLen) + 1;
+    }
+
+    // filesize
+    int fileSize = 0;
+    fileSize += fatBuffer[28];
+    fileSize += (fatBuffer[29] << 8);
+    fileSize += (fatBuffer[30] << 16);
+    fileSize += (fatBuffer[31] << 24);
+
+    // add slash if folder (filesize 0)
+    if (fileSize == 0)
+    {
+      catLen = strcpy(b + *bufLen, "/");
+      *bufLen += catLen;
+    }
+
+    // end the starting HTML link tag
+    catLen = strcpy(b + *bufLen, "\">");
+    *bufLen += catLen;
+
+    // do again for the link text
+    // parse filename
+    printLen = FS_parseFATstring(fatBuffer, 8, b, bufLen);
+
+    // add '.' and parse extension
+    if (fatBuffer[8] != ' ' || fatBuffer[9] != ' ' || fatBuffer[10] != ' ')
+    {
+        b[*bufLen] = '.';
+        *bufLen += 1;
+        printLen += FS_parseFATstring(fatBuffer+8, 3, b, bufLen) + 1;
+    }
+
+    // add slash if folder (filesize 0)
+    if (fileSize == 0)
+    {
+      catLen = strcpy(b + *bufLen, "/");
+      *bufLen += catLen;
+    }
+
+    // end hyperlink
+    catLen = strcpy(b + *bufLen, "</a></td><td style=\"padding:0 15px 0 15px;\">");
+    *bufLen += catLen;
+
+    
+
+    // filesize to integer string
+    char buffer[10];
+    itoa(fileSize, &buffer[0]);
+
+    // write to buffer
+    int i = 0;
+    while (buffer[i] != 0)
+    {
+        b[*bufLen] = buffer[i];
+        *bufLen += 1;
+        i += 1;
+    }
+
+    catLen = strcpy(b + *bufLen, "</td></tr>\n");
+    *bufLen += catLen;
+}
+
+
+// Reads FAT data for single entry
+// FAT data is parsed by FS_parseFatData()
+void wiz_readFATdata(char* b, int* bufLen)
+{
+    FS_spiBeginTransfer();
+    FS_spiTransfer(CMD_RD_USB_DATA0);
+    int datalen = FS_spiTransfer(0x0);
+    char fatbuf[32];
+    for (int i = 0; i < datalen; i++)
+    {
+        fatbuf[i] = FS_spiTransfer(0x00);
+    }
+    wiz_parseFATdata(datalen, &fatbuf[0], b, bufLen);
+    FS_spiEndTransfer();
+}
+
+// Lists directory of full path f
+// f needs to start with / and not end with /
+// Returns ANSW_USB_INT_SUCCESS if successful
+// Writes parsed result to address b
+// Result is terminated with a \0
+int wiz_listDir(char* f, char* b)
+{
+    int bufLen = 0;
+    int* pBuflen = &bufLen;
+
+    int retval = FS_sendFullPath(f);
+    // Return on failure
+    if (retval != ANSW_USB_INT_SUCCESS)
+        return retval;
+
+    retval = FS_open();
+    // Return on failure
+    if (retval != ANSW_USB_INT_SUCCESS && retval != ANSW_ERR_OPEN_DIR)
+        return retval;
+
+    FS_sendSinglePath("*");
+
+    retval = FS_open();
+    // Return on failure
+    if (retval != ANSW_USB_INT_DISK_READ)
+        return retval;
+
+    // Init length of output buffer
+    *pBuflen = 0;
+
+    while (retval == ANSW_USB_INT_DISK_READ)
+    {
+        wiz_readFATdata(b, pBuflen);
+        FS_spiBeginTransfer();
+        FS_spiTransfer(CMD_FILE_ENUM_GO);
+        FS_spiEndTransfer();
+        retval = FS_WaitGetStatus();
+    }
+
+    // Terminate buffer
+    b[*pBuflen] = 0;
+    *pBuflen += 1;
+
+    return ANSW_USB_INT_SUCCESS;
+}
+
+
+
+
+
 
 
 //-------------------
@@ -87,7 +242,7 @@ int wizWriteResponseFromUSB(int s, int fileSize)
   // file size is already checked on being > 0
 
   if (FS_setCursor(0) != ANSW_USB_INT_SUCCESS)
-      uprintln("cursor error");
+      BDOS_PrintConsole("cursor error\n");
 
   int bytesSent = 0;
   char buffer[10];
@@ -102,7 +257,7 @@ int wizWriteResponseFromUSB(int s, int fileSize)
 
     // read from usb to buffer
     if (FS_readFile(fileBuffer, partToSend, 0) != ANSW_USB_INT_SUCCESS)
-      uprintln("read error");
+      BDOS_PrintConsole("read error\n");
     if (!wizWriteResponseFromMemory(s, fileBuffer, partToSend))
     {
       //uprintln("wizTranser error");
@@ -175,11 +330,23 @@ int wizGetFilePath(char* rbuf, char* pbuf)
 }
 
 
-void wizListDir(int s, char* path)
+void wizDirectoryListing(int s, char* path)
 {
-  char *b = (char *) HEAP_LOCATION;
 
-  if (FS_listDir(path, b) == ANSW_USB_INT_SUCCESS)
+  // write start of html page
+  wizWriteResponseFromMemory(s, "<!DOCTYPE html><html><body><h2>", 31);
+
+  int pathLen = 0;
+    while (path[pathLen] != 0)
+      pathLen++;
+
+  wizWriteResponseFromMemory(s, path, pathLen-1);
+
+  wizWriteResponseFromMemory(s, "</h2><table><tr><th>Name</th><th>Size</th></tr>", 47);
+
+
+  char *b = (char *) HEAP_LOCATION;
+  if (wiz_listDir(path, b) == ANSW_USB_INT_SUCCESS)
   {
     int listSize = 0;
     while (b[listSize] != 0)
@@ -190,6 +357,9 @@ void wizListDir(int s, char* path)
 
     wizWriteResponseFromMemory(s, b, listSize-1);
   }
+
+  // write end of html page
+  wizWriteResponseFromMemory(s, "</table></body></html>", 22);
 }
 
 
@@ -198,19 +368,6 @@ void wizServeFile(int s, char* path)
   BDOS_PrintConsole("Request: ");
   BDOS_PrintConsole(&path[0]);
   BDOS_PrintConsole("\n");
-
-  // Remove trailing slashes
-  // remove (single) trailing slash if exists
-
-  int i = 0;
-  while (path[i] != 0)
-    i++;
-
-  if (i > 1) // ignore the root path
-  {
-    if (path[i-1] == '/')
-      path[i-1] = 0;
-  }
 
   // Redirect "/" to "/INDEX.HTM"
   if (path[0] == 47 && path[1] == 0)
@@ -277,22 +434,53 @@ void wizServeFile(int s, char* path)
   }
   else
   {
-    BDOS_PrintConsole("Response: 200 OK ");
-    // write header
-    // currently omitting content type
-    char* header = "HTTP/1.1 200 OK\nServer: FPGC4/1.0\n\n";
-    wizWriteResponseFromMemory(s, header, 35);
-
     if (listDir)
     {
-      wizListDir(s, path);
-      BDOS_PrintConsole("\n");
+      // check if last character is a /
+      // if not, redirect to the path with / after it
+      int i = 0;
+      while (path[i] != 0)
+        i++;
+
+      if (path[i-1] != '/')
+      {
+        BDOS_PrintConsole(path);
+        BDOS_PrintConsole("\n");
+        path[i] = '/';
+        path[i+1] = 0;
+        char* response = "HTTP/1.1 301 Moved Permanently\nLocation: ";
+        BDOS_PrintConsole("Response: redirect to ");
+        BDOS_PrintConsole(path);
+        BDOS_PrintConsole("\n");
+        wizWriteResponseFromMemory(s, response, 41);
+        wizWriteResponseFromMemory(s, path, i+1);
+        wizWriteResponseFromMemory(s, "\n", 1);
+      }
+      else
+      {
+        BDOS_PrintConsole("Response: 200 OK ");
+        // write header
+        // currently omitting content type
+        char* header = "HTTP/1.1 200 OK\nServer: FPGC4/1.0\n\n";
+        wizWriteResponseFromMemory(s, header, 35);
+        wizDirectoryListing(s, path);
+        BDOS_PrintConsole("Done\n");
+      }
     }
     else
     {
-      // write the response from USB
-      wizWriteResponseFromUSB(s, fileSize);
-      BDOS_PrintConsole("Done\n");
+      if (fileSize + 1 != 0) // really make sure no directory is being read
+      {
+        BDOS_PrintConsole("Response: 200 OK ");
+        // write header
+        // currently omitting content type
+        char* header = "HTTP/1.1 200 OK\nServer: FPGC4/1.0\n\n";
+        wizWriteResponseFromMemory(s, header, 35);
+        // write the response from USB
+        wizWriteResponseFromUSB(s, fileSize);
+        BDOS_PrintConsole("Done\n");
+      }
+      
     }
   }
 
@@ -399,8 +587,6 @@ int main()
         if (sxStatus == SOCK_CLOSED)
         { 
           // Open the socket when closed
-          if (WIZNET_DEBUG)
-            uprintln("Socket closed");
           // Set socket s in TCP Server mode at port 80
           wizInitSocketTCP(s, 80);
         }
@@ -408,8 +594,6 @@ int main()
         {
           // Handle session when a connection is established
           // Also reinitialize socket
-          if (WIZNET_DEBUG)
-            uprintln("Got connection");
           wizHandleSession(s);
           // Set socket s in TCP Server mode at port 80
           wizInitSocketTCP(s, 80);
@@ -422,8 +606,6 @@ int main()
         {
           // In other cases, reset the socket
           // Set socket s in TCP Server mode at port 80
-          if (WIZNET_DEBUG)
-            uprintln("Resetting socket");
           wizInitSocketTCP(s, 80);
         }
       }
