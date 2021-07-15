@@ -124,48 +124,6 @@ int strcmp(char* a, char* b, int n)
 
 
 /*
-Prints a single char c by writing it to 0xC02723
-*/
-void uprintc(char c) 
-{
-    int *p = (int *)UART_TX_ADDR;   // address of UART TX
-    *p = (int)c;            // write char over UART
-}
-
-
-/*
-Sends each character from str over UART
-by writing them to 0xC02723
-until a 0 value is found.
-Does not send a newline afterwards.
-*/
-void uprint(char* str) 
-{
-    int *p = (int *)UART_TX_ADDR;   // address of UART TX
-    char chr = *str;            // first character of str
-
-    while (chr != 0)            // continue until null value
-    {
-        *p = (int)chr;          // write char over UART
-        str++;                  // go to next character address
-        chr = *str;             // get character from address
-    }
-}
-
-
-/*
-Same as uprint(char* str),
-except it sends a newline afterwards.
-*/
-void uprintln(char* str) 
-{
-    uprint(str);
-    uprint("\n");
-}
-
-
-
-/*
 Recursive helper function for itoa
 Eventually returns the number of digits in n
 */
@@ -252,6 +210,91 @@ void itoah(int n, char *s)
     s[i] = 0;
 } 
 
+/*
+Prints a single char c by writing it to 0xC02723
+*/
+void uprintc(char c) 
+{
+    int *p = (int *)UART_TX_ADDR;   // address of UART TX
+    *p = (int)c;            // write char over UART
+}
+
+
+/*
+Sends each character from str over UART
+by writing them to 0xC02723
+until a 0 value is found.
+Does not send a newline afterwards.
+*/
+void uprint(char* str) 
+{
+    int *p = (int *)UART_TX_ADDR;   // address of UART TX
+    char chr = *str;            // first character of str
+
+    while (chr != 0)            // continue until null value
+    {
+        *p = (int)chr;          // write char over UART
+        str++;                  // go to next character address
+        chr = *str;             // get character from address
+    }
+}
+
+
+/*
+Same as uprint(char* str),
+except it sends a newline afterwards.
+*/
+void uprintln(char* str) 
+{
+    uprint(str);
+    uprint("\n");
+}
+
+
+/*
+Prints decimal integer over UART
+*/
+void uprintDec(int i) 
+{
+    char buffer[11];
+    itoa(i, &buffer[0]);
+    uprint(&buffer[0]);
+    uprint("\n");
+}
+
+/*
+Prints hex integer over UART
+*/
+void uprintHex(int i) 
+{
+    char buffer[11];
+    itoah(i, &buffer[0]);
+    uprint(&buffer[0]);
+    uprint("\n");
+}
+
+
+/*
+Prints decimal integer over UART, with newline
+*/
+void uprintlnDec(int i) 
+{
+    char buffer[11];
+    itoa(i, &buffer[0]);
+    uprint(&buffer[0]);
+    uprint("\n");
+}
+
+/*
+Prints hex integer over UART, with newline
+*/
+void uprintlnHex(int i) 
+{
+    char buffer[11];
+    itoah(i, &buffer[0]);
+    uprint(&buffer[0]);
+    uprint("\n");
+}
 
 
 // sleeps ms using timer1.

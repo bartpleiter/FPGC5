@@ -14,6 +14,7 @@
 #define ANSW_USB_INT_CONNECT     0x15
 
 #define USBKEYBOARD_POLLING_RATE 30
+#define USBKEYBOARD_HOLD_COUNTS 20
 #define TIMER2_VAL 0xC0273B
 #define TIMER2_CTRL 0xC0273C
 
@@ -25,6 +26,9 @@
 int USBkeyboard_endp_mode = 0x80;
 char USBkeyboard_buffer[8] = 0;
 char USBkeyboard_buffer_prev[8] = 0;
+
+int USBkeyboard_holdCounter = 0;
+int USBkeyboard_holdButton = 0;
 
 /*
 *   Functions
@@ -255,12 +259,35 @@ void USBkeyboard_set_config(int cfg) {
     USBkeyboard_spiEndTransfer();   
 
     USBkeyboard_WaitGetStatus();
-}  
+} 
 
 
-// Parses USB keyboard buffer into ?
+void USBkeyboard_sendToFifo(char usbCode, char* usbBuf)
+{
+    // check first byte for both shift key bits
+    if ((usbBuf[0] &&& 0x2) || (usbBuf[0] &&& 0x20))
+    {
+        // convert to ascii/code using table
+        // add new ascii/code to fifo
+        int *tableShifted = (int*) &DATA_USBSCANCODE_SHIFTED;
+        tableShifted += 4; // set offset to data in function
+        HID_FifoWrite(*(tableShifted+usbCode));
+    }
+    else // non-shifted
+    {
+        // convert to ascii/code using table
+        // add new ascii/code to fifo
+        int *tableNomal = (int*) &DATA_USBSCANCODE_NORMAL;
+        tableNomal += 4; // set offset to data in function
+        HID_FifoWrite(*(tableNomal+usbCode));
+    } 
+}
+
+
+// Parses USB keyboard buffer and writes result to HID FIFO
 void USBkeyboard_parse_buffer(char* usbBuf, char* usbBufPrev)
 {
+
     // detect which keys are pressed:
     // compare byte 2-7 with previous buffer
     for (int i = 2; i < 8; i++)
@@ -268,24 +295,9 @@ void USBkeyboard_parse_buffer(char* usbBuf, char* usbBufPrev)
         // if prev byte == 0 and new byte != 0, then new byte is new keypress
         if (usbBuf[i] != 0 && usbBufPrev[i] == 0)
         {
-
-            // check first byte for both shift key bits
-            if ((usbBuf[0] &&& 0x2) || (usbBuf[0] &&& 0x20))
-            {
-                // convert to ascii/code using table
-                // add new ascii/code to fifo
-                int *tableShifted = (int*) &DATA_USBSCANCODE_SHIFTED;
-                tableShifted += 4; // set offset to data in function
-                HID_FifoWrite(*(tableShifted+usbBuf[i]));
-            }
-            else // non-shifted
-            {
-                // convert to ascii/code using table
-                // add new ascii/code to fifo
-                int *tableNomal = (int*) &DATA_USBSCANCODE_NORMAL;
-                tableNomal += 4; // set offset to data in function
-                HID_FifoWrite(*(tableNomal+usbBuf[i]));
-            } 
+            //uprintlnDec(usbBuf[i]); // usefull for adding new keys
+            USBkeyboard_holdButton = i;
+            USBkeyboard_sendToFifo(usbBuf[i], usbBuf);
         }
     }
     
@@ -315,6 +327,29 @@ void USBkeyboard_poll()
         USBkeyboard_set_config(1);
         USBkeyboard_toggle_recv();
         USBkeyboard_issue_token(0x19); // result of endp 1 and pid 9 ( 1 << 4 ) | 0x09
+    }
+
+    char* usbBuf = USBkeyboard_buffer;
+
+    // Button hold detection
+    if (USBkeyboard_holdButton != 0)
+    {
+        if (usbBuf[USBkeyboard_holdButton] != 0)
+        {
+            if (USBkeyboard_holdCounter < USBKEYBOARD_HOLD_COUNTS)
+                USBkeyboard_holdCounter++;
+        }
+        else
+        {
+            USBkeyboard_holdButton = 0;
+            USBkeyboard_holdCounter = 0;
+        }
+
+        // Send repetitive code to HID FIFO when holding a button for a certain amount of time
+        if (USBkeyboard_holdCounter >= USBKEYBOARD_HOLD_COUNTS)
+        {
+            USBkeyboard_sendToFifo(usbBuf[USBkeyboard_holdButton], usbBuf);
+        }
     }
 }
 
