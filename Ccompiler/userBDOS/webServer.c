@@ -170,72 +170,6 @@ int wiz_listDir(char* f, char* b)
 //W5500 CONNECTION HANDLING FUNCTIONS
 //-------------------
 
-
-int wizWriteResponseFromMemory(int s, char* buf, int buflen)
-{
-  // Make sure there is something to send
-  if (buflen <= 0)
-  {
-    return 0;
-  }
-
-  int bytesSent = 0;
-
-  // loop until all bytes are sent
-  while (bytesSent != buflen)
-  {
-
-    if (wizGetSockReg8(s, SnSR) == SOCK_CLOSED)
-    {
-      //uprintln("connection closed");
-      return 0;
-    }
-
-    int partToSend = buflen - bytesSent;
-    if (partToSend > WIZ_MAX_TBUF)
-      partToSend = WIZ_MAX_TBUF;
-
-    // Make sure there is room in the transmit buffer for what we want to send
-    int txfree = wizGetSockReg16(s, SnTX_FSR); // Size of the available buffer area
-
-    int timeout = 0;
-    while (txfree < partToSend) 
-    {
-      timeout++; // Increase timeout counter
-      delay(1); // Wait a bit
-      txfree = wizGetSockReg16(s, SnTX_FSR); // Size of the available buffer area
-      
-      // After a second
-      if (timeout > 1000) 
-      {
-        wizCmd(s, CR_DISCON); // Disconnect the connection
-        //uprintln("timeout");
-        return 0;
-      }
-    }
-
-     // Space is available so we will send the buffer
-    int txwr = wizGetSockReg16(s, SnTX_WR);  // Read the Tx Write Pointer
-
-    // Write the outgoing data to the transmit buffer
-    wizWrite(txwr, WIZNET_WRITE_SnTX + (s << 5), buf + bytesSent, partToSend);
-
-    // update the buffer pointer
-    int newSize = txwr + partToSend;
-    wizSetSockReg16(s, SnTX_WR, newSize);
-
-    // Now Send the SEND command which tells the wiznet the pointer is updated
-    wizCmd(s, CR_SEND);
-
-    // Update the amount of bytes sent
-    bytesSent += partToSend;
-  }
-
-
-  return 1;
-}
-
-
 // Writes response from (successfully) opened USB file
 int wizWriteResponseFromUSB(int s, int fileSize)
 {
@@ -258,7 +192,7 @@ int wizWriteResponseFromUSB(int s, int fileSize)
     // read from usb to buffer
     if (FS_readFile(fileBuffer, partToSend, 0) != ANSW_USB_INT_SUCCESS)
       BDOS_PrintConsole("read error\n");
-    if (!wizWriteResponseFromMemory(s, fileBuffer, partToSend))
+    if (!wizWriteDataFromMemory(s, fileBuffer, partToSend))
     {
       //uprintln("wizTranser error");
       return 0;
@@ -278,7 +212,7 @@ int wizWriteResponseFromUSB(int s, int fileSize)
 void wizSend404Response(int s)
 {
   char* retTxt = "<!DOCTYPE html><html><head><title>ERROR404</title></head><body>ERROR 404: This is not the page you are looking for</body></html>";
-  wizWriteResponseFromMemory(s, retTxt, 128);
+  wizWriteDataFromMemory(s, retTxt, 128);
 }
 
 
@@ -334,15 +268,15 @@ void wizDirectoryListing(int s, char* path)
 {
 
   // write start of html page
-  wizWriteResponseFromMemory(s, "<!DOCTYPE html><html><body><h2>", 31);
+  wizWriteDataFromMemory(s, "<!DOCTYPE html><html><body><h2>", 31);
 
   int pathLen = 0;
     while (path[pathLen] != 0)
       pathLen++;
 
-  wizWriteResponseFromMemory(s, path, pathLen-1);
+  wizWriteDataFromMemory(s, path, pathLen-1);
 
-  wizWriteResponseFromMemory(s, "</h2><table><tr><th>Name</th><th>Size</th></tr>", 47);
+  wizWriteDataFromMemory(s, "</h2><table><tr><th>Name</th><th>Size</th></tr>", 47);
 
 
   char *b = (char *) HEAP_LOCATION;
@@ -355,11 +289,11 @@ void wizDirectoryListing(int s, char* path)
     if (listSize == 0)
       listSize = 1;
 
-    wizWriteResponseFromMemory(s, b, listSize-1);
+    wizWriteDataFromMemory(s, b, listSize-1);
   }
 
   // write end of html page
-  wizWriteResponseFromMemory(s, "</table></body></html>", 22);
+  wizWriteDataFromMemory(s, "</table></body></html>", 22);
 }
 
 
@@ -375,7 +309,7 @@ void wizServeFile(int s, char* path)
     // send an actual redirect to the browser
     char* response = "HTTP/1.1 301 Moved Permanently\nLocation: /INDEX.HTM\n";
     BDOS_PrintConsole("Response: redirect to /INDEX.HTM\n");
-    wizWriteResponseFromMemory(s, response, 52);
+    wizWriteDataFromMemory(s, response, 52);
     // Disconnect after sending the redirect
     wizCmd(s, CR_DISCON);
     return;
@@ -413,7 +347,7 @@ void wizServeFile(int s, char* path)
     // currently puts all errors under 404
     // write header
     char* header = "HTTP/1.1 404 Not Found\nServer: FPGC4/1.0\nContent-Type: text/html\n\n";
-    wizWriteResponseFromMemory(s, header, 66);
+    wizWriteDataFromMemory(s, header, 66);
 
     FS_sendFullPath("/404.HTM");
     if (FS_open() != ANSW_USB_INT_SUCCESS)
@@ -452,9 +386,9 @@ void wizServeFile(int s, char* path)
         BDOS_PrintConsole("Response: redirect to ");
         BDOS_PrintConsole(path);
         BDOS_PrintConsole("\n");
-        wizWriteResponseFromMemory(s, response, 41);
-        wizWriteResponseFromMemory(s, path, i+1);
-        wizWriteResponseFromMemory(s, "\n", 1);
+        wizWriteDataFromMemory(s, response, 41);
+        wizWriteDataFromMemory(s, path, i+1);
+        wizWriteDataFromMemory(s, "\n", 1);
       }
       else
       {
@@ -462,7 +396,7 @@ void wizServeFile(int s, char* path)
         // write header
         // currently omitting content type
         char* header = "HTTP/1.1 200 OK\nServer: FPGC4/1.0\n\n";
-        wizWriteResponseFromMemory(s, header, 35);
+        wizWriteDataFromMemory(s, header, 35);
         wizDirectoryListing(s, path);
         BDOS_PrintConsole("Done\n");
       }
@@ -475,7 +409,7 @@ void wizServeFile(int s, char* path)
         // write header
         // currently omitting content type
         char* header = "HTTP/1.1 200 OK\nServer: FPGC4/1.0\n\n";
-        wizWriteResponseFromMemory(s, header, 35);
+        wizWriteDataFromMemory(s, header, 35);
         // write the response from USB
         wizWriteResponseFromUSB(s, fileSize);
         BDOS_PrintConsole("Done\n");

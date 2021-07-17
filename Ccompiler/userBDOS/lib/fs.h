@@ -549,28 +549,11 @@ int FS_createFile()
     if (retval != ANSW_USB_INT_SUCCESS)
         return retval;
 
+    // open and close file
+    FS_open();
+    FS_close();
 
-    retval = FS_open();
-    // Return on error
-    if (retval != ANSW_USB_INT_SUCCESS)
-        return retval;
-
-
-    // setting file size to 0
-    // works in memory, but does not update on disk
-    /*
-    FS_spiBeginTransfer();
-    FS_spiTransfer(CMD_SET_FILE_SIZE);
-    FS_spiTransfer(0x68);
-    FS_spiTransfer(0);
-    FS_spiTransfer(0);
-    FS_spiTransfer(0);
-    FS_spiTransfer(0);
-    FS_spiEndTransfer();
-    */
-
-    // closing file
-    return FS_close();
+    return ANSW_USB_INT_SUCCESS;
 }
 
 

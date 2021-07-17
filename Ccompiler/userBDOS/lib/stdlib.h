@@ -32,6 +32,41 @@ void memcpy(char* dest, char* src, int n)
 
 
 /*
+Compares n words between a and b
+Returns 1 if similar, 0 otherwise
+*/
+int memcmp(char* a, char* b, int n)
+{
+    for (int i = 0; i < n; i++)
+    {
+        if (a[i] != b[i])
+        {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+
+// Returns length of string
+int strlen(char* str)
+{
+    int retval = 0;
+    char chr = *str;            // first character of str
+
+    while (chr != 0)            // continue until null value
+    {
+        retval += 1;
+        str++;                  // go to next character address
+        chr = *str;             // get character from address
+    }
+
+    return retval;
+}
+
+
+/*
 Copies string from src to dest
 Returns number of characters copied
 */
@@ -66,10 +101,46 @@ int strcat(char* dest, char* src)
 
 
 /*
+Compares two strings a and b
+Returns 1 if similar, 0 otherwise
+*/
+int strcmp(char* a, char* b, int n)
+{
+    if (strlen(a) != strlen(b))
+        return 0;
+
+
+    int i = 0;
+    while (a[i] != 0)
+    {
+        if (a[i] != b[i])
+        {
+            return 0;
+        }
+        i += 1;
+    }
+
+    return 1;
+}
+
+
+
+/*
+Checks if str contains substr
+Returns 1 on match
+*/
+int strstr(char* str, char* substr)
+{
+    //TODO implement
+    return 0;
+}
+
+
+/*
 Recursive helper function for itoa
 Eventually returns the number of digits in n
 */
-int itoar(int n, char *s)
+int itoar(int n, char* s)
 {
     int digit = MATH_mod(n, 10);
     int i = 0;
@@ -90,7 +161,7 @@ The characters are placed in the buffer s.
 The buffer is terminated with a 0 value.
 Uses recursion, division and mod to compute.
 */
-void itoa(int n, char *s)
+void itoa(int n, char* s)
 {
     // compute and fill the buffer
     int i = itoar(n, s);
@@ -107,7 +178,7 @@ void itoa(int n, char *s)
 Recursive helper function for itoa
 Eventually returns the number of digits in n
 */
-int itoahr(int n, char *s)
+int itoahr(int n, char* s)
 {
     int digit = MATH_mod(n, 16);
     int i = 0;
@@ -138,7 +209,7 @@ A prefix of 0x is added.
 The buffer is terminated with a 0 value.
 Uses recursion, division and mod to compute.
 */
-void itoah(int n, char *s)
+void itoah(int n, char* s)
 {
     // add prefix
     s[0] = '0';
@@ -152,6 +223,43 @@ void itoah(int n, char *s)
     s[i] = 0;
 } 
 
+/*
+Converts string into int.
+Assumes the string is valid.
+*/
+int strToInt(char* str)
+{
+    int retval = 0;
+    int multiplier = 1;
+    int i = 0;
+    while (str[i] != 0)
+    {
+        i++;
+    }
+    if (i == 0)
+        return 0;
+
+    i--;
+
+    while (i > 0)
+    {
+        // Return 0 if not a digit
+        if (str[i] < '0' || str[i] > '9')
+            return 0;
+
+        int currentDigit = str[i] - '0';
+        int toAdd = multiplier * currentDigit;
+        retval += toAdd;
+        multiplier = multiplier * 10;
+        i--;
+    }
+
+    int currentDigit = str[i] - '0';
+    int toAdd = multiplier * currentDigit;
+    retval += toAdd;
+
+    return retval;
+}
 
 /*
 Prints a single char c by writing it to 0xC02723
@@ -276,11 +384,25 @@ int getIntID()
 
 
 
-//Converts char c to uppercase if possible
+// Converts char c to uppercase if possible
 char toUpper(char c)
 {
     if (c>96 && c<123) 
         c = c ^ 0x20;
 
     return c;
+}
+
+
+// Converts string str to uppercase if possible
+void strToUpper(char* str) 
+{
+    char chr = *str;            // first character of str
+
+    while (chr != 0)            // continue until null value
+    {
+        *str = toUpper(chr);    // uppercase char
+        str++;                  // go to next character address
+        chr = *str;             // get character from address
+    }
 }

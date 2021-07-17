@@ -110,3 +110,55 @@ void BDOS_PrintHexConsole(int i)
     itoah(i, &buffer[0]);
     BDOS_PrintConsole(&buffer[0]);
 }
+
+
+// Returns command line args
+char* BDOS_GetArgs()
+{
+    int* p = syscall(4);
+    return (char*) p[0];
+}
+
+
+// Writes command line argument n into buf
+// Arg 0 is the command itself
+void BDOS_GetArgN(int n, char* buf)
+{
+    char* args = BDOS_GetArgs();
+
+    int i = 0;
+    int bufi = 0;
+    int currentArg = 0;
+    char prevChar = 0;
+    buf[0] = 0;
+    while (args[i] != 0)
+    {
+        // new argument
+        if (args[i] == ' ' && prevChar != ' ')
+        {
+            currentArg++;
+        }
+
+        if (args[i] != ' ')
+        {
+            if (currentArg == n)
+            {
+                buf[bufi] = args[i];
+                bufi++;
+            }
+        }
+
+        prevChar = args[i];
+        i++;
+    }
+
+    buf[bufi] = 0; // terminate
+}
+
+
+// Returns BDOS current path
+char* BDOS_GetPath()
+{
+    int* p = syscall(5);
+    return (char*) p[0];
+}

@@ -738,9 +738,21 @@ void SHELL_parseCommand(char* p)
     {
         // do nothing on enter
     }
+
+    // Check if the command is in /BIN as a file
     else
     {
-        SHELL_runFile(p, 1);
+        // copy p to commandBuf but without the arguments
+        char commandBuf[16]; // filenames cannot be larger than 12 characters anyways, so this should be enough
+        int i = 0;
+        commandBuf[0] = 0;
+        while (p[i] != 0 && p[i] != ' ' && i < 16)
+        {
+            commandBuf[i] = p[i];
+            i++;
+        }
+        commandBuf[i] = 0; // terminate buffer
+        SHELL_runFile(&commandBuf[0], 1);
         return;
     }
 }

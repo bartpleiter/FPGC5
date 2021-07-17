@@ -154,6 +154,8 @@ int main()
 0 - Nothing
 1 - HID_FifoAvailable
 2 - HID_FifoRead
+3 - GFX_PrintcConsole
+4 - Get arguments
 */
 void syscall()
 {
@@ -165,26 +167,32 @@ void syscall()
     {
         int x = HID_FifoAvailable();
         p[0] = x;
-        return;
     }
     // HID_FifoRead()
     else if (ID == 2)
     {
         int x = HID_FifoRead();
         p[0] = x;
-        return;
     }
     // GFX_PrintcConsole()
     else if (ID == 3)
     {
         GFX_PrintcConsole(p[1]);
         p[0] = 0;
-        return;
+    }
+    // Get arguments
+    else if (ID == 4)
+    {
+        p[0] = SHELL_CMD_ADDR;
+    }
+    // Get path (backup)
+    else if (ID == 5)
+    {
+        p[0] = SHELL_PATH_BACKUP;
     }
     else
     {
         p[0] = 0;
-        return;
     }
 }
 

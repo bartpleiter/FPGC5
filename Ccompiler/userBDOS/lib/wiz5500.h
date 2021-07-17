@@ -105,8 +105,8 @@
 // MSByte: 0x0004
 // LSByte: 0x0005
 
-#define WIZ_MAX_RBUF 1400 // buffer for receiving data (max rx packet size!)
-#define WIZ_MAX_TBUF 1400 // buffer for sending data (max tx packet size!)
+#define WIZ_MAX_RBUF 2048 // buffer for receiving data (max rx packet size!)
+#define WIZ_MAX_TBUF 2048 // buffer for sending data (max tx packet size!)
 
 
 //-------------------
@@ -424,6 +424,17 @@ void wizInitSocketTCP(int s, int port)
   wizSetSockReg16     (s, SnPORT, port);  //set tcp port
   wizCmd(s, CR_OPEN);
   wizCmd(s, CR_LISTEN);
+  delay(10); //wait a bit to make sure the socket is in the correct state (technically not necessary)
+}
+
+// Initialize socket s for TCP client
+void wizInitSocketTCPClient(int s, int port)
+{
+  wizCmd(s, CR_CLOSE);
+  wizSetSockReg8      (s, SnIR, 0xFF);    //reset interrupt register
+  wizSetSockReg8      (s, SnMR, MR_TCP);  //set mode register to tcp
+  wizSetSockReg16     (s, SnPORT, port);  //set tcp port
+  wizCmd(s, CR_OPEN);
   delay(10); //wait a bit to make sure the socket is in the correct state (technically not necessary)
 }
 

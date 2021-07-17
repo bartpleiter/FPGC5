@@ -210,6 +210,42 @@ void itoah(int n, char *s)
     s[i] = 0;
 } 
 
+
+/*
+Converts string into int.
+Assumes the string is valid.
+*/
+int strToInt(char* str)
+{
+    int retval = 0;
+    int multiplier = 1;
+    int i = 0;
+    while (str[i] != 0)
+    {
+        i++;
+    }
+    if (i == 0)
+        return 0;
+
+    i--;
+
+    while (i > 0)
+    {
+        int currentDigit = str[i] - '0';
+        int toAdd = multiplier * currentDigit;
+        retval += toAdd;
+        multiplier = multiplier * 10;
+        i--;
+    }
+
+    int currentDigit = str[i] - '0';
+    int toAdd = multiplier * currentDigit;
+    retval += toAdd;
+
+    return retval;
+}
+
+
 /*
 Prints a single char c by writing it to 0xC02723
 */

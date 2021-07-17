@@ -105,8 +105,8 @@
 // MSByte: 0x0004
 // LSByte: 0x0005
 
-#define WIZ_MAX_RBUF 1400 // buffer for receiving data (max rx packet size!)
-#define WIZ_MAX_TBUF 1400 // buffer for sending data (max tx packet size!)
+#define WIZ_MAX_RBUF 2048 // buffer for receiving data (max rx packet size!)
+#define WIZ_MAX_TBUF 2048 // buffer for sending data (max tx packet size!)
 
 
 //-------------------

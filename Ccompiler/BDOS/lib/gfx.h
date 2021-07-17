@@ -507,6 +507,12 @@ void GFX_PrintcConsole(char c)
         }
     }
 
+    // if \r
+    else if (c == '\r')
+    {
+        // ignore
+    }
+
     // else (character)
     else
     {
