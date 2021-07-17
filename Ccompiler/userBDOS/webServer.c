@@ -8,6 +8,7 @@
 #define FILE_BUFFER_SIZE 1024 // buffer size for reading files from USB storage
 char fileBuffer[FILE_BUFFER_SIZE] = 0;
 
+char WIZrbuf[WIZ_MAX_RBUF] = 0;
 
 //-------------------
 //LIST DIR CUSTOM FUNCTIONS
@@ -438,8 +439,8 @@ void wizHandleSession(int s)
     wizCmd(s, CR_DISCON);
     return;
   }
-  
-  char rbuf[WIZ_MAX_RBUF];
+
+  char* rbuf = WIZrbuf;
   wizReadRecvData(s, &rbuf[0], rsize);
 
   //  read rbuf for requested page
