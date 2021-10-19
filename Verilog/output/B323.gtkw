@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
 [*] Sun Jun 27 13:27:24 2021
 [*]
-[dumpfile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\wave.vcd"
+[dumpfile] "/home/bart/Documents/FPGA/FPGC5/Verilog/output/wave.vcd"
 [dumpfile_mtime] "Sun Jun 27 12:45:46 2021"
 [dumpfile_size] 175312
-[savefile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\B323.gtkw"
+[savefile] "/home/bart/Documents/FPGA/FPGC5/Verilog/output/B323.gtkw"
 [timestart] 0
 [size] 1920 1027
 [pos] -1 -1

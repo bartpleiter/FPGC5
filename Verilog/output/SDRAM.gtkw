@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
 [*] Sun Jun 27 15:51:53 2021
 [*]
-[dumpfile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\wave.vcd"
+[dumpfile] "/home/bart/Documents/FPGA/FPGC5/Verilog/output/wave.vcd"
 [dumpfile_mtime] "Sun Jun 27 15:50:03 2021"
 [dumpfile_size] 13441
-[savefile] "\\wsl.localhost\Ubuntu-CommPrev\home\bart\Documents\FPGA\FPGC5\Verilog\output\SDRAM.gtkw"
+[savefile] "/home/bart/Documents/FPGA/FPGC5/Verilog/output/SDRAM.gtkw"
 [timestart] 378900
 [size] 1920 1027
 [pos] -1 -1
