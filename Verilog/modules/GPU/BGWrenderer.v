@@ -8,6 +8,9 @@ module BGWrenderer(
     input               vs,
     input               blank,
 
+    input               scale2x,    // render vertically in 2x scaling (e.g. for HDMI to get full screen 320x240 on a 640x480 signal)
+                                    // note: horizontally this scaling is always applied
+
     // Output pixels
     output wire [2:0]   r,
     output wire [2:0]   g,
@@ -51,7 +54,7 @@ wire [2:0] hTilePixelCounter = hTileDoublePixelCounter[3:1]; // 8 pixels per til
 
 reg [4:0] vTileCounter = 5'd0; // 25 vTiles
 reg [3:0] vTileDoubleLineCounter = 4'd0; // 16 pixels per tile
-wire [2:0] vTileLineCounter = vTileDoubleLineCounter[3:1]; // 8 pixels per tile
+wire [2:0] vTileLineCounter = (scale2x) ?vTileDoubleLineCounter[3:1] : vTileDoubleLineCounter[2:0]; // 8 pixels per tile
 
 reg [10:0] bg_tile = 11'd0;
 reg [10:0] window_tile = 11'd0;
@@ -106,11 +109,24 @@ begin
         else 
         begin
             vTileDoubleLineCounter <= vTileDoubleLineCounter + 1'b1;
-            if (vTileDoubleLineCounter == 4'd15)
+            if (scale2x)
             begin
-                vTileCounter <= vTileCounter + 1'b1;
-                bg_tile_line <= bg_tile_line + 7'd64; // + number of tiles per line in bg plane
-                window_tile_line <= window_tile_line + 6'd40; // + number of tiles per line in window plane
+                if (vTileDoubleLineCounter == 4'd15)
+                begin
+                    vTileCounter <= vTileCounter + 1'b1;
+                    bg_tile_line <= bg_tile_line + 7'd64; // + number of tiles per line in bg plane
+                    window_tile_line <= window_tile_line + 6'd40; // + number of tiles per line in window plane
+                end
+            end
+            else
+            begin
+                if (vTileDoubleLineCounter == 4'd7)
+                begin
+                    vTileDoubleLineCounter <= 4'd0;
+                    vTileCounter <= vTileCounter + 1'b1;
+                    bg_tile_line <= bg_tile_line + 7'd64; // + number of tiles per line in bg plane
+                    window_tile_line <= window_tile_line + 6'd40; // + number of tiles per line in window plane
+                end
             end
         end
     end

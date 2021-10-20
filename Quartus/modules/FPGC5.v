@@ -8,6 +8,9 @@ module FPGC5(
     //HDMI
     output [3:0]    TMDS_p,
     output [3:0]    TMDS_n,
+    
+    //NTSC composite video signal
+    output [7:0]    composite,
 
     //SDRAM
     output          SDRAM_CLK,
@@ -101,13 +104,33 @@ wire clk;               // System clock                         (50MHz)
 
 clock_pll clkPll(
 .inclk0 (clock),
-.c0     (clkPixel),
-.c1     (clkTMDShalf),
+//.c0     (clkPixel),
+//.c1     (clkTMDShalf),
 .c2     (clk_SDRAM),
 .c3     (SDRAM_CLK),
 .c4     (clk)
 );
 
+wire clk14; //14.31818MHz (50*63/220)
+wire clk114; //14.31818 * 8 MHz = 114.5454MHz (50*(63*2)/55)
+
+NTSC_pll ntscPll(
+.inclk0 (clock),
+.c0     (clk14),
+.c1     (clk114),
+.c2     (clkPixel), // 25.2MHz dirty fix to allow ALTCLKBUF
+.c3     (clkTMDShalf)
+);
+
+wire clkMuxOut;
+wire selectOutput;    // 1 -> HDMI, 0 -> Composite
+
+clkMux clkmux(
+.inclk0x(clk14),
+.inclk1x(clkPixel),
+.clkselect(selectOutput),
+.outclk(clkMuxOut)
+);
 
 //--------------------Reset&Stabilizers-----------------------
 // Reset signals
@@ -139,7 +162,9 @@ MultiStabilizer multistabilizer(
 .u6     (frameDrawn),
 .s6     (frameDrawn_stable),
 .u7     (DIPS[0]),
-.s7     (boot_mode_stable)
+.s7     (boot_mode_stable),
+.u8     (DIPS[1]),
+.s8     (selectOutput)
 );
 
 // Debug: indicator for opened Serial port
@@ -193,7 +218,7 @@ VRAM #(
 .cpu_q      (vram32_cpu_q),
 
 // GPU port
-.gpu_clk    (clkPixel),
+.gpu_clk    (clkMuxOut),
 .gpu_d      (vram32_gpu_d),
 .gpu_addr   (vram32_gpu_addr),
 .gpu_we     (vram32_gpu_we),
@@ -226,7 +251,7 @@ VRAM #(
 .cpu_q      (),
 
 // GPU port
-.gpu_clk    (clkPixel),
+.gpu_clk    (clkMuxOut),
 .gpu_d      (vram322_gpu_d),
 .gpu_addr   (vram322_gpu_addr),
 .gpu_we     (vram322_gpu_we),
@@ -265,7 +290,7 @@ VRAM #(
 .cpu_q      (vram8_cpu_q),
 
 // GPU port
-.gpu_clk    (clkPixel),
+.gpu_clk    (clkMuxOut),
 .gpu_d      (vram8_gpu_d),
 .gpu_addr   (vram8_gpu_addr),
 .gpu_we     (vram8_gpu_we),
@@ -304,7 +329,7 @@ VRAM #(
 .cpu_q      (vramSPR_cpu_q),
 
 // GPU port
-.gpu_clk    (clkPixel),
+.gpu_clk    (clkMuxOut),
 .gpu_d      (vramSPR_gpu_d),
 .gpu_addr   (vramSPR_gpu_addr),
 .gpu_we     (vramSPR_gpu_we),
@@ -328,14 +353,15 @@ ROM rom(
 //-----------------------FSX-------------------------
 // FSX I/O
 
-// TODO: Composite output option still has to be implemented
-wire [7:0]  composite;              // NTSC composite video signal
-reg         selectOutput = 1'b1;    // 1 -> HDMI, 0 -> Composite
+//wire [7:0]  composite;              // NTSC composite video signal
 
 FSX fsx(
 // Clocks
 .clkPixel       (clkPixel),
 .clkTMDShalf    (clkTMDShalf),
+.clk14          (clk14),
+.clk114         (clk114),
+.clkMuxOut      (clkMuxOut),
 
 // HDMI
 .TMDS_p         (TMDS_p),

@@ -1,15 +1,15 @@
 [*]
-[*] GTKWave Analyzer v3.3.105 (w)1999-2020 BSI
-[*] Tue Jul 06 18:44:29 2021
+[*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
+[*] Tue Oct 19 20:32:34 2021
 [*]
 [dumpfile] "/home/bart/Documents/FPGA/FPGC5/Verilog/output/wave.vcd"
-[dumpfile_mtime] "Tue Jul 06 18:43:13 2021"
-[dumpfile_size] 38911345
+[dumpfile_mtime] "Tue Oct 19 20:21:55 2021"
+[dumpfile_size] 38057831
 [savefile] "/home/bart/Documents/FPGA/FPGC5/Verilog/output/FPGC.gtkw"
-[timestart] 0
-[size] 1920 1027
-[pos] -1 -1
-*-27.187408 209305000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 202666000
+[size] 1920 1054
+[pos] -1 -1108
+*-20.187408 204677000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] FPGC_tb.
 [treeopen] FPGC_tb.fpgc.
 [treeopen] FPGC_tb.fpgc.cpu.
@@ -18,7 +18,7 @@
 [sst_width] 268
 [signals_width] 337
 [sst_expanded] 1
-[sst_vpaned_height] 531
+[sst_vpaned_height] 549
 @28
 FPGC_tb.fpgc.clk
 FPGC_tb.fpgc.nreset
@@ -335,7 +335,6 @@ FPGC_tb.fpgc.mu.bus_q_wire[31:0]
 -
 @22
 FPGC_tb.fpgc.mu.bus_q_wire_reg[31:0]
-FPGC_tb.fpgc.mu.bus_q_reg[31:0]
 @200
 -
 @22
@@ -355,8 +354,6 @@ FPGC_tb.fpgc.mu.sd_q[31:0]
 FPGC_tb.fpgc.mu.sd_initDone
 @22
 FPGC_tb.fpgc.mu.sd_d[31:0]
-@23
-FPGC_tb.fpgc.mu.sdramcontroller.d_reg[31:0]
 @28
 FPGC_tb.fpgc.mu.sd_busy
 @22

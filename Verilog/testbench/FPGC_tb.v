@@ -20,6 +20,10 @@
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/HDMI/TMDSenc.v"
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/HDMI/lvds.v"
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/HDMI/ddr.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/NTSC/NTSC.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/NTSC/PhaseGen.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/NTSC/RGB332toNTSC.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/GPU/NTSC/RGBtoYPhaseAmpl.v"
 
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/Memory/VRAM.v"
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/Memory/mt48lc16m16a2.v"

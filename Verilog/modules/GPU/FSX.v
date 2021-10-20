@@ -6,6 +6,9 @@ module FSX(
     //Clocks
     input clkPixel,
     input clkTMDShalf,
+    input clk14,
+    input clk114,
+    input clkMuxOut,
 
     //HDMI
     output [3:0] TMDS_p,
@@ -47,31 +50,76 @@ lvds lvdsConverter(
 );
 
 
-wire [11:0] h_count;
-wire [11:0] v_count;
+wire [11:0] h_count_hdmi;
+wire [11:0] v_count_hdmi;
 
-wire hsync;
-wire vsync;
+wire hsync_hdmi;
+wire vsync_hdmi;
 wire csync;
-wire blank;
+wire blank_hdmi;
+wire frameDrawn_hdmi;
 
 TimingGenerator timingGenerator(
     // Clock
     .clkPixel(clkPixel),
 
     // Position counters
-    .h_count(h_count),
-    .v_count(v_count),
+    .h_count(h_count_hdmi),
+    .v_count(v_count_hdmi),
 
     // Video signals
-    .hsync(hsync),
-    .vsync(vsync),
+    .hsync(hsync_hdmi),
+    .vsync(vsync_hdmi),
     .csync(csync),
-    .blank(blank),
+    .blank(blank_hdmi),
     
     // Interrupt signal
-    .frameDrawn(frameDrawn)
+    .frameDrawn(frameDrawn_hdmi)
 );
+
+
+wire [2:0] r_ntsc;
+wire [2:0] g_ntsc;
+wire [1:0] b_ntsc;
+
+
+wire frameDrawn_ntsc;
+wire [11:0] h_count_ntsc;
+wire [11:0] v_count_ntsc;
+
+wire hsync_ntsc;
+wire vsync_ntsc;
+wire blank_ntsc;
+
+
+RGB332toNTSC rgb2ntsc(
+    .clk(clk14), //14.318MHz
+    .clkColor(clk114), //114.5454MHz
+    .r(r_ntsc),
+    .g(g_ntsc),
+    .b(b_ntsc),
+    .hcount(h_count_ntsc),
+    .vcount(v_count_ntsc),
+    .hs(hsync_ntsc),
+    .vs(vsync_ntsc),
+    .blank(blank_ntsc),
+    .composite(composite), // video output signal
+    .frameDrawn(frameDrawn_ntsc) // interrupt signal
+);
+
+
+wire hsync;
+wire vsync;
+wire blank;
+wire [11:0] h_count;
+wire [11:0] v_count;
+
+assign frameDrawn   = (selectOutput == 1'b1) ? frameDrawn_hdmi : frameDrawn_ntsc;
+assign hsync        = (selectOutput == 1'b1) ? hsync_hdmi : hsync_ntsc;
+assign vsync        = (selectOutput == 1'b1) ? vsync_hdmi : ~vsync_ntsc; // ntsc vsync is inverted
+assign blank        = (selectOutput == 1'b1) ? blank_hdmi : blank_ntsc;
+assign h_count      = (selectOutput == 1'b1) ? h_count_hdmi : h_count_ntsc;
+assign v_count      = (selectOutput == 1'b1) ? v_count_hdmi : v_count_ntsc;
 
 
 wire [2:0] BGW_r;
@@ -81,10 +129,12 @@ wire [1:0] BGW_b;
 
 BGWrenderer bgwrenderer(
     // Video I/O
-    .clk(clkPixel),
+    .clk(clkMuxOut),
     .hs(hsync),
     .vs(vsync),
     .blank(blank),
+
+    .scale2x(selectOutput),
     
     // Output colors
     .r(BGW_r),
@@ -104,23 +154,26 @@ BGWrenderer bgwrenderer(
 );
 
 
+assign r_ntsc = (!selectOutput) ? BGW_r : 3'd0;
+assign g_ntsc = (!selectOutput) ? BGW_g : 3'd0;
+assign b_ntsc = (!selectOutput) ? BGW_b : 2'd0;
 
-wire [2:0] r;
-wire [2:0] g;
-wire [1:0] b;
 
-assign r = BGW_r;
-assign g = BGW_g;
-assign b = BGW_b;
+wire [2:0] r_hdmi;
+wire [2:0] g_hdmi;
+wire [1:0] b_hdmi;
 
+assign r_hdmi = (selectOutput) ? BGW_r : 3'd0;
+assign g_hdmi = (selectOutput) ? BGW_g : 3'd0;
+assign b_hdmi = (selectOutput) ? BGW_b : 2'd0;
 
 wire [7:0] rByte;
 wire [7:0] gByte;
 wire [7:0] bByte;
 
-assign rByte = (r == 3'd0) ?  {r, 5'b00000} : {r, 5'b11111};
-assign gByte = (g == 3'd0) ?  {g, 5'b00000} : {g, 5'b11111};
-assign bByte = (b == 2'd0) ?  {b, 6'b000000} : {b, 6'b111111};
+assign rByte = (r_hdmi == 3'd0) ?  {r_hdmi, 5'b00000} : {r_hdmi, 5'b11111};
+assign gByte = (g_hdmi == 3'd0) ?  {g_hdmi, 5'b00000} : {g_hdmi, 5'b11111};
+assign bByte = (b_hdmi == 2'd0) ?  {b_hdmi, 6'b000000} : {b_hdmi, 6'b111111};
 
 
 // Convert VGA signal to HDMI signals
@@ -130,9 +183,9 @@ RGB2HDMI rgb2hdmi(
     .rRGB   (rByte),
     .gRGB   (gByte),
     .bRGB   (bByte),
-    .blk    (blank),
-    .hs     (hsync),
-    .vs     (vsync), 
+    .blk    (blank_hdmi),
+    .hs     (hsync_hdmi),
+    .vs     (vsync_hdmi), 
     .bTMDS  (TMDS[0]),
     .gTMDS  (TMDS[1]),
     .rTMDS  (TMDS[2]),
@@ -143,7 +196,7 @@ RGB2HDMI rgb2hdmi(
 // Image file generator for simulation
 integer file;
 integer framecounter = 0;
-always @(negedge vsync)
+always @(negedge vsync_hdmi)
 begin
     file = $fopen($sformatf("/home/bart/Documents/FPGA/FPGC5/Verilog/output/frame%0d.ppm", framecounter), "w");
     $fwrite(file, "P3\n");
@@ -154,14 +207,10 @@ end
 
 always @(posedge clkPixel)
 begin
-    if (~blank)
+    if (~blank_hdmi)
     begin
         $fwrite(file, "%d  %d  %d\n", rByte, gByte, bByte);
     end
 end
-
-
-
-
 
 endmodule

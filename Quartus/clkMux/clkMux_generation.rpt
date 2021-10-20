@@ -1,0 +1,33 @@
+Info: Starting: Create block symbol file (.bsf)
+Info: qsys-generate /home/bart/Documents/FPGA/FPGC5/Quartus/clkMux.qsys --block-symbol-file --output-directory=/home/bart/Documents/FPGA/FPGC5/Quartus/clkMux --family="Cyclone IV E" --part=EP4CE15F23C8
+Progress: Loading Quartus/clkMux.qsys
+Progress: Reading input file
+Progress: Adding altclkctrl_0 [altclkctrl 20.1]
+Progress: Parameterizing module altclkctrl_0
+Progress: Building connections
+Progress: Parameterizing connections
+Progress: Validating
+Progress: Done reading input file
+: clkMux.altclkctrl_0: Targeting device family: Cyclone IV E.
+: clkMux.altclkctrl_0: Global clock network allows a clock signal to reach all parts of the chip with the same amount of skew. Input port 'clkselect' can be used to switch between four clock inputs.
+Info: qsys-generate succeeded.
+Info: Finished: Create block symbol file (.bsf)
+Info: 
+Info: Starting: Create HDL design files for synthesis
+Info: qsys-generate /home/bart/Documents/FPGA/FPGC5/Quartus/clkMux.qsys --synthesis=VERILOG --output-directory=/home/bart/Documents/FPGA/FPGC5/Quartus/clkMux/synthesis --family="Cyclone IV E" --part=EP4CE15F23C8
+Progress: Loading Quartus/clkMux.qsys
+Progress: Reading input file
+Progress: Adding altclkctrl_0 [altclkctrl 20.1]
+Progress: Parameterizing module altclkctrl_0
+Progress: Building connections
+Progress: Parameterizing connections
+Progress: Validating
+Progress: Done reading input file
+: clkMux.altclkctrl_0: Targeting device family: Cyclone IV E.
+: clkMux.altclkctrl_0: Global clock network allows a clock signal to reach all parts of the chip with the same amount of skew. Input port 'clkselect' can be used to switch between four clock inputs.
+Info: clkMux: Generating clkMux "clkMux" for QUARTUS_SYNTH
+Info: altclkctrl_0: Generating top-level entity clkMux_altclkctrl_0.
+Info: altclkctrl_0: "clkMux" instantiated altclkctrl "altclkctrl_0"
+Info: clkMux: Done "clkMux" with 2 modules, 2 files
+Info: qsys-generate succeeded.
+Info: Finished: Create HDL design files for synthesis

@@ -104,9 +104,17 @@ module FPGC5(
 wire clkTMDShalf;   // TMDS clock (pre-DDR), 5x pixel clock
 wire clkPixel;  // Pixel clock
 
+wire clk14; // NTSC clock
+wire clk114; // NTSC color clock
+
+wire clkMuxOut; // HDMI or NTSC clock, depending on selectOutput
+
 // everything at clk speed for simulation
 assign clkTMDShalf = clk;
 assign clkPixel = clk;
+assign clk14 = clk;
+assign clk114 = clk;
+assign clkMuxOut = clk;
 
 //Run SDRAM at 100MHz
 assign SDRAM_CLK = clk_SDRAM;
@@ -196,7 +204,7 @@ VRAM #(
 .cpu_q      (vram32_cpu_q),
 
 //GPU port
-.gpu_clk    (clkPixel),
+.gpu_clk    (clkMuxOut),
 .gpu_d      (vram32_gpu_d),
 .gpu_addr   (vram32_gpu_addr),
 .gpu_we     (vram32_gpu_we),
@@ -229,7 +237,7 @@ VRAM #(
 .cpu_q      (),
 
 //GPU port
-.gpu_clk    (clkPixel),
+.gpu_clk    (clkMuxOut),
 .gpu_d      (vram322_gpu_d),
 .gpu_addr   (vram322_gpu_addr),
 .gpu_we     (vram322_gpu_we),
@@ -268,7 +276,7 @@ VRAM #(
 .cpu_q      (vram8_cpu_q),
 
 //GPU port
-.gpu_clk    (clkPixel),
+.gpu_clk    (clkMuxOut),
 .gpu_d      (vram8_gpu_d),
 .gpu_addr   (vram8_gpu_addr),
 .gpu_we     (vram8_gpu_we),
@@ -307,7 +315,7 @@ VRAM #(
 .cpu_q      (vramSPR_cpu_q),
 
 //GPU port
-.gpu_clk    (clkPixel),
+.gpu_clk    (clkMuxOut),
 .gpu_d      (vramSPR_gpu_d),
 .gpu_addr   (vramSPR_gpu_addr),
 .gpu_we     (vramSPR_gpu_we),
@@ -334,11 +342,14 @@ ROM rom(
 wire [7:0]  composite; // NTSC composite video signal
 reg         selectOutput = 1'b1; // 1 -> HDMI, 0 -> Composite
 
-
 FSX fsx(
 //Clocks
 .clkPixel       (clkPixel),
 .clkTMDShalf    (clkTMDShalf),
+.clk14          (clk14),
+.clk114         (clk114),
+.clkMuxOut      (clkMuxOut),
+
 
 //HDMI
 .TMDS_p         (TMDS_p),
