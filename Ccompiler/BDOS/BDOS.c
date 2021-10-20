@@ -78,9 +78,13 @@ void BDOS_Backup()
 
 void BDOS_Restore()
 {
-    // Restore graphics (minimally)
+    // Restore graphics (trying to keep text in window plane)
     GFX_copyPaletteTable((int)DATA_PALETTE_DEFAULT);
     GFX_copyPatternTable((int)DATA_ASCII_DEFAULT);
+    GFX_clearBGtileTable();
+    GFX_clearBGpaletteTable();
+    GFX_clearWindowpaletteTable();
+    GFX_clearSprites();
 
     // Restore netloader
     NETLOADER_init(NETLOADER_SOCKET);

@@ -544,3 +544,11 @@ void GFX_PrintConsole(char* str)
         chr = *str;             // get character from address
     }
 }
+
+// Clears console by removing all tiles and resetting the cursor
+void GFX_clearConsole()
+{
+    GFX_clearWindowtileTable();
+    GFX_clearBGtileTable();
+    GFX_cursor = 0;
+}
