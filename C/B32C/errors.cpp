@@ -23,7 +23,7 @@ class ErrorCollector{
         {
         }
             
-}
+};
 
 class Position{
     /*

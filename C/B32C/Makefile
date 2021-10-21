@@ -25,6 +25,6 @@ dist-clean: clean
 
 test: $(objects)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $(appname) $(objects) $(LDLIBS)
-	./b32c ../compilerTests/a.c
+	./b32c ../compilerTests/c.c
 
 include .depend

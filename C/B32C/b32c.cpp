@@ -79,7 +79,7 @@ void process_file(string filename, bool bdos, bool os)
     string fileContent( (istreambuf_iterator<char>(ifs) ),
                        (istreambuf_iterator<char>()    ) );
 
-    //cout << fileContent;
+    cout << fileContent;
 }
 
 int main(int argc, char* argv[])
@@ -90,6 +90,21 @@ int main(int argc, char* argv[])
 
     bool bdos = input.cmdOptionExists("--bdos");
     bool os = input.cmdOptionExists("--os");
+    bool help = input.cmdOptionExists("--help");
+
+    // if help is given, print help message and exit
+    if (help)
+    {
+        cout << "Compiles C(ish) program into B332 Assembly.\n";
+        cout << "Usage: b32c [options] file\n";
+        cout << "Options:\n";
+        cout << "--help: Show this message\n";
+        cout << "--bdos: Compile as userBDOS program\n";
+        cout << "--os:   Compile as OS\n\n";
+        cout << "The --bdos and --os options add different assembly wrappers to the code\n";
+        return 0;
+    }
+
     string filename = input.getFirstCfile();
 
     if (filename != "")
