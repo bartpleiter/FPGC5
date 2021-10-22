@@ -14,43 +14,6 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
-L FPGC4IOboard-rescue:Conn_01x07-Connector_Generic J2
-U 1 1 5E2A11F1
-P 1300 3950
-F 0 "J2" H 1350 3450 50  0000 L CNN
-F 1 "Conn_NES" H 1150 3550 50  0000 L CNN
-F 2 "SNES:SNES_controller_port" H 1300 3950 50  0001 C CNN
-F 3 "~" H 1300 3950 50  0001 C CNN
-	1    1300 3950
-	-1   0    0    1   
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:GND-power #PWR014
-U 1 1 5E2AF5E8
-P 1650 3700
-F 0 "#PWR014" H 1650 3450 50  0001 C CNN
-F 1 "GND" H 1750 3600 50  0000 C CNN
-F 2 "" H 1650 3700 50  0001 C CNN
-F 3 "" H 1650 3700 50  0001 C CNN
-	1    1650 3700
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	1650 3650 1500 3650
-$Comp
-L FPGC4IOboard-rescue:+3.3V-power #PWR015
-U 1 1 5E2B1790
-P 1700 4350
-F 0 "#PWR015" H 1700 4200 50  0001 C CNN
-F 1 "+3.3V" H 1850 4400 50  0000 C CNN
-F 2 "" H 1700 4350 50  0001 C CNN
-F 3 "" H 1700 4350 50  0001 C CNN
-	1    1700 4350
-	1    0    0    -1  
-$EndComp
-NoConn ~ 1500 3750
-NoConn ~ 1500 3850
-$Comp
 L FPGC4IOboard-rescue:GND-power #PWR0108
 U 1 1 5E3B478B
 P 17350 14250
@@ -317,10 +280,6 @@ F 3 "" H 18150 1700 50  0001 C CNN
 $EndComp
 Text Notes 14400 750  0    50   ~ 0
 IO Headers
-Wire Wire Line
-	1550 4250 1500 4250
-Text Notes 2100 3450 2    50   ~ 0
-NES controller port
 $Comp
 L FPGC4IOboard-rescue:Conn_01x04-Connector_Generic J12
 U 1 1 5E54708C
@@ -1732,18 +1691,6 @@ F 3 "~" H 17850 900 50  0001 C CNN
 $EndComp
 Text Label 17550 1350 1    50   ~ 0
 IO_GP
-Text GLabel 1650 4150 2    50   Input ~ 0
-NES_CLK
-Text GLabel 1650 4050 2    50   Input ~ 0
-NES_Latch
-Text GLabel 1650 3950 2    50   Output ~ 0
-NES_Data
-Wire Wire Line
-	1500 4150 1650 4150
-Wire Wire Line
-	1500 4050 1650 4050
-Wire Wire Line
-	1500 3950 1650 3950
 Text GLabel 4700 1100 2    50   Input ~ 0
 PS2_CLK
 Text GLabel 4700 2150 2    50   BiDi ~ 0
@@ -1940,20 +1887,6 @@ Wire Notes Line
 	13200 9400 13200 16000
 Wire Notes Line
 	13200 9400 22850 9400
-Wire Wire Line
-	1650 3650 1650 3700
-Wire Wire Line
-	1550 4250 1550 4350
-Wire Wire Line
-	1550 4350 1700 4350
-Wire Notes Line
-	950  3350 2150 3350
-Wire Notes Line
-	2150 3350 2150 4750
-Wire Notes Line
-	2150 4750 950  4750
-Wire Notes Line
-	950  3350 950  4750
 Wire Wire Line
 	18100 3400 18050 3400
 Wire Wire Line
@@ -3472,12 +3405,10 @@ Wire Wire Line
 Connection ~ 9250 7000
 Wire Wire Line
 	9250 7000 9250 7050
-Text GLabel 17100 14100 2    50   Output ~ 0
+Text GLabel 17650 13850 2    50   Output ~ 0
 CRT_AUDIO
 Wire Wire Line
 	17050 14250 17050 14100
-Wire Wire Line
-	17050 14100 17100 14100
 Connection ~ 17050 14250
 Text GLabel 9850 9700 1    50   Input ~ 0
 Flash_CLK
@@ -3596,7 +3527,7 @@ L FPGC4IOboard-rescue:Fuse-Device F?
 U 1 1 61627EE2
 P 19850 7000
 F 0 "F?" V 19650 6950 50  0000 L CNN
-F 1 "500mA" V 19750 6900 50  0000 L CNN
+F 1 "0.75A" V 19750 6900 50  0000 L CNN
 F 2 "Fuse:Fuse_1812_4532Metric_Pad1.30x3.40mm_HandSolder" V 19780 7000 50  0001 C CNN
 F 3 "~" H 19850 7000 50  0001 C CNN
 	1    19850 7000
@@ -3652,7 +3583,7 @@ U 1 1 61627F00
 P 20150 6600
 F 0 "SW?" V 20000 6300 50  0000 L CNN
 F 1 "SW_Power" V 20100 6100 50  0000 L CNN
-F 2 "switch:switchAngled" H 20150 6600 50  0001 C CNN
+F 2 "" H 20150 6600 50  0001 C CNN
 F 3 "~" H 20150 6600 50  0001 C CNN
 	1    20150 6600
 	0    1    1    0   
@@ -4323,12 +4254,12 @@ $EndComp
 $Comp
 L FPGC4IOboard-rescue:R-Device R?
 U 1 1 666D70BF
-P 10700 13200
-F 0 "R?" V 10600 13100 50  0000 C CNN
-F 1 "75" V 10600 13300 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" V 10630 13200 50  0001 C CNN
-F 3 "~" H 10700 13200 50  0001 C CNN
-	1    10700 13200
+P 10850 13200
+F 0 "R?" V 10750 13100 50  0000 C CNN
+F 1 "75" V 10750 13300 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" V 10780 13200 50  0001 C CNN
+F 3 "~" H 10850 13200 50  0001 C CNN
+	1    10850 13200
 	0    -1   -1   0   
 $EndComp
 Wire Wire Line
@@ -4371,9 +4302,6 @@ Wire Wire Line
 	10300 12600 10350 12600
 Wire Wire Line
 	10350 12600 10350 13200
-Wire Wire Line
-	10550 13200 10350 13200
-Connection ~ 10350 13200
 $Comp
 L FPGC4IOboard-rescue:C-Device C?
 U 1 1 66DDD76A
@@ -4771,16 +4699,16 @@ DAC_D7
 $Comp
 L Connector:Conn_Coaxial J?
 U 1 1 685B9D15
-P 11150 13200
-F 0 "J?" H 11250 13175 50  0000 L CNN
-F 1 "Conn_RCA" H 11250 13084 50  0000 L CNN
-F 2 "RCJ013:CUI_RCJ-013" H 11150 13200 50  0001 C CNN
-F 3 " ~" H 11150 13200 50  0001 C CNN
-	1    11150 13200
+P 11300 13200
+F 0 "J?" H 11400 13175 50  0000 L CNN
+F 1 "Conn_RCA_Video" H 11000 13350 50  0000 L CNN
+F 2 "RCJ013:CUI_RCJ-013" H 11300 13200 50  0001 C CNN
+F 3 " ~" H 11300 13200 50  0001 C CNN
+	1    11300 13200
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	10950 13200 10850 13200
+	11100 13200 11000 13200
 $Comp
 L FPGC4IOboard-rescue:GND-power #PWR?
 U 1 1 68636EAF
@@ -4801,16 +4729,16 @@ Wire Wire Line
 $Comp
 L FPGC4IOboard-rescue:GND-power #PWR?
 U 1 1 686B50E5
-P 11150 13500
-F 0 "#PWR?" H 11150 13250 50  0001 C CNN
-F 1 "GND" H 11000 13450 50  0000 C CNN
-F 2 "" H 11150 13500 50  0001 C CNN
-F 3 "" H 11150 13500 50  0001 C CNN
-	1    11150 13500
+P 11300 13500
+F 0 "#PWR?" H 11300 13250 50  0001 C CNN
+F 1 "GND" H 11150 13450 50  0000 C CNN
+F 2 "" H 11300 13500 50  0001 C CNN
+F 3 "" H 11300 13500 50  0001 C CNN
+	1    11300 13500
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	11150 13400 11150 13500
+	11300 13400 11300 13500
 Wire Notes Line
 	5950 12050 11650 12050
 Wire Notes Line
@@ -4820,7 +4748,7 @@ Wire Notes Line
 Wire Notes Line
 	5950 14200 5950 12050
 Text Notes 6000 12150 0    50   ~ 0
-8bit DAC
+8bit DAC (NTSC Video)
 Text GLabel 1150 7000 3    50   Input ~ 0
 LED_Booted
 $Comp
@@ -5316,4 +5244,107 @@ Wire Wire Line
 	2150 8600 2150 8750
 Connection ~ 2050 8600
 NoConn ~ 2250 10000
+$Comp
+L Connector:Conn_Coaxial J?
+U 1 1 617BE518
+P 11300 12350
+F 0 "J?" H 11400 12325 50  0000 L CNN
+F 1 "Conn_RCA_Audio" H 11000 12500 50  0000 L CNN
+F 2 "RCJ013:CUI_RCJ-013" H 11300 12350 50  0001 C CNN
+F 3 " ~" H 11300 12350 50  0001 C CNN
+	1    11300 12350
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	11100 12350 11000 12350
+$Comp
+L FPGC4IOboard-rescue:GND-power #PWR?
+U 1 1 617BE51F
+P 11300 12650
+F 0 "#PWR?" H 11300 12400 50  0001 C CNN
+F 1 "GND" H 11150 12600 50  0000 C CNN
+F 2 "" H 11300 12650 50  0001 C CNN
+F 3 "" H 11300 12650 50  0001 C CNN
+	1    11300 12650
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	11300 12550 11300 12650
+Text Notes 1200 8500 0    50   ~ 0
+TODO: look into easy to solder SMD connector \nlike the breakout board
+$Comp
+L FPGC4IOboard-rescue:R-Device R?
+U 1 1 618862D9
+P 5000 6350
+F 0 "R?" H 4850 6250 50  0000 C CNN
+F 1 "1k" H 4850 6350 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" V 4930 6350 50  0001 C CNN
+F 3 "~" H 5000 6350 50  0001 C CNN
+	1    5000 6350
+	1    0    0    1   
+$EndComp
+Text GLabel 5000 7000 3    50   Input ~ 0
+LED_VideoOutput
+$Comp
+L Device:LED D?
+U 1 1 618862E0
+P 5000 6750
+F 0 "D?" V 4947 6830 50  0000 L CNN
+F 1 "LED" V 5038 6830 50  0000 L CNN
+F 2 "" H 5000 6750 50  0001 C CNN
+F 3 "~" H 5000 6750 50  0001 C CNN
+	1    5000 6750
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	5000 6500 5000 6600
+Wire Wire Line
+	5000 6900 5000 7000
+$Comp
+L FPGC4IOboard-rescue:+3.3V-power #PWR?
+U 1 1 618862E8
+P 5000 6100
+F 0 "#PWR?" H 5000 5950 50  0001 C CNN
+F 1 "+3.3V" H 4850 6200 50  0000 C CNN
+F 2 "" H 5000 6100 50  0001 C CNN
+F 3 "" H 5000 6100 50  0001 C CNN
+	1    5000 6100
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5000 6100 5000 6200
+Text Notes 1200 7650 0    50   ~ 0
+If too many leds, use some kind of multiplexing
+Text Notes 2300 750  0    50   ~ 0
+Can move to the back now, since good USB keyboard support
+Text Notes 14500 2200 0    50   ~ 0
+TODO: look into adding 5v somewhere (like other development boards do)
+Text Notes 20300 6650 0    50   ~ 0
+TODO: better physical switch
+Text GLabel 11000 12350 0    50   Input ~ 0
+CRT_AUDIO
+Wire Wire Line
+	10350 13200 10700 13200
+Connection ~ 10350 13200
+$Comp
+L FPGC4IOboard-rescue:R-Device R?
+U 1 1 61AA0A74
+P 17400 13850
+F 0 "R?" V 17300 13750 50  0000 C CNN
+F 1 "10k" V 17300 13950 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.15x1.40mm_HandSolder" V 17330 13850 50  0001 C CNN
+F 3 "~" H 17400 13850 50  0001 C CNN
+	1    17400 13850
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	17550 13850 17650 13850
+Wire Wire Line
+	17250 13850 17200 13850
+Wire Wire Line
+	17200 13850 17200 14100
+Wire Wire Line
+	17050 14100 17200 14100
+Text Notes 2500 10600 0    50   ~ 0
+TODO: add tvs diodes
 $EndSCHEMATC

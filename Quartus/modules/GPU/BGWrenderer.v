@@ -32,7 +32,7 @@ module BGWrenderer(
 //localparam HSTART = 164;//128; // About two tiles before blanking ends
 
 // Dirty fix to use different offsets for NTSC vs HDMI
-wire [7:0] VSTART = (scale2x) ? 8'd86 : 8'd42;
+wire [7:0] VSTART = (scale2x) ? 8'd86 : 8'd41;
 wire [7:0] HSTART = (scale2x) ? 8'd128 : 8'd164;
 
 // Actions based on hTilePixelCounter value
