@@ -5,8 +5,9 @@ token_kinds.py). A Token instance represents a token as produced by the lexer.
 
 """
 
+from shivyc.errors cimport Range
 
-class TokenKind:
+cdef class TokenKind:
     """Class representing the various known kinds of tokens.
 
     Ex: +, -, ), return, int
@@ -19,7 +20,8 @@ class TokenKind:
 
     """
 
-    def __init__(self, text_repr="", kinds=[]):
+
+    def __init__(self, str text_repr="", list kinds=[]):
         """Initialize a new TokenKind and add it to `kinds`.
 
         kinds (List[TokenKind]) - List of kinds to which this TokenKind is
@@ -35,7 +37,7 @@ class TokenKind:
         return self.text_repr
 
 
-class Token:
+cdef class Token:
     """Single unit element of the input as produced by the tokenizer.
 
     kind (TokenKind) - Kind of this token.
@@ -49,7 +51,7 @@ class Token:
 
     """
 
-    def __init__(self, kind, content="", rep="", r=None):
+    def __init__(self, TokenKind kind, str content="", str rep="", Range r=None):
         """Initialize this token."""
         self.kind = kind
 

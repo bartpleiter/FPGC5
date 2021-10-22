@@ -1,6 +1,6 @@
 """The token kinds currently recognized."""
 
-from shivyc.tokens import TokenKind
+from shivyc.tokens cimport TokenKind
 
 keyword_kinds = []
 symbol_kinds = []

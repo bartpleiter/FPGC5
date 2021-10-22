@@ -7,13 +7,13 @@ generates a flat list of tokens present in that input file.
 import re
 
 import shivyc.token_kinds as token_kinds
-from shivyc.errors import CompilerError, Position, Range, error_collector
+from shivyc.errors cimport CompilerError, Position, Range, error_collector
 from shivyc.tokens import Token
 from shivyc.token_kinds import symbol_kinds, keyword_kinds
 
 defineDict = {}
 
-class Tagged:
+cdef class Tagged:
     """Class representing tagged characters.
 
     c (char) - the character that is tagged
@@ -21,14 +21,18 @@ class Tagged:
     r (Range) - a length-one range for the character
     """
 
-    def __init__(self, c, p):
+    cdef public str c
+    cdef public Position p
+    cdef public Range r
+
+    def __init__(self, str c, Position p):
         """Initialize object."""
         self.c = c
         self.p = p
         self.r = Range(p, p)
 
 
-def tokenize(code, filename):
+cdef _tokenize(str code, str filename):
     """Convert given code into a flat list of Tokens.
 
     lines - List of list of Tagged objects, where each embedded list is a
@@ -36,13 +40,16 @@ def tokenize(code, filename):
     return - List of Token objects.
     """
     # Store tokens as they are generated
-    tokens = []
+    cdef list tokens = []
 
-    lines = split_to_tagged_lines(code, filename)
+    cdef list lines = split_to_tagged_lines(code, filename)
+
     join_extended_lines(lines)
 
+    cdef bint in_comment = False
 
-    in_comment = False
+    cdef list line, line_tokens
+
     for line in lines:
         try:
             line_tokens, in_comment = tokenize_line(line, in_comment)
@@ -54,8 +61,10 @@ def tokenize(code, filename):
     #    print(token.__dict__)
     return tokens, defineDict
 
+def tokenize(str code, str filename):
+    return _tokenize(code, filename)
 
-def split_to_tagged_lines(text, filename):
+cdef list split_to_tagged_lines(str text, str filename):
     """Split the input text into tagged lines.
 
     No newline escaping or other preprocessing is done by this function.
@@ -65,6 +74,11 @@ def split_to_tagged_lines(text, filename):
     return - Tagged lines. List of list of Tagged objects, where each second
     order list is a separate line in the input progam. No newline characters.
     """
+    cdef int col, line_num
+    cdef str char, line
+    cdef list lines, tagged_lines, tagged_line
+    cdef Position p
+
     lines = text.splitlines()
     tagged_lines = []
     for line_num, line in enumerate(lines):
@@ -79,7 +93,7 @@ def split_to_tagged_lines(text, filename):
     return tagged_lines
 
 
-def join_extended_lines(lines):
+cdef join_extended_lines(list lines):
     """Join together any lines which end in an escaped newline.
 
     This function modifies the given lines object in place.
@@ -89,7 +103,7 @@ def join_extended_lines(lines):
     """
     # TODO: GCC supports \ followed by whitespace. Should ShivyC do this too?
 
-    i = 0
+    cdef int i = 0
     while i < len(lines):
         if lines[i] and lines[i][-1].c == "\\":
             # There is a next line to collapse into this one
@@ -110,7 +124,7 @@ def join_extended_lines(lines):
         i += 1
 
 
-def tokenize_line(line, in_comment):
+cdef tokenize_line(list line, bint in_comment):
     """Tokenize the given single line.
 
     line - List of Tagged objects.
@@ -119,24 +133,27 @@ def tokenize_line(line, in_comment):
     return - List of Token objects, and boolean indicating whether the next
     character is part of a comment body.
     """
-    tokens = []
+    cdef list tokens = []
 
     # line[chunk_start:chunk_end] is the section of the line currently
     # being considered for conversion into a token; this string will be
     # called the 'chunk'. Everything before the chunk has already been
     # tokenized, and everything after has not yet been examined
-    chunk_start = 0
-    chunk_end = 0
+    cdef int chunk_start = 0
+    cdef int chunk_end = 0
 
     # Flag that is set True if the line begins with `#` and `include`,
     # perhaps with comments and whitespace in between.
-    include_line = False
+    cdef bint include_line = False
     # Flag that is set True if the line is an include directive and the
     # filename has been seen and succesfully parsed.
-    seen_filename = False
+    cdef bint seen_filename = False
 
     # Flag for defines
-    define_line = False
+    cdef bint define_line = False
+
+    cdef str fullLine
+    cdef Tagged i
 
     while chunk_end < len(line):
         # First check (using a really hacky way) if this is ASM code
@@ -302,7 +319,7 @@ def match_symbol_kind_at(content, start):
 
     content - List of Tagged objects in which to search for match.
     start (int) - Index, inclusive, at which to start searching for a match.
-    returns (TokenType or None) - Symbol token found, or None if no token
+    returns (TokenKind or None) - Symbol token found, or None if no token
     is found.
 
     """

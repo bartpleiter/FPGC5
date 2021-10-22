@@ -5,7 +5,7 @@ The main executable catches an exception and prints it for the user.
 """
 
 
-class ErrorCollector:
+cdef class ErrorCollector:
     """Class that accumulates all errors and warnings encountered.
 
     We create a global instance of this class so all parts of the compiler can
@@ -18,14 +18,18 @@ class ErrorCollector:
         """Initialize the ErrorCollector with no issues to report."""
         self.issues = []
 
-    def add(self, issue):
+    def add(self, CompilerError issue):
         """Add the given error or warning (CompilerError) to list of errors."""
         self.issues.append(issue)
         self.issues.sort()
 
-    def ok(self):
+    # using cdef for speed is useless, but it is a good test
+    cdef bint _ok(self):
         """Return True iff there are no errors."""
         return not any(not issue.warning for issue in self.issues)
+
+    def ok(self):
+        return self._ok()
 
     def show(self):  # pragma: no cover
         """Display all warnings and errors."""
@@ -36,11 +40,9 @@ class ErrorCollector:
         """Clear all warnings and errors. Intended only for testing use."""
         self.issues = []
 
-
 error_collector = ErrorCollector()
 
-
-class Position:
+cdef class Position:
     """Class representing a position in source code.
 
     file (str) - Name of file in which this position is located.
@@ -50,36 +52,36 @@ class Position:
     Specifically, full_line[col + 1] should be this position.
     """
 
-    def __init__(self, file, line, col, full_line):
+    def __init__(self, str file, int line, int col, str full_line):
         """Initialize Position object."""
         self.file = file
         self.line = line
         self.col = col
         self.full_line = full_line
 
-    def __add__(self, other):
+    def __add__(self, int other):
         """Increment Position column by one."""
         return Position(self.file, self.line, self.col + 1, self.full_line)
 
 
-class Range:
+cdef class Range:
     """Class representing a continuous range between two positions.
 
     start (Position) - start position, inclusive
     end (Position) - end position, inclusive
     """
 
-    def __init__(self, start, end=None):
+    def __init__(self, Position start, Position end=None):
         """Initialize Range objects."""
         self.start = start
         self.end = end or start
 
-    def __add__(self, other):
+    def __add__(self, Range other):
         """Add Range objects by concatenating their ranges."""
         return Range(self.start, other.end)
 
 
-class CompilerError(Exception):
+cdef class CompilerError(Exception):
     """Class representing compile-time errors.
 
     message (str) - User-friendly explanation of the error. Should
@@ -89,7 +91,7 @@ class CompilerError(Exception):
 
     """
 
-    def __init__(self, descrip, range=None, warning=False):
+    def __init__(self, str descrip, Range range=None, bint warning=False):
         """Initialize error.
 
         descrip (str) - Description of the error.
@@ -106,12 +108,14 @@ class CompilerError(Exception):
 
         Also includes the line on which the error occurred.
         """
-        error_color = "\x1B[31m"
-        warn_color = "\x1B[33m"
-        reset_color = "\x1B[0m"
-        bold_color = "\033[1m"
+        cdef str error_color = "\x1B[31m"
+        cdef str warn_color = "\x1B[33m"
+        cdef str reset_color = "\x1B[0m"
+        cdef str bold_color = "\033[1m"
 
+        cdef str color_code
         color_code = warn_color if self.warning else error_color
+        cdef str issue_type
         issue_type = "warning" if self.warning else "error"
 
         # A position range is provided, and this is output to terminal.
@@ -146,7 +150,7 @@ class CompilerError(Exception):
             return (f"{bold_color}shivyc: {color_code}{issue_type}:"
                     f"{reset_color} {self.descrip}")
 
-    def __lt__(self, other):  # pragma: no cover
+    def __lt__(self, CompilerError other):  # pragma: no cover
         """Provides sort order for printing errors."""
 
         # everything without a range comes before everything with range
@@ -157,6 +161,8 @@ class CompilerError(Exception):
         if self.range.start.file != other.range.start.file:
             return False
 
+        cdef int this_tuple 
         this_tuple = self.range.start.line, self.range.start.col
+        cdef int other_tuple 
         other_tuple = other.range.start.line, other.range.start.col
         return this_tuple < other_tuple
