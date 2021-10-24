@@ -2975,14 +2975,6 @@ Text GLabel 11950 6650 3    50   Input ~ 0
 FPGC4_RX
 Text GLabel 12050 6650 3    50   Output ~ 0
 FPGC4_DTR
-Text GLabel 9750 6650 3    50   Input ~ 0
-NES_CLK
-Text GLabel 9850 6650 3    50   Input ~ 0
-NES_Latch
-Text GLabel 9950 6650 3    50   Output ~ 0
-NES_Data
-Text GLabel 9550 6650 3    50   Input ~ 0
-PS2_CLK
 Text GLabel 9650 6650 3    50   BiDi ~ 0
 PS2_Data
 Text GLabel 9850 10200 3    50   BiDi ~ 0
@@ -3945,7 +3937,7 @@ U 1 1 640C641B
 P 21750 11150
 F 0 "J?" H 21520 11047 50  0000 R CNN
 F 1 "USB_B_Micro" H 21520 11138 50  0000 R CNN
-F 2 "Connector_USB:USB_Micro-B_Wuerth_629105150521" H 21900 11100 50  0001 C CNN
+F 2 "RCJ013:MicroUSB_G30" H 21900 11100 50  0001 C CNN
 F 3 "~" H 21900 11100 50  0001 C CNN
 	1    21750 11150
 	-1   0    0    1   
@@ -4680,21 +4672,21 @@ Wire Wire Line
 	8750 12800 8750 12900
 Wire Wire Line
 	9200 12800 9200 12900
-Text GLabel 11550 9250 1    50   Input ~ 0
+Text GLabel 11900 8950 1    50   Output ~ 0
 DAC_D6
-Text GLabel 11450 9250 1    50   Input ~ 0
+Text GLabel 11800 8950 1    50   Output ~ 0
 DAC_D5
-Text GLabel 11350 9250 1    50   Input ~ 0
+Text GLabel 11700 8950 1    50   Output ~ 0
 DAC_D4
-Text GLabel 11250 9250 1    50   Input ~ 0
+Text GLabel 11600 8950 1    50   Output ~ 0
 DAC_D3
-Text GLabel 11150 9250 1    50   Input ~ 0
+Text GLabel 11500 8950 1    50   Output ~ 0
 DAC_D2
-Text GLabel 11050 9250 1    50   Input ~ 0
+Text GLabel 11400 8950 1    50   Output ~ 0
 DAC_D1
-Text GLabel 10950 9250 1    50   Input ~ 0
+Text GLabel 11300 8950 1    50   Output ~ 0
 DAC_D0
-Text GLabel 11650 9250 1    50   Input ~ 0
+Text GLabel 12000 8950 1    50   Output ~ 0
 DAC_D7
 $Comp
 L Connector:Conn_Coaxial J?
@@ -5173,9 +5165,9 @@ $Comp
 L Connector:HDMI_A J?
 U 1 1 61E88954
 P 1850 10100
-F 0 "J?" H 2280 10054 50  0000 L CNN
-F 1 "HDMI_A" H 2280 10145 50  0000 L CNN
-F 2 "" H 1875 10100 50  0001 C CNN
+F 0 "J?" H 1400 9200 50  0000 L CNN
+F 1 "HDMI_conn" H 1100 9100 50  0000 L CNN
+F 2 "RCJ013:HDMI_connector_19" H 1875 10100 50  0001 C CNN
 F 3 "https://en.wikipedia.org/wiki/HDMI" H 1875 10100 50  0001 C CNN
 	1    1850 10100
 	-1   0    0    1   
@@ -5270,8 +5262,6 @@ F 3 "" H 11300 12650 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	11300 12550 11300 12650
-Text Notes 1200 8500 0    50   ~ 0
-TODO: look into easy to solder SMD connector \nlike the breakout board
 $Comp
 L FPGC4IOboard-rescue:R-Device R?
 U 1 1 618862D9
@@ -5313,8 +5303,6 @@ F 3 "" H 5000 6100 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	5000 6100 5000 6200
-Text Notes 1200 7650 0    50   ~ 0
-If too many leds, use some kind of multiplexing
 Text Notes 2300 750  0    50   ~ 0
 Can move to the back now, since good USB keyboard support
 Text Notes 14500 2200 0    50   ~ 0
@@ -5345,6 +5333,207 @@ Wire Wire Line
 	17200 13850 17200 14100
 Wire Wire Line
 	17050 14100 17200 14100
-Text Notes 2500 10600 0    50   ~ 0
-TODO: add tvs diodes
+Text GLabel 9550 6650 3    50   Input ~ 0
+PS2_CLK
+Text Notes 13450 9750 0    50   ~ 0
+TODO: look into an alternative for audio
+NoConn ~ 18150 5450
+NoConn ~ 18150 5650
+NoConn ~ 18150 5750
+NoConn ~ 18150 5850
+NoConn ~ 18150 5950
+NoConn ~ 19300 10850
+NoConn ~ 19300 10950
+NoConn ~ 19300 11050
+NoConn ~ 19300 11150
+NoConn ~ 20100 11350
+NoConn ~ 18950 6150
+$Comp
+L RCJ-013:SRV05-4 U?
+U 1 1 625E169B
+P 3100 9550
+F 0 "U?" H 3075 9965 50  0000 C CNN
+F 1 "SRV05-4" H 3075 9874 50  0000 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-23-6" H 3200 9200 50  0001 C CNN
+F 3 "https://katalog.we-online.de/pbs/datasheet/82400102.pdf" H 3100 9300 50  0001 C CNN
+	1    3100 9550
+	1    0    0    -1  
+$EndComp
+$Comp
+L RCJ-013:SRV05-4 U?
+U 1 1 625E4C72
+P 3100 11600
+F 0 "U?" H 3075 12015 50  0000 C CNN
+F 1 "SRV05-4" H 3075 11924 50  0000 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-23-6" H 3200 11250 50  0001 C CNN
+F 3 "https://katalog.we-online.de/pbs/datasheet/82400102.pdf" H 3100 11350 50  0001 C CNN
+	1    3100 11600
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2250 10300 2550 10300
+Wire Wire Line
+	2250 10400 3450 10400
+Wire Wire Line
+	2250 10500 2700 10500
+Wire Wire Line
+	2250 10600 2700 10600
+Wire Wire Line
+	2250 10700 3450 10700
+Wire Wire Line
+	2250 10800 2550 10800
+Wire Wire Line
+	2250 10900 3550 10900
+Wire Wire Line
+	2250 10200 3550 10200
+Wire Wire Line
+	3350 9400 3550 9400
+Wire Wire Line
+	3550 9400 3550 10200
+Connection ~ 3550 10200
+Wire Wire Line
+	3550 10200 4200 10200
+Wire Wire Line
+	2800 9400 2550 9400
+Wire Wire Line
+	2550 9400 2550 10300
+Connection ~ 2550 10300
+Wire Wire Line
+	2550 10300 4200 10300
+Wire Wire Line
+	2800 9700 2700 9700
+Wire Wire Line
+	2700 9700 2700 10500
+Connection ~ 2700 10500
+Wire Wire Line
+	2700 10500 4200 10500
+Wire Wire Line
+	3350 9700 3450 9700
+Wire Wire Line
+	3450 9700 3450 10400
+Connection ~ 3450 10400
+Wire Wire Line
+	3450 10400 4200 10400
+$Comp
+L FPGC4IOboard-rescue:GND-power #PWR?
+U 1 1 630B0A32
+P 2700 9550
+F 0 "#PWR?" H 2700 9300 50  0001 C CNN
+F 1 "GND" H 2700 9600 50  0000 C CNN
+F 2 "" H 2700 9550 50  0001 C CNN
+F 3 "" H 2700 9550 50  0001 C CNN
+	1    2700 9550
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2800 9550 2700 9550
+$Comp
+L FPGC4IOboard-rescue:+5V-power #PWR?
+U 1 1 631524B2
+P 3450 9550
+F 0 "#PWR?" H 3450 9400 50  0001 C CNN
+F 1 "+5V" H 3450 9500 50  0000 C CNN
+F 2 "" H 3450 9550 50  0001 C CNN
+F 3 "" H 3450 9550 50  0001 C CNN
+	1    3450 9550
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3350 9550 3450 9550
+$Comp
+L FPGC4IOboard-rescue:GND-power #PWR?
+U 1 1 631F5ACB
+P 2700 11600
+F 0 "#PWR?" H 2700 11350 50  0001 C CNN
+F 1 "GND" H 2700 11650 50  0000 C CNN
+F 2 "" H 2700 11600 50  0001 C CNN
+F 3 "" H 2700 11600 50  0001 C CNN
+	1    2700 11600
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2800 11600 2700 11600
+$Comp
+L FPGC4IOboard-rescue:+5V-power #PWR?
+U 1 1 632994F8
+P 3450 11600
+F 0 "#PWR?" H 3450 11450 50  0001 C CNN
+F 1 "+5V" H 3450 11550 50  0000 C CNN
+F 2 "" H 3450 11600 50  0001 C CNN
+F 3 "" H 3450 11600 50  0001 C CNN
+	1    3450 11600
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3350 11600 3450 11600
+Wire Wire Line
+	2550 10800 2550 11750
+Wire Wire Line
+	2550 11750 2800 11750
+Connection ~ 2550 10800
+Wire Wire Line
+	2550 10800 4200 10800
+Wire Wire Line
+	3350 11750 3550 11750
+Wire Wire Line
+	3550 11750 3550 10900
+Connection ~ 3550 10900
+Wire Wire Line
+	3550 10900 4200 10900
+Wire Wire Line
+	3450 10700 3450 11450
+Wire Wire Line
+	3450 11450 3350 11450
+Connection ~ 3450 10700
+Wire Wire Line
+	3450 10700 4200 10700
+Wire Wire Line
+	2700 10600 2700 11450
+Wire Wire Line
+	2700 11450 2800 11450
+Connection ~ 2700 10600
+Wire Wire Line
+	2700 10600 4200 10600
+Text GLabel 10350 8950 1    50   Output ~ 0
+HDMI_CLK-
+Text GLabel 10450 8950 1    50   Output ~ 0
+HDMI_CLK+
+Text GLabel 10550 8950 1    50   Output ~ 0
+HDMI_D0-
+Text GLabel 10650 8950 1    50   Output ~ 0
+HDMI_D0+
+Text GLabel 10750 8950 1    50   Output ~ 0
+HDMI_D1-
+Text GLabel 10850 8950 1    50   Output ~ 0
+HDMI_D1+
+Text GLabel 10950 8950 1    50   Output ~ 0
+HDMI_D2-
+Text GLabel 11050 8950 1    50   Output ~ 0
+HDMI_D2+
+Wire Notes Line
+	1350 8450 4750 8450
+Wire Notes Line
+	4750 8450 4750 11950
+Wire Notes Line
+	4750 11950 1350 11950
+Wire Notes Line
+	1350 11950 1350 8450
+Text Notes 4350 8550 0    50   ~ 0
+HDMI OUT
+Text GLabel 4200 10200 2    50   Input ~ 0
+HDMI_CLK-
+Text GLabel 4200 10300 2    50   Input ~ 0
+HDMI_CLK+
+Text GLabel 4200 10400 2    50   Input ~ 0
+HDMI_D0-
+Text GLabel 4200 10500 2    50   Input ~ 0
+HDMI_D0+
+Text GLabel 4200 10600 2    50   Input ~ 0
+HDMI_D1-
+Text GLabel 4200 10700 2    50   Input ~ 0
+HDMI_D1+
+Text GLabel 4200 10800 2    50   Input ~ 0
+HDMI_D2-
+Text GLabel 4200 10900 2    50   Input ~ 0
+HDMI_D2+
 $EndSCHEMATC

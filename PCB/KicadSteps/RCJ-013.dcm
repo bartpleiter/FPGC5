@@ -1,0 +1,9 @@
+EESchema-DOCLIB  Version 2.0
+#
+$CMP SRV05-4
+D Low Capacitance TVS Diode Array, 2 Channels, SOT-23-6
+K ESD Protection TVS High-speed USB
+F https://katalog.we-online.de/pbs/datasheet/82400102.pdf
+$ENDCMP
+#
+#End Doc Library
