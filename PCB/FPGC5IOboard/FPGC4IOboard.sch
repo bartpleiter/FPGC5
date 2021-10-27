@@ -625,17 +625,6 @@ F 3 "http://iteadstudio.com/store/images/produce/Platform/FPGA/BlackGold/CH376DS
 $EndComp
 NoConn ~ 21250 10750
 $Comp
-L FPGC4IOboard-rescue:CP-Device C7
-U 1 1 5EE498A8
-P 9100 6850
-F 0 "C7" H 9000 6800 50  0000 R CNN
-F 1 "100uF" H 9000 6900 50  0000 R CNN
-F 2 "Capacitor_THT:CP_Radial_D4.0mm_P2.00mm" H 9138 6700 50  0001 C CNN
-F 3 "~" H 9100 6850 50  0001 C CNN
-	1    9100 6850
-	1    0    0    -1  
-$EndComp
-$Comp
 L FPGC4IOboard-rescue:R-Device R35
 U 1 1 5E400D75
 P 14800 1550
@@ -2024,17 +2013,6 @@ Wire Notes Line
 	18500 2450 18500 650 
 Wire Notes Line
 	14350 650  18500 650 
-$Comp
-L FPGC4IOboard-rescue:CP-Device C24
-U 1 1 7E762AB8
-P 9100 9500
-F 0 "C24" H 9000 9450 50  0000 R CNN
-F 1 "100uF" H 9000 9550 50  0000 R CNN
-F 2 "Capacitor_THT:CP_Radial_D4.0mm_P2.00mm" H 9138 9350 50  0001 C CNN
-F 3 "~" H 9100 9500 50  0001 C CNN
-	1    9100 9500
-	1    0    0    1   
-$EndComp
 Text GLabel 9650 6150 1    50   Output ~ 0
 CH376_1_CLK
 Text GLabel 9850 6150 1    50   Input ~ 0
@@ -4701,4 +4679,26 @@ Connection ~ 20100 10500
 Wire Wire Line
 	20200 10750 20100 10750
 Connection ~ 20100 10750
+$Comp
+L FPGC4IOboard-rescue:C-Device C24
+U 1 1 618519E9
+P 9100 9500
+F 0 "C24" H 9250 9550 50  0000 L CNN
+F 1 "47uF" H 9250 9450 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 9138 9350 50  0001 C CNN
+F 3 "~" H 9100 9500 50  0001 C CNN
+	1    9100 9500
+	-1   0    0    -1  
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:C-Device C7
+U 1 1 61858C87
+P 9100 6850
+F 0 "C7" H 9250 6900 50  0000 L CNN
+F 1 "47uF" H 9250 6800 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 9138 6700 50  0001 C CNN
+F 3 "~" H 9100 6850 50  0001 C CNN
+	1    9100 6850
+	-1   0    0    -1  
+$EndComp
 $EndSCHEMATC
