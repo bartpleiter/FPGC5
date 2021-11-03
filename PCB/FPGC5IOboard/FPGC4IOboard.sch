@@ -47,17 +47,6 @@ F 3 "" H 12400 6750 50  0001 C CNN
 	-1   0    0    1   
 $EndComp
 $Comp
-L FPGC4IOboard-rescue:GND-power #PWR076
-U 1 1 5E2E2B1C
-P 12250 6750
-F 0 "#PWR076" H 12250 6500 50  0001 C CNN
-F 1 "GND" H 12300 6600 50  0000 C CNN
-F 2 "" H 12250 6750 50  0001 C CNN
-F 3 "" H 12250 6750 50  0001 C CNN
-	1    12250 6750
-	1    0    0    -1  
-$EndComp
-$Comp
 L FPGC4IOboard-rescue:GND-power #PWR075
 U 1 1 5E2E3134
 P 12250 6050
@@ -1196,7 +1185,7 @@ L FPGC4IOboard-rescue:R-Device R18
 U 1 1 6F3E53BA
 P 3350 4900
 F 0 "R18" H 3280 4854 50  0000 R CNN
-F 1 "10K" H 3280 4945 50  0000 R CNN
+F 1 "0R" H 3280 4945 50  0000 R CNN
 F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 3280 4900 50  0001 C CNN
 F 3 "~" H 3350 4900 50  0001 C CNN
 	1    3350 4900
@@ -1635,63 +1624,6 @@ Wire Wire Line
 Wire Wire Line
 	11100 4050 11100 4100
 $Comp
-L FPGC4IOboard-rescue:CP-Device C10
-U 1 1 757B9263
-P 9150 3500
-F 0 "C10" V 9300 3450 50  0000 R CNN
-F 1 "100uF" V 9300 3750 50  0000 R CNN
-F 2 "Capacitor_THT:CP_Radial_D4.0mm_P2.00mm" H 9188 3350 50  0001 C CNN
-F 3 "~" H 9150 3500 50  0001 C CNN
-	1    9150 3500
-	0    1    -1   0   
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:C-Device C11
-U 1 1 757B9269
-P 9150 3750
-F 0 "C11" V 9000 3800 50  0000 L CNN
-F 1 "100nF" V 9000 3500 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 9188 3600 50  0001 C CNN
-F 3 "~" H 9150 3750 50  0001 C CNN
-	1    9150 3750
-	0    -1   -1   0   
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:GND-power #PWR039
-U 1 1 757B926F
-P 8850 3650
-F 0 "#PWR039" H 8850 3400 50  0001 C CNN
-F 1 "GND" H 8900 3500 50  0000 C CNN
-F 2 "" H 8850 3650 50  0001 C CNN
-F 3 "" H 8850 3650 50  0001 C CNN
-	1    8850 3650
-	-1   0    0    -1  
-$EndComp
-Wire Wire Line
-	9000 3500 8950 3500
-Wire Wire Line
-	9000 3750 8950 3750
-Wire Wire Line
-	8950 3750 8950 3600
-Wire Wire Line
-	8950 3600 8850 3600
-Connection ~ 8950 3600
-Wire Wire Line
-	8950 3600 8950 3500
-Wire Wire Line
-	8850 3600 8850 3650
-$Comp
-L FPGC4IOboard-rescue:R-Device R24
-U 1 1 75985A6A
-P 10050 3250
-F 0 "R24" V 9950 3250 50  0000 R CNN
-F 1 "0" V 9950 3350 50  0000 R CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 9980 3250 50  0001 C CNN
-F 3 "~" H 10050 3250 50  0001 C CNN
-	1    10050 3250
-	1    0    0    -1  
-$EndComp
-$Comp
 L FPGC4IOboard-rescue:R-Device R26
 U 1 1 759876B7
 P 10350 3250
@@ -1700,17 +1632,6 @@ F 1 "0" V 10250 3350 50  0000 R CNN
 F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 10280 3250 50  0001 C CNN
 F 3 "~" H 10350 3250 50  0001 C CNN
 	1    10350 3250
-	1    0    0    -1  
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:R-Device R27
-U 1 1 75987A2F
-P 10500 3550
-F 0 "R27" V 10400 3550 50  0000 R CNN
-F 1 "0" V 10400 3650 50  0000 R CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 10430 3550 50  0001 C CNN
-F 3 "~" H 10500 3550 50  0001 C CNN
-	1    10500 3550
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -1747,8 +1668,6 @@ F 3 "~" H 9900 3550 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	10050 3400 10050 3950
-Wire Wire Line
 	10350 3400 10350 4300
 $Comp
 L FPGC4IOboard-rescue:GND-power #PWR044
@@ -1772,7 +1691,7 @@ Wire Wire Line
 Wire Wire Line
 	10450 3850 10500 3850
 Wire Wire Line
-	10500 3850 10500 3700
+	10500 3850 10500 3750
 Wire Wire Line
 	10450 3850 10450 4100
 Wire Wire Line
@@ -1824,24 +1743,6 @@ Wire Wire Line
 	10600 4200 10600 4100
 Connection ~ 10600 4100
 Wire Wire Line
-	10050 3950 9700 3950
-Wire Wire Line
-	9700 3950 9700 3650
-Wire Wire Line
-	9700 3650 9350 3650
-Wire Wire Line
-	9350 3650 9350 3750
-Wire Wire Line
-	9350 3750 9300 3750
-Connection ~ 10050 3950
-Wire Wire Line
-	10050 3950 10050 4300
-Wire Wire Line
-	9350 3650 9350 3500
-Wire Wire Line
-	9350 3500 9300 3500
-Connection ~ 9350 3650
-Wire Wire Line
 	9850 1150 9850 1300
 Wire Wire Line
 	9850 1300 9950 1300
@@ -1862,31 +1763,16 @@ Wire Wire Line
 Wire Wire Line
 	9900 2250 9900 3400
 $Comp
-L FPGC4IOboard-rescue:+5V-power #PWR043
-U 1 1 77F6C43C
-P 10050 3050
-F 0 "#PWR043" H 10050 2900 50  0001 C CNN
-F 1 "+5V" H 10050 3200 50  0000 C CNN
-F 2 "" H 10050 3050 50  0001 C CNN
-F 3 "" H 10050 3050 50  0001 C CNN
-	1    10050 3050
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	10050 3050 10050 3100
-$Comp
 L FPGC4IOboard-rescue:+5V-power #PWR045
 U 1 1 78049AF2
-P 10500 3350
-F 0 "#PWR045" H 10500 3200 50  0001 C CNN
-F 1 "+5V" H 10500 3500 50  0000 C CNN
-F 2 "" H 10500 3350 50  0001 C CNN
-F 3 "" H 10500 3350 50  0001 C CNN
-	1    10500 3350
+P 10500 3650
+F 0 "#PWR045" H 10500 3500 50  0001 C CNN
+F 1 "+5V" H 10500 3800 50  0000 C CNN
+F 2 "" H 10500 3650 50  0001 C CNN
+F 3 "" H 10500 3650 50  0001 C CNN
+	1    10500 3650
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	10500 3350 10500 3400
 Wire Wire Line
 	10350 3100 10350 2250
 Wire Wire Line
@@ -2013,61 +1899,55 @@ Wire Notes Line
 	18500 2450 18500 650 
 Wire Notes Line
 	14350 650  18500 650 
-Text GLabel 9650 6150 1    50   Output ~ 0
+Text GLabel 9550 6150 1    50   Output ~ 0
 CH376_1_CLK
-Text GLabel 9850 6150 1    50   Input ~ 0
+Text GLabel 9750 6150 1    50   Input ~ 0
 CH376_1_MISO
-Text GLabel 9750 6150 1    50   Output ~ 0
+Text GLabel 9750 6650 3    50   Output ~ 0
 CH376_1_MOSI
-Text GLabel 10050 6150 1    50   Input ~ 0
+Text GLabel 9650 6150 1    50   Input ~ 0
 CH376_1_INT
-Text GLabel 9950 6150 1    50   Output ~ 0
+Text GLabel 9650 6650 3    50   Output ~ 0
 CH376_1_RST
-Text GLabel 10150 6150 1    50   Output ~ 0
+Text GLabel 9850 6650 3    50   Output ~ 0
 CH376_2_CS
 Text GLabel 10250 6150 1    50   Output ~ 0
 CH376_2_CLK
-Text GLabel 10350 6150 1    50   Input ~ 0
+Text GLabel 10250 6650 3    50   Input ~ 0
 CH376_2_MISO
-Text GLabel 10350 6650 3    50   Output ~ 0
+Text GLabel 10150 6150 1    50   Output ~ 0
 CH376_2_MOSI
-Text GLabel 10450 6150 1    50   Input ~ 0
+Text GLabel 10150 6650 3    50   Input ~ 0
 CH376_2_INT
-Text GLabel 10450 6650 3    50   Output ~ 0
+Text GLabel 10050 6650 3    50   Output ~ 0
 CH376_2_RST
-Text GLabel 12150 6650 3    50   Output ~ 0
-FPGC_TX
-Text GLabel 11950 6650 3    50   Input ~ 0
-FPGC_RX
-Text GLabel 12050 6650 3    50   Input ~ 0
-FPGC_DTR
-Text GLabel 9650 6650 3    50   BiDi ~ 0
-PS2_Data
-Text GLabel 9850 10200 3    50   BiDi ~ 0
-Flash_HOLD_IO3
-Text GLabel 9950 9700 1    50   BiDi ~ 0
-Flash_WP_IO2
-Text GLabel 9950 10200 3    50   BiDi ~ 0
-Flash_MISO_IO1
-Text GLabel 11050 6150 1    50   Input ~ 0
-Ext_RX
-Text GLabel 10950 6150 1    50   Output ~ 0
-Ext_TX
 Text GLabel 10550 6150 1    50   BiDi ~ 0
+PS2_Data
+Text GLabel 11150 6650 3    50   BiDi ~ 0
+Flash_HOLD_IO3
+Text GLabel 11550 6650 3    50   BiDi ~ 0
+Flash_WP_IO2
+Text GLabel 11450 6650 3    50   BiDi ~ 0
+Flash_MISO_IO1
+Text GLabel 10850 6150 1    50   Input ~ 0
+Ext_RX
+Text GLabel 10750 6150 1    50   Output ~ 0
+Ext_TX
+Text GLabel 10650 10200 3    50   BiDi ~ 0
 Ext_GPIO_1
-Text GLabel 10650 6650 3    50   BiDi ~ 0
+Text GLabel 10550 10200 3    50   BiDi ~ 0
 Ext_GPIO_2
-Text GLabel 10650 6150 1    50   BiDi ~ 0
+Text GLabel 10450 10200 3    50   BiDi ~ 0
 Ext_GPIO_3
-Text GLabel 10750 6650 3    50   BiDi ~ 0
+Text GLabel 10350 10200 3    50   BiDi ~ 0
 Ext_GPIO_4
-Text GLabel 10750 6150 1    50   BiDi ~ 0
+Text GLabel 10250 10200 3    50   BiDi ~ 0
 Ext_GPIO_5
-Text GLabel 10550 6650 3    50   BiDi ~ 0
+Text GLabel 10750 10200 3    50   BiDi ~ 0
 Ext_GPIO_0
-Text GLabel 10850 6650 3    50   BiDi ~ 0
+Text GLabel 10150 10200 3    50   BiDi ~ 0
 Ext_GPIO_6
-Text GLabel 10850 6150 1    50   BiDi ~ 0
+Text GLabel 10050 10200 3    50   BiDi ~ 0
 Ext_GPIO_7
 $Comp
 L FPGC4IOboard-rescue:Conn_01x10-Connector_Generic J10
@@ -2092,62 +1972,15 @@ Text Notes 8600 5550 0    50   ~ 0
 FPGA Headers
 Wire Notes Line
 	8550 10900 12550 10900
-Wire Wire Line
-	11950 8650 11950 8600
-Wire Wire Line
-	11850 8650 11950 8650
-Wire Wire Line
-	11850 8650 11850 8700
-$Comp
-L FPGC4IOboard-rescue:+5V-power #PWR069
-U 1 1 87EE0D5A
-P 11950 8600
-F 0 "#PWR069" H 11950 8450 50  0001 C CNN
-F 1 "+5V" H 12050 8650 50  0000 C CNN
-F 2 "" H 11950 8600 50  0001 C CNN
-F 3 "" H 11950 8600 50  0001 C CNN
-	1    11950 8600
-	1    0    0    -1  
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:GND-power #PWR056
-U 1 1 87CDB25E
-P 10950 8600
-F 0 "#PWR056" H 10950 8350 50  0001 C CNN
-F 1 "GND" H 10955 8427 50  0000 C CNN
-F 2 "" H 10950 8600 50  0001 C CNN
-F 3 "" H 10950 8600 50  0001 C CNN
-	1    10950 8600
-	-1   0    0    1   
-$EndComp
-NoConn ~ 11750 8700
-NoConn ~ 11650 8700
-NoConn ~ 11550 8700
-NoConn ~ 11450 8700
-NoConn ~ 11350 8700
-NoConn ~ 11250 8700
-NoConn ~ 11150 8700
-NoConn ~ 11050 8700
-$Comp
-L FPGC4IOboard-rescue:Conn_02x10_Odd_Even-Connector_Generic J7
-U 1 1 84F7A5B6
-P 11350 9000
-F 0 "J7" V 11750 9300 50  0000 C CNN
-F 1 "Conn_Debug_U8" V 11750 8850 50  0000 C CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_2x10_P2.54mm_Vertical" H 11350 9000 50  0001 C CNN
-F 3 "~" H 11350 9000 50  0001 C CNN
-	1    11350 9000
-	0    -1   -1   0   
-$EndComp
-Text GLabel 9750 9700 1    50   Input ~ 0
+Text GLabel 9950 6650 3    50   Input ~ 0
 BTN_RST
-Text GLabel 9650 9700 1    50   Input ~ 0
+Text GLabel 10350 6150 1    50   Input ~ 0
 SW_1
-Text GLabel 9650 10200 3    50   Input ~ 0
+Text GLabel 10050 6150 1    50   Input ~ 0
 SW_2
-Text GLabel 9550 9700 1    50   Input ~ 0
+Text GLabel 9950 6150 1    50   Input ~ 0
 SW_3
-Text GLabel 9550 10200 3    50   Input ~ 0
+Text GLabel 9850 6150 1    50   Input ~ 0
 SW_4
 Wire Wire Line
 	9350 10600 9450 10600
@@ -2290,17 +2123,17 @@ Wire Wire Line
 	12350 10250 12400 10250
 Wire Wire Line
 	12400 10250 12400 10300
-Text GLabel 11850 6150 1    50   Input ~ 0
+Text GLabel 12050 6650 3    50   Input ~ 0
 W5500_INT
-Text GLabel 11950 6150 1    50   Output ~ 0
-W5500_CS
 Text GLabel 12050 6150 1    50   Output ~ 0
+W5500_CS
+Text GLabel 12150 6650 3    50   Output ~ 0
 W5500_CLK
 Text GLabel 12150 6150 1    50   Output ~ 0
 W5500_MOSI
-Text GLabel 11750 6150 1    50   Output ~ 0
+Text GLabel 11950 6150 1    50   Output ~ 0
 W5500_RST
-Text GLabel 11650 6150 1    50   Input ~ 0
+Text GLabel 11950 6650 3    50   Input ~ 0
 W5500_MISO
 $Comp
 L FPGC4IOboard-rescue:R-Device R72
@@ -2424,24 +2257,22 @@ Wire Wire Line
 Connection ~ 9250 7000
 Wire Wire Line
 	9250 7000 9250 7050
-Text GLabel 9850 9700 1    50   Output ~ 0
+Text GLabel 11350 6650 3    50   Output ~ 0
 Flash_CLK
-Text GLabel 10050 10200 3    50   Output ~ 0
+Text GLabel 11650 6150 1    50   Output ~ 0
 Flash_CS
-Text GLabel 9750 10200 3    50   BiDi ~ 0
+Text GLabel 11250 6650 3    50   BiDi ~ 0
 Flash_MOSI_IO0
-Text GLabel 11350 6150 1    50   Output ~ 0
+Text GLabel 9750 10200 3    50   Output ~ 0
 Ext_CLK
-Text GLabel 11250 6150 1    50   Output ~ 0
+Text GLabel 9850 10200 3    50   Output ~ 0
 Ext_MOSI
-Text GLabel 11150 6150 1    50   Input ~ 0
+Text GLabel 9950 10200 3    50   Input ~ 0
 Ext_MISO
-Text GLabel 11550 6150 1    50   BiDi ~ 0
+Text GLabel 9550 10200 3    50   BiDi ~ 0
 Ext_GP
-Text GLabel 11450 6150 1    50   Output ~ 0
+Text GLabel 9650 10200 3    50   Output ~ 0
 Ext_CS
-Wire Wire Line
-	10950 8600 10950 8700
 Wire Notes Line
 	12550 5450 12550 10900
 Wire Notes Line
@@ -2466,17 +2297,6 @@ F 1 "CH340G" H 18750 5200 50  0000 C CNN
 F 2 "Package_SO:SOIC-16_3.9x9.9mm_P1.27mm" H 18600 5300 50  0001 L CNN
 F 3 "http://www.datasheet5.com/pdf-local-2195953" H 18200 6650 50  0001 C CNN
 	1    18550 5850
-	-1   0    0    1   
-$EndComp
-$Comp
-L Connector:USB_B_Micro J15
-U 1 1 61301A26
-P 20600 5950
-F 0 "J15" H 20370 5847 50  0000 R CNN
-F 1 "USB_B_Micro" H 20370 5938 50  0000 R CNN
-F 2 "RCJ013:MicroUSB_G30" H 20750 5900 50  0001 C CNN
-F 3 "~" H 20750 5900 50  0001 C CNN
-	1    20600 5950
 	-1   0    0    1   
 $EndComp
 $Comp
@@ -2520,106 +2340,95 @@ USB_FPGC_D2+
 $Comp
 L FPGC4IOboard-rescue:Fuse-Device F1
 U 1 1 61627EE2
-P 19850 7000
-F 0 "F1" V 19650 6950 50  0000 L CNN
-F 1 "0.75A" V 19750 6900 50  0000 L CNN
-F 2 "RCJ013:Fuse_1812" V 19780 7000 50  0001 C CNN
-F 3 "~" H 19850 7000 50  0001 C CNN
-	1    19850 7000
-	0    1    1    0   
+P 20050 6150
+F 0 "F1" V 19850 6100 50  0000 L CNN
+F 1 "0.75A" V 19950 6050 50  0000 L CNN
+F 2 "RCJ013:Fuse_1812" V 19980 6150 50  0001 C CNN
+F 3 "~" H 20050 6150 50  0001 C CNN
+	1    20050 6150
+	0    -1   -1   0   
 $EndComp
 $Comp
 L FPGC4IOboard-rescue:GND-power #PWR0101
 U 1 1 61627EE8
-P 20350 7400
-F 0 "#PWR0101" H 20350 7150 50  0001 C CNN
-F 1 "GND" H 20350 7250 50  0000 C CNN
-F 2 "" H 20350 7400 50  0001 C CNN
-F 3 "" H 20350 7400 50  0001 C CNN
-	1    20350 7400
+P 20050 7350
+F 0 "#PWR0101" H 20050 7100 50  0001 C CNN
+F 1 "GND" H 20050 7200 50  0000 C CNN
+F 2 "" H 20050 7350 50  0001 C CNN
+F 3 "" H 20050 7350 50  0001 C CNN
+	1    20050 7350
 	-1   0    0    -1  
 $EndComp
 $Comp
 L FPGC4IOboard-rescue:C-Device C31
 U 1 1 61627EEE
-P 20350 7200
-F 0 "C31" H 20450 7250 50  0000 L CNN
-F 1 "100nF" H 20450 7150 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 20388 7050 50  0001 C CNN
-F 3 "~" H 20350 7200 50  0001 C CNN
-	1    20350 7200
+P 20050 7150
+F 0 "C31" H 20150 7200 50  0000 L CNN
+F 1 "100nF" H 20150 7100 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 20088 7000 50  0001 C CNN
+F 3 "~" H 20050 7150 50  0001 C CNN
+	1    20050 7150
 	-1   0    0    1   
 $EndComp
 $Comp
 L FPGC4IOboard-rescue:CP-Device C32
 U 1 1 61627EF4
-P 20600 7200
-F 0 "C32" H 20400 7150 50  0000 L CNN
-F 1 "220uF" H 20250 7250 50  0000 L CNN
-F 2 "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm" H 20638 7050 50  0001 C CNN
-F 3 "~" H 20600 7200 50  0001 C CNN
-	1    20600 7200
+P 20300 7150
+F 0 "C32" H 20100 7100 50  0000 L CNN
+F 1 "220uF" H 19950 7200 50  0000 L CNN
+F 2 "Capacitor_THT:CP_Radial_D5.0mm_P2.00mm" H 20338 7000 50  0001 C CNN
+F 3 "~" H 20300 7150 50  0001 C CNN
+	1    20300 7150
 	-1   0    0    -1  
 $EndComp
 $Comp
 L FPGC4IOboard-rescue:GND-power #PWR0102
 U 1 1 61627EFA
-P 20600 7400
-F 0 "#PWR0102" H 20600 7150 50  0001 C CNN
-F 1 "GND" H 20600 7250 50  0000 C CNN
-F 2 "" H 20600 7400 50  0001 C CNN
-F 3 "" H 20600 7400 50  0001 C CNN
-	1    20600 7400
+P 20300 7350
+F 0 "#PWR0102" H 20300 7100 50  0001 C CNN
+F 1 "GND" H 20300 7200 50  0000 C CNN
+F 2 "" H 20300 7350 50  0001 C CNN
+F 3 "" H 20300 7350 50  0001 C CNN
+	1    20300 7350
 	-1   0    0    -1  
 $EndComp
 $Comp
 L FPGC4IOboard-rescue:SW_DIP_x01-Switch SW4
 U 1 1 61627F00
-P 20150 6600
-F 0 "SW4" V 20000 6300 50  0000 L CNN
-F 1 "SW_Power" V 20100 6100 50  0000 L CNN
-F 2 "RCJ013:SS12D06" H 20150 6600 50  0001 C CNN
-F 3 "~" H 20150 6600 50  0001 C CNN
-	1    20150 6600
+P 19850 6550
+F 0 "SW4" V 19700 6250 50  0000 L CNN
+F 1 "SW_Power" V 19800 6050 50  0000 L CNN
+F 2 "RCJ013:SS12D06" H 19850 6550 50  0001 C CNN
+F 3 "~" H 19850 6550 50  0001 C CNN
+	1    19850 6550
 	0    1    1    0   
 $EndComp
 Wire Wire Line
-	20350 7050 20350 7000
-Wire Wire Line
-	20150 6150 20150 6300
-Wire Wire Line
-	20150 6150 20300 6150
+	20050 7000 20050 6950
 $Comp
 L FPGC4IOboard-rescue:+5V-power #PWR0103
 U 1 1 61627F12
-P 19650 6950
-F 0 "#PWR0103" H 19650 6800 50  0001 C CNN
-F 1 "+5V" H 19550 7050 50  0000 C CNN
-F 2 "" H 19650 6950 50  0001 C CNN
-F 3 "" H 19650 6950 50  0001 C CNN
-	1    19650 6950
+P 20300 6850
+F 0 "#PWR0103" H 20300 6700 50  0001 C CNN
+F 1 "+5V" H 20200 6950 50  0000 C CNN
+F 2 "" H 20300 6850 50  0001 C CNN
+F 3 "" H 20300 6850 50  0001 C CNN
+	1    20300 6850
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	19650 6950 19650 7000
+	20300 7300 20300 7350
 Wire Wire Line
-	19650 7000 19700 7000
+	20050 7300 20050 7350
 Wire Wire Line
-	20600 7350 20600 7400
+	20050 6950 20300 6950
 Wire Wire Line
-	20350 7350 20350 7400
+	20300 6950 20300 7000
+Connection ~ 20050 6950
 Wire Wire Line
-	20350 7000 20600 7000
+	19850 6850 19850 6950
 Wire Wire Line
-	20600 7000 20600 7050
-Connection ~ 20350 7000
-Wire Wire Line
-	20000 7000 20150 7000
-Wire Wire Line
-	20150 6900 20150 7000
-Connection ~ 20150 7000
-Wire Wire Line
-	20150 7000 20350 7000
+	19850 6950 20050 6950
 $Comp
 L FPGC4IOboard-rescue:GND-power #PWR0104
 U 1 1 61848BD3
@@ -2904,515 +2713,22 @@ Wire Wire Line
 	18650 6550 18550 6550
 Connection ~ 18650 6550
 NoConn ~ 20300 5750
-$Comp
-L Amplifier_Operational:ADA4841-1YRJ U8
-U 1 1 666D427F
-P 5300 13700
-F 0 "U8" H 5350 13850 50  0000 L CNN
-F 1 "ADA4841-1YRJ" H 5300 13950 50  0000 L CNN
-F 2 "Package_TO_SOT_SMD:SOT-23-6" H 5300 13100 50  0001 C CNN
-F 3 "https://www.analog.com/media/en/technical-documentation/data-sheets/ADA4841-1_4841-2.pdf" H 5300 13700 50  0001 C CNN
-	1    5300 13700
-	1    0    0    1   
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:R-Device R49
-U 1 1 666D70BF
-P 6250 13700
-F 0 "R49" V 6150 13600 50  0000 C CNN
-F 1 "75" V 6150 13800 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 6180 13700 50  0001 C CNN
-F 3 "~" H 6250 13700 50  0001 C CNN
-	1    6250 13700
-	0    -1   -1   0   
-$EndComp
-Wire Wire Line
-	5750 13700 5600 13700
-$Comp
-L FPGC4IOboard-rescue:R-Device R48
-U 1 1 66B0C605
-P 5550 13100
-F 0 "R48" V 5450 13000 50  0000 C CNN
-F 1 "100" V 5450 13200 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 5480 13100 50  0001 C CNN
-F 3 "~" H 5550 13100 50  0001 C CNN
-	1    5550 13100
-	0    -1   1    0   
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:+5V-power #PWR0112
-U 1 1 66B1998F
-P 5500 13450
-F 0 "#PWR0112" H 5500 13300 50  0001 C CNN
-F 1 "+5V" H 5450 13600 50  0000 C CNN
-F 2 "" H 5500 13450 50  0001 C CNN
-F 3 "" H 5500 13450 50  0001 C CNN
-	1    5500 13450
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	5300 13400 5300 13350
-Wire Wire Line
-	5300 13350 5400 13350
-Wire Wire Line
-	5400 13350 5400 13500
-Wire Wire Line
-	5400 13500 5500 13500
-Wire Wire Line
-	5500 13500 5500 13450
-Wire Wire Line
-	5400 13100 5350 13100
-Wire Wire Line
-	5700 13100 5750 13100
-Wire Wire Line
-	5750 13100 5750 13700
-$Comp
-L FPGC4IOboard-rescue:C-Device C3
-U 1 1 66DDD76A
-P 5550 12850
-F 0 "C3" V 5700 12900 50  0000 L CNN
-F 1 "100pf" V 5700 12600 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 5588 12700 50  0001 C CNN
-F 3 "~" H 5550 12850 50  0001 C CNN
-	1    5550 12850
-	0    1    -1   0   
-$EndComp
-Wire Wire Line
-	5400 12850 5350 12850
-Wire Wire Line
-	5350 12850 5350 13100
-Connection ~ 5350 13100
-Wire Wire Line
-	5700 12850 5750 12850
-Wire Wire Line
-	5750 12850 5750 13100
-Connection ~ 5750 13100
-$Comp
-L FPGC4IOboard-rescue:C-Device C2
-U 1 1 66EBED7B
-P 5200 14300
-F 0 "C2" H 4950 14250 50  0000 L CNN
-F 1 "100nF" H 4850 14350 50  0000 L CNN
-F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 5238 14150 50  0001 C CNN
-F 3 "~" H 5200 14300 50  0001 C CNN
-	1    5200 14300
-	-1   0    0    -1  
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:GND-power #PWR0113
-U 1 1 66EBED81
-P 5200 14550
-F 0 "#PWR0113" H 5200 14300 50  0001 C CNN
-F 1 "GND" H 5050 14500 50  0000 C CNN
-F 2 "" H 5200 14550 50  0001 C CNN
-F 3 "" H 5200 14550 50  0001 C CNN
-	1    5200 14550
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	5200 14450 5200 14550
-Wire Wire Line
-	5200 14000 5200 14100
-$Comp
-L FPGC4IOboard-rescue:+5V-power #PWR0114
-U 1 1 6719B712
-P 5000 14150
-F 0 "#PWR0114" H 5000 14000 50  0001 C CNN
-F 1 "+5V" H 4950 14300 50  0000 C CNN
-F 2 "" H 5000 14150 50  0001 C CNN
-F 3 "" H 5000 14150 50  0001 C CNN
-	1    5000 14150
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	5200 14100 5100 14100
-Wire Wire Line
-	5100 14100 5100 14200
-Wire Wire Line
-	5100 14200 5000 14200
-Wire Wire Line
-	5000 14200 5000 14150
-Connection ~ 5200 14100
-Wire Wire Line
-	5200 14100 5200 14150
-Wire Wire Line
-	5000 13600 4900 13600
-Wire Wire Line
-	4900 13100 4900 13600
-Wire Wire Line
-	4900 13100 5350 13100
-Wire Wire Line
-	5000 13800 4600 13800
-$Comp
-L FPGC4IOboard-rescue:R-Device R45
-U 1 1 673B7262
-P 4350 13800
-F 0 "R45" V 4250 13700 50  0000 C CNN
-F 1 "1k" V 4250 13900 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 4280 13800 50  0001 C CNN
-F 3 "~" H 4350 13800 50  0001 C CNN
-	1    4350 13800
-	0    -1   -1   0   
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:R-Device R42
-U 1 1 677EA21C
-P 3950 13800
-F 0 "R42" V 3850 13700 50  0000 C CNN
-F 1 "1k" V 3850 13900 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 3880 13800 50  0001 C CNN
-F 3 "~" H 3950 13800 50  0001 C CNN
-	1    3950 13800
-	0    -1   -1   0   
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:R-Device R38
-U 1 1 677EA820
-P 3550 13800
-F 0 "R38" V 3450 13700 50  0000 C CNN
-F 1 "1k" V 3450 13900 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 3480 13800 50  0001 C CNN
-F 3 "~" H 3550 13800 50  0001 C CNN
-	1    3550 13800
-	0    -1   -1   0   
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:R-Device R32
-U 1 1 677EA9BB
-P 3150 13800
-F 0 "R32" V 3050 13700 50  0000 C CNN
-F 1 "1k" V 3050 13900 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 3080 13800 50  0001 C CNN
-F 3 "~" H 3150 13800 50  0001 C CNN
-	1    3150 13800
-	0    -1   -1   0   
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:R-Device R29
-U 1 1 677EB9C1
-P 2750 13800
-F 0 "R29" V 2650 13700 50  0000 C CNN
-F 1 "1k" V 2650 13900 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 2680 13800 50  0001 C CNN
-F 3 "~" H 2750 13800 50  0001 C CNN
-	1    2750 13800
-	0    -1   -1   0   
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:R-Device R20
-U 1 1 677EBC7E
-P 2350 13800
-F 0 "R20" V 2250 13700 50  0000 C CNN
-F 1 "1k" V 2250 13900 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 2280 13800 50  0001 C CNN
-F 3 "~" H 2350 13800 50  0001 C CNN
-	1    2350 13800
-	0    -1   -1   0   
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:R-Device R13
-U 1 1 677EC013
-P 1950 13800
-F 0 "R13" V 1850 13700 50  0000 C CNN
-F 1 "1k" V 1850 13900 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 1880 13800 50  0001 C CNN
-F 3 "~" H 1950 13800 50  0001 C CNN
-	1    1950 13800
-	0    -1   -1   0   
-$EndComp
-Wire Wire Line
-	4200 13800 4150 13800
-Wire Wire Line
-	3800 13800 3750 13800
-Wire Wire Line
-	3400 13800 3350 13800
-Wire Wire Line
-	3000 13800 2950 13800
-Wire Wire Line
-	2600 13800 2550 13800
-Wire Wire Line
-	2200 13800 2150 13800
-$Comp
-L FPGC4IOboard-rescue:R-Device R47
-U 1 1 67A7AE66
-P 4600 14050
-F 0 "R47" H 4450 13950 50  0000 C CNN
-F 1 "1.6k" H 4450 14050 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 4530 14050 50  0001 C CNN
-F 3 "~" H 4600 14050 50  0001 C CNN
-	1    4600 14050
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	4600 13800 4600 13900
-Connection ~ 4600 13800
-Wire Wire Line
-	4600 13800 4500 13800
-$Comp
-L FPGC4IOboard-rescue:GND-power #PWR0116
-U 1 1 67AECA2B
-P 4600 14300
-F 0 "#PWR0116" H 4600 14050 50  0001 C CNN
-F 1 "GND" H 4450 14250 50  0000 C CNN
-F 2 "" H 4600 14300 50  0001 C CNN
-F 3 "" H 4600 14300 50  0001 C CNN
-	1    4600 14300
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	4600 14200 4600 14300
-$Comp
-L FPGC4IOboard-rescue:R-Device R46
-U 1 1 67B5C2B8
-P 4600 13550
-F 0 "R46" H 4450 13450 50  0000 C CNN
-F 1 "2k" H 4450 13550 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 4530 13550 50  0001 C CNN
-F 3 "~" H 4600 13550 50  0001 C CNN
-	1    4600 13550
-	1    0    0    -1  
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:R-Device R43
-U 1 1 67B5C89C
-P 4150 13550
-F 0 "R43" H 4000 13450 50  0000 C CNN
-F 1 "2k" H 4000 13550 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 4080 13550 50  0001 C CNN
-F 3 "~" H 4150 13550 50  0001 C CNN
-	1    4150 13550
-	1    0    0    -1  
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:R-Device R40
-U 1 1 67B5CC98
-P 3750 13550
-F 0 "R40" H 3600 13450 50  0000 C CNN
-F 1 "2k" H 3600 13550 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 3680 13550 50  0001 C CNN
-F 3 "~" H 3750 13550 50  0001 C CNN
-	1    3750 13550
-	1    0    0    -1  
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:R-Device R37
-U 1 1 67B5CF68
-P 3350 13550
-F 0 "R37" H 3200 13450 50  0000 C CNN
-F 1 "2k" H 3200 13550 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 3280 13550 50  0001 C CNN
-F 3 "~" H 3350 13550 50  0001 C CNN
-	1    3350 13550
-	1    0    0    -1  
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:R-Device R31
-U 1 1 67B5DBFF
-P 2950 13550
-F 0 "R31" H 2800 13450 50  0000 C CNN
-F 1 "2k" H 2800 13550 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 2880 13550 50  0001 C CNN
-F 3 "~" H 2950 13550 50  0001 C CNN
-	1    2950 13550
-	1    0    0    -1  
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:R-Device R28
-U 1 1 67B5DDFA
-P 2550 13550
-F 0 "R28" H 2400 13450 50  0000 C CNN
-F 1 "2k" H 2400 13550 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 2480 13550 50  0001 C CNN
-F 3 "~" H 2550 13550 50  0001 C CNN
-	1    2550 13550
-	1    0    0    -1  
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:R-Device R14
-U 1 1 67B5E850
-P 2150 13550
-F 0 "R14" H 2000 13450 50  0000 C CNN
-F 1 "2k" H 2000 13550 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 2080 13550 50  0001 C CNN
-F 3 "~" H 2150 13550 50  0001 C CNN
-	1    2150 13550
-	1    0    0    -1  
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:R-Device R3
-U 1 1 67B5EC50
-P 1700 13550
-F 0 "R3" H 1550 13450 50  0000 C CNN
-F 1 "2k" H 1550 13550 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 1630 13550 50  0001 C CNN
-F 3 "~" H 1700 13550 50  0001 C CNN
-	1    1700 13550
-	1    0    0    -1  
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:R-Device R9
-U 1 1 67B5F096
-P 1700 14050
-F 0 "R9" H 1550 13950 50  0000 C CNN
-F 1 "2k" H 1550 14050 50  0000 C CNN
-F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 1630 14050 50  0001 C CNN
-F 3 "~" H 1700 14050 50  0001 C CNN
-	1    1700 14050
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	1700 13700 1700 13800
-Wire Wire Line
-	1800 13800 1700 13800
-Connection ~ 1700 13800
-Wire Wire Line
-	1700 13800 1700 13900
-Wire Wire Line
-	2150 13700 2150 13800
-Connection ~ 2150 13800
-Wire Wire Line
-	2150 13800 2100 13800
-Wire Wire Line
-	2550 13700 2550 13800
-Connection ~ 2550 13800
-Wire Wire Line
-	2550 13800 2500 13800
-Wire Wire Line
-	2950 13700 2950 13800
-Connection ~ 2950 13800
-Wire Wire Line
-	2950 13800 2900 13800
-Wire Wire Line
-	3350 13700 3350 13800
-Connection ~ 3350 13800
-Wire Wire Line
-	3350 13800 3300 13800
-Wire Wire Line
-	3750 13700 3750 13800
-Connection ~ 3750 13800
-Wire Wire Line
-	3750 13800 3700 13800
-Wire Wire Line
-	4150 13700 4150 13800
-Connection ~ 4150 13800
-Wire Wire Line
-	4150 13800 4100 13800
-Wire Wire Line
-	4600 13700 4600 13800
-Text GLabel 4600 13300 1    50   Input ~ 0
-DAC_D7
-Text GLabel 4150 13300 1    50   Input ~ 0
+Text GLabel 10950 9700 1    50   Output ~ 0
 DAC_D6
-Text GLabel 3750 13300 1    50   Input ~ 0
+Text GLabel 10850 9700 1    50   Output ~ 0
 DAC_D5
-Text GLabel 3350 13300 1    50   Input ~ 0
+Text GLabel 10750 9700 1    50   Output ~ 0
 DAC_D4
-Text GLabel 2950 13300 1    50   Input ~ 0
+Text GLabel 10650 9700 1    50   Output ~ 0
 DAC_D3
-Text GLabel 2550 13300 1    50   Input ~ 0
+Text GLabel 10550 9700 1    50   Output ~ 0
 DAC_D2
-Text GLabel 2150 13300 1    50   Input ~ 0
+Text GLabel 10450 9700 1    50   Output ~ 0
 DAC_D1
-Text GLabel 1700 13300 1    50   Input ~ 0
+Text GLabel 10350 9700 1    50   Output ~ 0
 DAC_D0
-$Comp
-L FPGC4IOboard-rescue:GND-power #PWR0117
-U 1 1 67F947AE
-P 1700 14300
-F 0 "#PWR0117" H 1700 14050 50  0001 C CNN
-F 1 "GND" H 1550 14250 50  0000 C CNN
-F 2 "" H 1700 14300 50  0001 C CNN
-F 3 "" H 1700 14300 50  0001 C CNN
-	1    1700 14300
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	1700 14200 1700 14300
-Wire Wire Line
-	1700 13300 1700 13400
-Wire Wire Line
-	2150 13300 2150 13400
-Wire Wire Line
-	2550 13300 2550 13400
-Wire Wire Line
-	2950 13300 2950 13400
-Wire Wire Line
-	3350 13300 3350 13400
-Wire Wire Line
-	3750 13300 3750 13400
-Wire Wire Line
-	4150 13300 4150 13400
-Wire Wire Line
-	4600 13300 4600 13400
-Text GLabel 10250 10200 3    50   Output ~ 0
-DAC_D6
-Text GLabel 10350 10200 3    50   Output ~ 0
-DAC_D5
-Text GLabel 10450 10200 3    50   Output ~ 0
-DAC_D4
-Text GLabel 10550 10200 3    50   Output ~ 0
-DAC_D3
-Text GLabel 10650 10200 3    50   Output ~ 0
-DAC_D2
-Text GLabel 10750 10200 3    50   Output ~ 0
-DAC_D1
-Text GLabel 10850 10200 3    50   Output ~ 0
-DAC_D0
-Text GLabel 10150 10200 3    50   Output ~ 0
+Text GLabel 11050 9700 1    50   Output ~ 0
 DAC_D7
-$Comp
-L Connector:Conn_Coaxial J5
-U 1 1 685B9D15
-P 6700 13700
-F 0 "J5" H 6800 13675 50  0000 L CNN
-F 1 "Conn_RCA_Video" H 6400 13850 50  0000 L CNN
-F 2 "RCJ013:CUI_RCJ-013" H 6700 13700 50  0001 C CNN
-F 3 " ~" H 6700 13700 50  0001 C CNN
-	1    6700 13700
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	6500 13700 6400 13700
-$Comp
-L FPGC4IOboard-rescue:GND-power #PWR0119
-U 1 1 68636EAF
-P 5050 13350
-F 0 "#PWR0119" H 5050 13100 50  0001 C CNN
-F 1 "GND" H 5050 13450 50  0000 C CNN
-F 2 "" H 5050 13350 50  0001 C CNN
-F 3 "" H 5050 13350 50  0001 C CNN
-	1    5050 13350
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	5050 13350 5050 13300
-Wire Wire Line
-	5050 13300 5200 13300
-Wire Wire Line
-	5200 13300 5200 13400
-$Comp
-L FPGC4IOboard-rescue:GND-power #PWR0120
-U 1 1 686B50E5
-P 6700 14000
-F 0 "#PWR0120" H 6700 13750 50  0001 C CNN
-F 1 "GND" H 6550 13950 50  0000 C CNN
-F 2 "" H 6700 14000 50  0001 C CNN
-F 3 "" H 6700 14000 50  0001 C CNN
-	1    6700 14000
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	6700 13900 6700 14000
-Wire Notes Line
-	1350 12550 7050 12550
-Wire Notes Line
-	7050 12550 7050 14700
-Wire Notes Line
-	7050 14700 1350 14700
-Wire Notes Line
-	1350 14700 1350 12550
-Text Notes 1400 12650 0    50   ~ 0
-8bit DAC (NTSC Video)
 Text GLabel 1150 7000 3    50   Input ~ 0
 LED_Booted
 $Comp
@@ -3898,38 +3214,9 @@ Wire Wire Line
 	2150 8600 2150 8750
 Connection ~ 2050 8600
 NoConn ~ 2250 10000
-$Comp
-L Connector:Conn_Coaxial J3
-U 1 1 617BE518
-P 6700 12850
-F 0 "J3" H 6800 12825 50  0000 L CNN
-F 1 "Conn_RCA_Audio" H 6400 13000 50  0000 L CNN
-F 2 "RCJ013:CUI_RCJ-013" H 6700 12850 50  0001 C CNN
-F 3 " ~" H 6700 12850 50  0001 C CNN
-	1    6700 12850
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	6500 12850 6400 12850
-$Comp
-L FPGC4IOboard-rescue:GND-power #PWR0136
-U 1 1 617BE51F
-P 6700 13150
-F 0 "#PWR0136" H 6700 12900 50  0001 C CNN
-F 1 "GND" H 6550 13100 50  0000 C CNN
-F 2 "" H 6700 13150 50  0001 C CNN
-F 3 "" H 6700 13150 50  0001 C CNN
-	1    6700 13150
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	6700 13050 6700 13150
 Text GLabel 3250 7000 3    50   Input ~ 0
 LED_VideoOutput
-Wire Wire Line
-	5750 13700 6100 13700
-Connection ~ 5750 13700
-Text GLabel 9550 6650 3    50   Input ~ 0
+Text GLabel 10450 6150 1    50   Input ~ 0
 PS2_CLK
 NoConn ~ 18150 5450
 NoConn ~ 18150 5650
@@ -3940,35 +3227,31 @@ NoConn ~ 18950 6150
 $Comp
 L RCJ-013:SRV05-4 U1
 U 1 1 625E169B
-P 3100 9550
-F 0 "U1" H 3075 9965 50  0000 C CNN
-F 1 "SRV05-4" H 3075 9874 50  0000 C CNN
-F 2 "Package_TO_SOT_SMD:SOT-23-6" H 3200 9200 50  0001 C CNN
-F 3 "https://katalog.we-online.de/pbs/datasheet/82400102.pdf" H 3100 9300 50  0001 C CNN
-	1    3100 9550
-	1    0    0    -1  
+P 3050 9550
+F 0 "U1" H 3025 9965 50  0000 C CNN
+F 1 "SRV05-4" H 3025 9874 50  0000 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-23-6" H 3150 9200 50  0001 C CNN
+F 3 "https://katalog.we-online.de/pbs/datasheet/82400102.pdf" H 3050 9300 50  0001 C CNN
+	1    3050 9550
+	-1   0    0    1   
 $EndComp
 $Comp
 L RCJ-013:SRV05-4 U6
 U 1 1 625E4C72
-P 3100 11600
-F 0 "U6" H 3075 12015 50  0000 C CNN
-F 1 "SRV05-4" H 3075 11924 50  0000 C CNN
-F 2 "Package_TO_SOT_SMD:SOT-23-6" H 3200 11250 50  0001 C CNN
-F 3 "https://katalog.we-online.de/pbs/datasheet/82400102.pdf" H 3100 11350 50  0001 C CNN
-	1    3100 11600
-	1    0    0    -1  
+P 3050 11600
+F 0 "U6" H 3025 12015 50  0000 C CNN
+F 1 "SRV05-4" H 3025 11924 50  0000 C CNN
+F 2 "Package_TO_SOT_SMD:SOT-23-6" H 3150 11250 50  0001 C CNN
+F 3 "https://katalog.we-online.de/pbs/datasheet/82400102.pdf" H 3050 11350 50  0001 C CNN
+	1    3050 11600
+	-1   0    0    1   
 $EndComp
 Wire Wire Line
 	2250 10300 2550 10300
 Wire Wire Line
-	2250 10400 3450 10400
+	2250 10400 2750 10400
 Wire Wire Line
-	2250 10500 2700 10500
-Wire Wire Line
-	2250 10600 2700 10600
-Wire Wire Line
-	2250 10700 3450 10700
+	2250 10700 2700 10700
 Wire Wire Line
 	2250 10800 2550 10800
 Wire Wire Line
@@ -3976,85 +3259,63 @@ Wire Wire Line
 Wire Wire Line
 	2250 10200 3550 10200
 Wire Wire Line
-	3350 9400 3550 9400
-Wire Wire Line
 	3550 9400 3550 10200
 Connection ~ 3550 10200
 Wire Wire Line
 	3550 10200 4200 10200
 Wire Wire Line
-	2800 9400 2550 9400
-Wire Wire Line
 	2550 9400 2550 10300
 Connection ~ 2550 10300
 Wire Wire Line
 	2550 10300 4200 10300
-Wire Wire Line
-	2800 9700 2700 9700
-Wire Wire Line
-	2700 9700 2700 10500
-Connection ~ 2700 10500
-Wire Wire Line
-	2700 10500 4200 10500
-Wire Wire Line
-	3350 9700 3450 9700
-Wire Wire Line
-	3450 9700 3450 10400
-Connection ~ 3450 10400
-Wire Wire Line
-	3450 10400 4200 10400
 $Comp
 L FPGC4IOboard-rescue:GND-power #PWR0137
 U 1 1 630B0A32
-P 2700 9550
-F 0 "#PWR0137" H 2700 9300 50  0001 C CNN
-F 1 "GND" H 2700 9600 50  0000 C CNN
-F 2 "" H 2700 9550 50  0001 C CNN
-F 3 "" H 2700 9550 50  0001 C CNN
-	1    2700 9550
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	2800 9550 2700 9550
-$Comp
-L FPGC4IOboard-rescue:+5V-power #PWR0138
-U 1 1 631524B2
 P 3450 9550
-F 0 "#PWR0138" H 3450 9400 50  0001 C CNN
-F 1 "+5V" H 3450 9500 50  0000 C CNN
+F 0 "#PWR0137" H 3450 9300 50  0001 C CNN
+F 1 "GND" H 3450 9600 50  0000 C CNN
 F 2 "" H 3450 9550 50  0001 C CNN
 F 3 "" H 3450 9550 50  0001 C CNN
 	1    3450 9550
-	1    0    0    -1  
+	-1   0    0    -1  
 $EndComp
 Wire Wire Line
 	3350 9550 3450 9550
 $Comp
+L FPGC4IOboard-rescue:+5V-power #PWR0138
+U 1 1 631524B2
+P 2700 9550
+F 0 "#PWR0138" H 2700 9400 50  0001 C CNN
+F 1 "+5V" H 2700 9500 50  0000 C CNN
+F 2 "" H 2700 9550 50  0001 C CNN
+F 3 "" H 2700 9550 50  0001 C CNN
+	1    2700 9550
+	-1   0    0    -1  
+$EndComp
+$Comp
 L FPGC4IOboard-rescue:GND-power #PWR0139
 U 1 1 631F5ACB
-P 2700 11600
-F 0 "#PWR0139" H 2700 11350 50  0001 C CNN
-F 1 "GND" H 2700 11650 50  0000 C CNN
-F 2 "" H 2700 11600 50  0001 C CNN
-F 3 "" H 2700 11600 50  0001 C CNN
-	1    2700 11600
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	2800 11600 2700 11600
-$Comp
-L FPGC4IOboard-rescue:+5V-power #PWR0140
-U 1 1 632994F8
 P 3450 11600
-F 0 "#PWR0140" H 3450 11450 50  0001 C CNN
-F 1 "+5V" H 3450 11550 50  0000 C CNN
+F 0 "#PWR0139" H 3450 11350 50  0001 C CNN
+F 1 "GND" H 3450 11650 50  0000 C CNN
 F 2 "" H 3450 11600 50  0001 C CNN
 F 3 "" H 3450 11600 50  0001 C CNN
 	1    3450 11600
-	1    0    0    -1  
+	-1   0    0    -1  
 $EndComp
 Wire Wire Line
 	3350 11600 3450 11600
+$Comp
+L FPGC4IOboard-rescue:+5V-power #PWR0140
+U 1 1 632994F8
+P 2700 11600
+F 0 "#PWR0140" H 2700 11450 50  0001 C CNN
+F 1 "+5V" H 2700 11550 50  0000 C CNN
+F 2 "" H 2700 11600 50  0001 C CNN
+F 3 "" H 2700 11600 50  0001 C CNN
+	1    2700 11600
+	-1   0    0    -1  
+$EndComp
 Wire Wire Line
 	2550 10800 2550 11750
 Wire Wire Line
@@ -4062,42 +3323,26 @@ Wire Wire Line
 Connection ~ 2550 10800
 Wire Wire Line
 	2550 10800 4200 10800
-Wire Wire Line
-	3350 11750 3550 11750
-Wire Wire Line
-	3550 11750 3550 10900
 Connection ~ 3550 10900
 Wire Wire Line
 	3550 10900 4200 10900
 Wire Wire Line
-	3450 10700 3450 11450
-Wire Wire Line
-	3450 11450 3350 11450
-Connection ~ 3450 10700
-Wire Wire Line
-	3450 10700 4200 10700
-Wire Wire Line
-	2700 10600 2700 11450
-Wire Wire Line
 	2700 11450 2800 11450
-Connection ~ 2700 10600
-Wire Wire Line
-	2700 10600 4200 10600
-Text GLabel 11450 10200 3    50   Output ~ 0
+Text GLabel 11950 9700 1    50   Output ~ 0
 HDMI_CLK-
-Text GLabel 11550 10200 3    50   Output ~ 0
-HDMI_CLK+
-Text GLabel 11650 10200 3    50   Output ~ 0
-HDMI_D0-
-Text GLabel 11750 10200 3    50   Output ~ 0
-HDMI_D0+
-Text GLabel 11850 10200 3    50   Output ~ 0
-HDMI_D1-
 Text GLabel 11950 10200 3    50   Output ~ 0
+HDMI_CLK+
+Text GLabel 11850 9700 1    50   Output ~ 0
+HDMI_D0-
+Text GLabel 11850 10200 3    50   Output ~ 0
+HDMI_D0+
+Text GLabel 11750 9700 1    50   Output ~ 0
+HDMI_D1-
+Text GLabel 11750 10200 3    50   Output ~ 0
 HDMI_D1+
-Text GLabel 12050 10200 3    50   Output ~ 0
+Text GLabel 11650 9700 1    50   Output ~ 0
 HDMI_D2-
-Text GLabel 12150 10200 3    50   Output ~ 0
+Text GLabel 11650 10200 3    50   Output ~ 0
 HDMI_D2+
 Wire Notes Line
 	1350 8450 4750 8450
@@ -4246,8 +3491,6 @@ Text GLabel 1850 3900 0    50   Output ~ 0
 SW_4
 Text GLabel 20700 10300 1    50   Output ~ 0
 Audio_Mono
-Text GLabel 6400 12850 0    50   Input ~ 0
-Audio_Mono
 $Comp
 L FPGC4IOboard-rescue:C-Device C6
 U 1 1 62AB99E7
@@ -4338,7 +3581,7 @@ $Comp
 L FPGC4IOboard-rescue:C-Device C19
 U 1 1 6364E15C
 P 18750 11400
-F 0 "C19" H 18550 11400 50  0000 L CNN
+F 0 "C19" H 18500 11400 50  0000 L CNN
 F 1 "100nF" H 18450 11500 50  0000 L CNN
 F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 18788 11250 50  0001 C CNN
 F 3 "~" H 18750 11400 50  0001 C CNN
@@ -4349,7 +3592,7 @@ $Comp
 L FPGC4IOboard-rescue:C-Device C22
 U 1 1 6364E665
 P 19050 11400
-F 0 "C22" H 18850 11400 50  0000 L CNN
+F 0 "C22" H 18800 11400 50  0000 L CNN
 F 1 "1uF" H 18800 11500 50  0000 L CNN
 F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 19088 11250 50  0001 C CNN
 F 3 "~" H 19050 11400 50  0001 C CNN
@@ -4502,7 +3745,7 @@ Wire Wire Line
 Connection ~ 16700 12000
 Wire Wire Line
 	16700 12000 16850 12000
-Text GLabel 9550 6150 1    50   Output ~ 0
+Text GLabel 9550 6650 3    50   Output ~ 0
 CH376_1_CS
 Text GLabel 16750 11350 0    50   Input ~ 0
 I2S_SCLK
@@ -4530,122 +3773,33 @@ Wire Notes Line
 	850  5900 850  7750
 Wire Wire Line
 	17150 5550 18150 5550
-Text GLabel 9750 6650 3    50   Output ~ 0
+Text GLabel 10350 6650 3    50   Output ~ 0
 LED_Booted
-NoConn ~ 11050 7750
-NoConn ~ 11150 7750
-NoConn ~ 11250 7750
-$Comp
-L FPGC4IOboard-rescue:GND-power #PWR0135
-U 1 1 5FD72CD5
-P 10950 7900
-F 0 "#PWR0135" H 10950 7650 50  0001 C CNN
-F 1 "GND" H 10955 7727 50  0000 C CNN
-F 2 "" H 10950 7900 50  0001 C CNN
-F 3 "" H 10950 7900 50  0001 C CNN
-	1    10950 7900
-	1    0    0    -1  
-$EndComp
-$Comp
-L FPGC4IOboard-rescue:Conn_02x10_Odd_Even-Connector_Generic J8
-U 1 1 85280139
-P 11450 7450
-F 0 "J8" V 11850 7050 50  0000 C CNN
-F 1 "Conn_Debug_U7" V 11850 7500 50  0000 C CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_2x10_P2.54mm_Vertical" H 11450 7450 50  0001 C CNN
-F 3 "~" H 11450 7450 50  0001 C CNN
-	1    11450 7450
-	0    1    1    0   
-$EndComp
-NoConn ~ 11350 7750
-NoConn ~ 11450 7750
-NoConn ~ 11550 7750
-NoConn ~ 11650 7750
-NoConn ~ 11750 7750
-$Comp
-L FPGC4IOboard-rescue:+3.3V-power #PWR068
-U 1 1 87FE5F3A
-P 11950 7700
-F 0 "#PWR068" H 11950 7550 50  0001 C CNN
-F 1 "+3.3V" H 12100 7750 50  0000 C CNN
-F 2 "" H 11950 7700 50  0001 C CNN
-F 3 "" H 11950 7700 50  0001 C CNN
-	1    11950 7700
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	11850 7750 11850 7800
-Wire Wire Line
-	11850 7800 11950 7800
-Wire Wire Line
-	11950 7700 11950 7800
-Wire Wire Line
-	10950 7900 10950 7750
-Text GLabel 10350 9700 1    50   Output ~ 0
+Text GLabel 9850 9700 1    50   Output ~ 0
 LED_VideoOutput
-Text GLabel 10050 9700 1    50   Output ~ 0
+Text GLabel 9650 9700 1    50   Output ~ 0
 LED_I2S
-Text GLabel 10150 9700 1    50   Output ~ 0
+Text GLabel 9750 9700 1    50   Output ~ 0
 LED_FSX
-Text GLabel 10250 9700 1    50   Output ~ 0
+Text GLabel 10050 9700 1    50   Output ~ 0
 LED_SPImode
-Text GLabel 10450 9700 1    50   Output ~ 0
+Text GLabel 9550 9700 1    50   Output ~ 0
 LED_PS2
-Text GLabel 10150 6650 3    50   Output ~ 0
+Text GLabel 10250 9700 1    50   Output ~ 0
 LED_USB1
-Text GLabel 10050 6650 3    50   Output ~ 0
+Text GLabel 10450 6650 3    50   Output ~ 0
 LED_USB0
-Text GLabel 9950 6650 3    50   Output ~ 0
+Text GLabel 10150 9700 1    50   Output ~ 0
 LED_Flash
-Text GLabel 9850 6650 3    50   Output ~ 0
+Text GLabel 9950 9700 1    50   Output ~ 0
 LED_Eth
-Wire Wire Line
-	11050 9200 11050 9700
-Wire Wire Line
-	11150 9200 11150 9700
-Wire Wire Line
-	11250 9200 11250 9700
-Wire Wire Line
-	11850 9200 11850 9700
-Wire Wire Line
-	11750 9700 11750 9200
-Wire Wire Line
-	11650 9200 11650 9700
-Wire Wire Line
-	11550 9700 11550 9200
-Wire Wire Line
-	11450 9200 11450 9700
-Wire Wire Line
-	11350 9700 11350 9200
-Wire Wire Line
-	10950 9200 10950 9700
-Wire Wire Line
-	10950 6650 10950 7250
-Wire Wire Line
-	11050 7250 11050 6650
-Wire Wire Line
-	11150 6650 11150 7250
-Wire Wire Line
-	11250 7250 11250 6650
-Wire Wire Line
-	11350 6650 11350 7250
-Wire Wire Line
-	11450 7250 11450 6650
-Wire Wire Line
-	11550 6650 11550 7250
-Wire Wire Line
-	11650 7250 11650 6650
-Wire Wire Line
-	11750 6650 11750 7250
-Wire Wire Line
-	11850 7250 11850 6650
-Text GLabel 10750 9700 1    50   Output ~ 0
+Text GLabel 10850 6650 3    50   Output ~ 0
 I2S_SCLK
-Text GLabel 10650 9700 1    50   Output ~ 0
+Text GLabel 10750 6650 3    50   Output ~ 0
 I2S_LRCLK
-Text GLabel 10550 9700 1    50   Output ~ 0
+Text GLabel 10650 6650 3    50   Output ~ 0
 I2S_MCLK
-Text GLabel 10850 9700 1    50   Output ~ 0
+Text GLabel 10950 6650 3    50   Output ~ 0
 I2S_SDIN
 $Comp
 L FPGC4IOboard-rescue:R-Device R60
@@ -4701,4 +3855,643 @@ F 3 "~" H 9100 6850 50  0001 C CNN
 	1    9100 6850
 	-1   0    0    -1  
 $EndComp
+Wire Wire Line
+	10050 4300 10050 3750
+Wire Wire Line
+	10050 3750 10500 3750
+Wire Wire Line
+	10500 3650 10500 3750
+Connection ~ 10500 3750
+Wire Wire Line
+	2800 9400 2550 9400
+Wire Wire Line
+	3350 9400 3550 9400
+Wire Wire Line
+	3350 9700 3450 9700
+Wire Wire Line
+	2800 9550 2700 9550
+Wire Wire Line
+	2250 10500 3450 10500
+Wire Wire Line
+	2800 9700 2750 9700
+Wire Wire Line
+	2750 9700 2750 10400
+Connection ~ 2750 10400
+Wire Wire Line
+	2750 10400 4200 10400
+Wire Wire Line
+	3450 9700 3450 10500
+Connection ~ 3450 10500
+Wire Wire Line
+	3450 10500 4200 10500
+Wire Wire Line
+	2800 11600 2700 11600
+Wire Wire Line
+	3350 11750 3550 11750
+Wire Wire Line
+	3350 11450 3450 11450
+Wire Wire Line
+	2250 10600 3450 10600
+Connection ~ 2700 10700
+Wire Wire Line
+	2700 10700 4200 10700
+Wire Wire Line
+	3450 10600 3450 11450
+Connection ~ 3450 10600
+Wire Wire Line
+	3450 10600 4200 10600
+Text GLabel 11850 6650 3    50   Input ~ 0
+FPGC_DTR
+Text GLabel 11750 6650 3    50   Input ~ 0
+FPGC_RX
+Text GLabel 11650 6650 3    50   Output ~ 0
+FPGC_TX
+$Comp
+L FPGC4IOboard-rescue:GND-power #PWR076
+U 1 1 5E2E2B1C
+P 12250 6750
+F 0 "#PWR076" H 12250 6500 50  0001 C CNN
+F 1 "GND" H 12300 6600 50  0000 C CNN
+F 2 "" H 12250 6750 50  0001 C CNN
+F 3 "" H 12250 6750 50  0001 C CNN
+	1    12250 6750
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	3550 11750 3550 10900
+Wire Wire Line
+	2700 10700 2700 11450
+Text GLabel 6400 12850 0    50   Input ~ 0
+Audio_Mono
+Connection ~ 5750 13700
+Wire Wire Line
+	5750 13700 6100 13700
+Wire Wire Line
+	6700 13050 6700 13150
+$Comp
+L FPGC4IOboard-rescue:GND-power #PWR0136
+U 1 1 617BE51F
+P 6700 13150
+F 0 "#PWR0136" H 6700 12900 50  0001 C CNN
+F 1 "GND" H 6550 13100 50  0000 C CNN
+F 2 "" H 6700 13150 50  0001 C CNN
+F 3 "" H 6700 13150 50  0001 C CNN
+	1    6700 13150
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6500 12850 6400 12850
+$Comp
+L Connector:Conn_Coaxial J3
+U 1 1 617BE518
+P 6700 12850
+F 0 "J3" H 6800 12825 50  0000 L CNN
+F 1 "Conn_RCA_Audio" H 6400 13000 50  0000 L CNN
+F 2 "RCJ013:CUI_RCJ-013-Min" H 6700 12850 50  0001 C CNN
+F 3 " ~" H 6700 12850 50  0001 C CNN
+	1    6700 12850
+	1    0    0    -1  
+$EndComp
+Text Notes 1400 12650 0    50   ~ 0
+8bit DAC (NTSC Video)
+Wire Notes Line
+	1350 14700 1350 12550
+Wire Notes Line
+	7050 14700 1350 14700
+Wire Notes Line
+	7050 12550 7050 14700
+Wire Notes Line
+	1350 12550 7050 12550
+Wire Wire Line
+	6700 13900 6700 14000
+$Comp
+L FPGC4IOboard-rescue:GND-power #PWR0120
+U 1 1 686B50E5
+P 6700 14000
+F 0 "#PWR0120" H 6700 13750 50  0001 C CNN
+F 1 "GND" H 6550 13950 50  0000 C CNN
+F 2 "" H 6700 14000 50  0001 C CNN
+F 3 "" H 6700 14000 50  0001 C CNN
+	1    6700 14000
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5200 13300 5200 13400
+Wire Wire Line
+	5050 13300 5200 13300
+Wire Wire Line
+	5050 13350 5050 13300
+$Comp
+L FPGC4IOboard-rescue:GND-power #PWR0119
+U 1 1 68636EAF
+P 5050 13350
+F 0 "#PWR0119" H 5050 13100 50  0001 C CNN
+F 1 "GND" H 5050 13450 50  0000 C CNN
+F 2 "" H 5050 13350 50  0001 C CNN
+F 3 "" H 5050 13350 50  0001 C CNN
+	1    5050 13350
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6500 13700 6400 13700
+$Comp
+L Connector:Conn_Coaxial J5
+U 1 1 685B9D15
+P 6700 13700
+F 0 "J5" H 6800 13675 50  0000 L CNN
+F 1 "Conn_RCA_Video" H 6400 13850 50  0000 L CNN
+F 2 "RCJ013:CUI_RCJ-013-Min" H 6700 13700 50  0001 C CNN
+F 3 " ~" H 6700 13700 50  0001 C CNN
+	1    6700 13700
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4600 13300 4600 13400
+Wire Wire Line
+	4150 13300 4150 13400
+Wire Wire Line
+	3750 13300 3750 13400
+Wire Wire Line
+	3350 13300 3350 13400
+Wire Wire Line
+	2950 13300 2950 13400
+Wire Wire Line
+	2550 13300 2550 13400
+Wire Wire Line
+	2150 13300 2150 13400
+Wire Wire Line
+	1700 13300 1700 13400
+Wire Wire Line
+	1700 14200 1700 14300
+$Comp
+L FPGC4IOboard-rescue:GND-power #PWR0117
+U 1 1 67F947AE
+P 1700 14300
+F 0 "#PWR0117" H 1700 14050 50  0001 C CNN
+F 1 "GND" H 1550 14250 50  0000 C CNN
+F 2 "" H 1700 14300 50  0001 C CNN
+F 3 "" H 1700 14300 50  0001 C CNN
+	1    1700 14300
+	1    0    0    -1  
+$EndComp
+Text GLabel 1700 13300 1    50   Input ~ 0
+DAC_D0
+Text GLabel 2150 13300 1    50   Input ~ 0
+DAC_D1
+Text GLabel 2550 13300 1    50   Input ~ 0
+DAC_D2
+Text GLabel 2950 13300 1    50   Input ~ 0
+DAC_D3
+Text GLabel 3350 13300 1    50   Input ~ 0
+DAC_D4
+Text GLabel 3750 13300 1    50   Input ~ 0
+DAC_D5
+Text GLabel 4150 13300 1    50   Input ~ 0
+DAC_D6
+Text GLabel 4600 13300 1    50   Input ~ 0
+DAC_D7
+Wire Wire Line
+	4600 13700 4600 13800
+Wire Wire Line
+	4150 13800 4100 13800
+Connection ~ 4150 13800
+Wire Wire Line
+	4150 13700 4150 13800
+Wire Wire Line
+	3750 13800 3700 13800
+Connection ~ 3750 13800
+Wire Wire Line
+	3750 13700 3750 13800
+Wire Wire Line
+	3350 13800 3300 13800
+Connection ~ 3350 13800
+Wire Wire Line
+	3350 13700 3350 13800
+Wire Wire Line
+	2950 13800 2900 13800
+Connection ~ 2950 13800
+Wire Wire Line
+	2950 13700 2950 13800
+Wire Wire Line
+	2550 13800 2500 13800
+Connection ~ 2550 13800
+Wire Wire Line
+	2550 13700 2550 13800
+Wire Wire Line
+	2150 13800 2100 13800
+Connection ~ 2150 13800
+Wire Wire Line
+	2150 13700 2150 13800
+Wire Wire Line
+	1700 13800 1700 13900
+Connection ~ 1700 13800
+Wire Wire Line
+	1800 13800 1700 13800
+Wire Wire Line
+	1700 13700 1700 13800
+$Comp
+L FPGC4IOboard-rescue:R-Device R9
+U 1 1 67B5F096
+P 1700 14050
+F 0 "R9" H 1550 13950 50  0000 C CNN
+F 1 "2k" H 1550 14050 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 1630 14050 50  0001 C CNN
+F 3 "~" H 1700 14050 50  0001 C CNN
+	1    1700 14050
+	1    0    0    -1  
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:R-Device R3
+U 1 1 67B5EC50
+P 1700 13550
+F 0 "R3" H 1550 13450 50  0000 C CNN
+F 1 "2k" H 1550 13550 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 1630 13550 50  0001 C CNN
+F 3 "~" H 1700 13550 50  0001 C CNN
+	1    1700 13550
+	1    0    0    -1  
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:R-Device R14
+U 1 1 67B5E850
+P 2150 13550
+F 0 "R14" H 2000 13450 50  0000 C CNN
+F 1 "2k" H 2000 13550 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 2080 13550 50  0001 C CNN
+F 3 "~" H 2150 13550 50  0001 C CNN
+	1    2150 13550
+	1    0    0    -1  
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:R-Device R28
+U 1 1 67B5DDFA
+P 2550 13550
+F 0 "R28" H 2400 13450 50  0000 C CNN
+F 1 "2k" H 2400 13550 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 2480 13550 50  0001 C CNN
+F 3 "~" H 2550 13550 50  0001 C CNN
+	1    2550 13550
+	1    0    0    -1  
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:R-Device R31
+U 1 1 67B5DBFF
+P 2950 13550
+F 0 "R31" H 2800 13450 50  0000 C CNN
+F 1 "2k" H 2800 13550 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 2880 13550 50  0001 C CNN
+F 3 "~" H 2950 13550 50  0001 C CNN
+	1    2950 13550
+	1    0    0    -1  
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:R-Device R37
+U 1 1 67B5CF68
+P 3350 13550
+F 0 "R37" H 3200 13450 50  0000 C CNN
+F 1 "2k" H 3200 13550 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 3280 13550 50  0001 C CNN
+F 3 "~" H 3350 13550 50  0001 C CNN
+	1    3350 13550
+	1    0    0    -1  
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:R-Device R40
+U 1 1 67B5CC98
+P 3750 13550
+F 0 "R40" H 3600 13450 50  0000 C CNN
+F 1 "2k" H 3600 13550 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 3680 13550 50  0001 C CNN
+F 3 "~" H 3750 13550 50  0001 C CNN
+	1    3750 13550
+	1    0    0    -1  
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:R-Device R43
+U 1 1 67B5C89C
+P 4150 13550
+F 0 "R43" H 4000 13450 50  0000 C CNN
+F 1 "2k" H 4000 13550 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 4080 13550 50  0001 C CNN
+F 3 "~" H 4150 13550 50  0001 C CNN
+	1    4150 13550
+	1    0    0    -1  
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:R-Device R46
+U 1 1 67B5C2B8
+P 4600 13550
+F 0 "R46" H 4450 13450 50  0000 C CNN
+F 1 "2k" H 4450 13550 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 4530 13550 50  0001 C CNN
+F 3 "~" H 4600 13550 50  0001 C CNN
+	1    4600 13550
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4600 14200 4600 14300
+$Comp
+L FPGC4IOboard-rescue:GND-power #PWR0116
+U 1 1 67AECA2B
+P 4600 14300
+F 0 "#PWR0116" H 4600 14050 50  0001 C CNN
+F 1 "GND" H 4450 14250 50  0000 C CNN
+F 2 "" H 4600 14300 50  0001 C CNN
+F 3 "" H 4600 14300 50  0001 C CNN
+	1    4600 14300
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4600 13800 4500 13800
+Connection ~ 4600 13800
+Wire Wire Line
+	4600 13800 4600 13900
+$Comp
+L FPGC4IOboard-rescue:R-Device R47
+U 1 1 67A7AE66
+P 4600 14050
+F 0 "R47" H 4450 13950 50  0000 C CNN
+F 1 "1.6k" H 4450 14050 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 4530 14050 50  0001 C CNN
+F 3 "~" H 4600 14050 50  0001 C CNN
+	1    4600 14050
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	2200 13800 2150 13800
+Wire Wire Line
+	2600 13800 2550 13800
+Wire Wire Line
+	3000 13800 2950 13800
+Wire Wire Line
+	3400 13800 3350 13800
+Wire Wire Line
+	3800 13800 3750 13800
+Wire Wire Line
+	4200 13800 4150 13800
+$Comp
+L FPGC4IOboard-rescue:R-Device R13
+U 1 1 677EC013
+P 1950 13800
+F 0 "R13" V 1850 13700 50  0000 C CNN
+F 1 "1k" V 1850 13900 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 1880 13800 50  0001 C CNN
+F 3 "~" H 1950 13800 50  0001 C CNN
+	1    1950 13800
+	0    -1   -1   0   
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:R-Device R20
+U 1 1 677EBC7E
+P 2350 13800
+F 0 "R20" V 2250 13700 50  0000 C CNN
+F 1 "1k" V 2250 13900 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 2280 13800 50  0001 C CNN
+F 3 "~" H 2350 13800 50  0001 C CNN
+	1    2350 13800
+	0    -1   -1   0   
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:R-Device R29
+U 1 1 677EB9C1
+P 2750 13800
+F 0 "R29" V 2650 13700 50  0000 C CNN
+F 1 "1k" V 2650 13900 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 2680 13800 50  0001 C CNN
+F 3 "~" H 2750 13800 50  0001 C CNN
+	1    2750 13800
+	0    -1   -1   0   
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:R-Device R32
+U 1 1 677EA9BB
+P 3150 13800
+F 0 "R32" V 3050 13700 50  0000 C CNN
+F 1 "1k" V 3050 13900 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 3080 13800 50  0001 C CNN
+F 3 "~" H 3150 13800 50  0001 C CNN
+	1    3150 13800
+	0    -1   -1   0   
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:R-Device R38
+U 1 1 677EA820
+P 3550 13800
+F 0 "R38" V 3450 13700 50  0000 C CNN
+F 1 "1k" V 3450 13900 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 3480 13800 50  0001 C CNN
+F 3 "~" H 3550 13800 50  0001 C CNN
+	1    3550 13800
+	0    -1   -1   0   
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:R-Device R42
+U 1 1 677EA21C
+P 3950 13800
+F 0 "R42" V 3850 13700 50  0000 C CNN
+F 1 "1k" V 3850 13900 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 3880 13800 50  0001 C CNN
+F 3 "~" H 3950 13800 50  0001 C CNN
+	1    3950 13800
+	0    -1   -1   0   
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:R-Device R45
+U 1 1 673B7262
+P 4350 13800
+F 0 "R45" V 4250 13700 50  0000 C CNN
+F 1 "1k" V 4250 13900 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 4280 13800 50  0001 C CNN
+F 3 "~" H 4350 13800 50  0001 C CNN
+	1    4350 13800
+	0    -1   -1   0   
+$EndComp
+Wire Wire Line
+	5000 13800 4600 13800
+Wire Wire Line
+	4900 13100 5350 13100
+Wire Wire Line
+	4900 13100 4900 13600
+Wire Wire Line
+	5000 13600 4900 13600
+Wire Wire Line
+	5200 14100 5200 14150
+Connection ~ 5200 14100
+Wire Wire Line
+	5000 14200 5000 14150
+Wire Wire Line
+	5100 14200 5000 14200
+Wire Wire Line
+	5100 14100 5100 14200
+Wire Wire Line
+	5200 14100 5100 14100
+$Comp
+L FPGC4IOboard-rescue:+5V-power #PWR0114
+U 1 1 6719B712
+P 5000 14150
+F 0 "#PWR0114" H 5000 14000 50  0001 C CNN
+F 1 "+5V" H 4950 14300 50  0000 C CNN
+F 2 "" H 5000 14150 50  0001 C CNN
+F 3 "" H 5000 14150 50  0001 C CNN
+	1    5000 14150
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	5200 14000 5200 14100
+Wire Wire Line
+	5200 14450 5200 14550
+$Comp
+L FPGC4IOboard-rescue:GND-power #PWR0113
+U 1 1 66EBED81
+P 5200 14550
+F 0 "#PWR0113" H 5200 14300 50  0001 C CNN
+F 1 "GND" H 5050 14500 50  0000 C CNN
+F 2 "" H 5200 14550 50  0001 C CNN
+F 3 "" H 5200 14550 50  0001 C CNN
+	1    5200 14550
+	1    0    0    -1  
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:C-Device C2
+U 1 1 66EBED7B
+P 5200 14300
+F 0 "C2" H 4950 14250 50  0000 L CNN
+F 1 "100nF" H 4850 14350 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 5238 14150 50  0001 C CNN
+F 3 "~" H 5200 14300 50  0001 C CNN
+	1    5200 14300
+	-1   0    0    -1  
+$EndComp
+Connection ~ 5750 13100
+Wire Wire Line
+	5750 12850 5750 13100
+Wire Wire Line
+	5700 12850 5750 12850
+Connection ~ 5350 13100
+Wire Wire Line
+	5350 12850 5350 13100
+Wire Wire Line
+	5400 12850 5350 12850
+$Comp
+L FPGC4IOboard-rescue:C-Device C3
+U 1 1 66DDD76A
+P 5550 12850
+F 0 "C3" V 5700 12900 50  0000 L CNN
+F 1 "100pf" V 5700 12600 50  0000 L CNN
+F 2 "Capacitor_SMD:C_0805_2012Metric_Pad1.18x1.45mm_HandSolder" H 5588 12700 50  0001 C CNN
+F 3 "~" H 5550 12850 50  0001 C CNN
+	1    5550 12850
+	0    1    -1   0   
+$EndComp
+Wire Wire Line
+	5750 13100 5750 13700
+Wire Wire Line
+	5700 13100 5750 13100
+Wire Wire Line
+	5400 13100 5350 13100
+Wire Wire Line
+	5500 13500 5500 13450
+Wire Wire Line
+	5400 13500 5500 13500
+Wire Wire Line
+	5400 13350 5400 13500
+Wire Wire Line
+	5300 13350 5400 13350
+Wire Wire Line
+	5300 13400 5300 13350
+$Comp
+L FPGC4IOboard-rescue:+5V-power #PWR0112
+U 1 1 66B1998F
+P 5500 13450
+F 0 "#PWR0112" H 5500 13300 50  0001 C CNN
+F 1 "+5V" H 5450 13600 50  0000 C CNN
+F 2 "" H 5500 13450 50  0001 C CNN
+F 3 "" H 5500 13450 50  0001 C CNN
+	1    5500 13450
+	1    0    0    -1  
+$EndComp
+$Comp
+L FPGC4IOboard-rescue:R-Device R48
+U 1 1 66B0C605
+P 5550 13100
+F 0 "R48" V 5450 13000 50  0000 C CNN
+F 1 "100" V 5450 13200 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 5480 13100 50  0001 C CNN
+F 3 "~" H 5550 13100 50  0001 C CNN
+	1    5550 13100
+	0    -1   1    0   
+$EndComp
+Wire Wire Line
+	5750 13700 5600 13700
+$Comp
+L FPGC4IOboard-rescue:R-Device R49
+U 1 1 666D70BF
+P 6250 13700
+F 0 "R49" V 6150 13600 50  0000 C CNN
+F 1 "75" V 6150 13800 50  0000 C CNN
+F 2 "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder" V 6180 13700 50  0001 C CNN
+F 3 "~" H 6250 13700 50  0001 C CNN
+	1    6250 13700
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Amplifier_Operational:ADA4841-1YRJ U8
+U 1 1 666D427F
+P 5300 13700
+F 0 "U8" H 5350 13850 50  0000 L CNN
+F 1 "ADA4841-1YRJ" H 5300 13950 50  0000 L CNN
+F 2 "Package_TO_SOT_SMD:SOT-23-6" H 5300 13100 50  0001 C CNN
+F 3 "https://www.analog.com/media/en/technical-documentation/data-sheets/ADA4841-1_4841-2.pdf" H 5300 13700 50  0001 C CNN
+	1    5300 13700
+	1    0    0    1   
+$EndComp
+NoConn ~ 11050 10200
+NoConn ~ 11150 10200
+NoConn ~ 11250 10200
+NoConn ~ 11350 10200
+NoConn ~ 11450 10200
+NoConn ~ 11550 10200
+NoConn ~ 12050 10200
+NoConn ~ 12150 10200
+NoConn ~ 12150 9700
+NoConn ~ 12050 9700
+NoConn ~ 11550 9700
+NoConn ~ 11450 9700
+NoConn ~ 11350 9700
+NoConn ~ 11250 9700
+NoConn ~ 11150 9700
+NoConn ~ 10550 6650
+NoConn ~ 11050 6650
+NoConn ~ 10650 6150
+NoConn ~ 10950 6150
+NoConn ~ 11050 6150
+NoConn ~ 11150 6150
+NoConn ~ 11250 6150
+NoConn ~ 11350 6150
+NoConn ~ 11450 6150
+NoConn ~ 11550 6150
+NoConn ~ 11750 6150
+NoConn ~ 11850 6150
+Wire Wire Line
+	20300 6850 20300 6950
+Connection ~ 20300 6950
+$Comp
+L Connector:USB_B_Micro J15
+U 1 1 61301A26
+P 20600 5950
+F 0 "J15" H 20370 5847 50  0000 R CNN
+F 1 "USB_B_Micro" H 20370 5938 50  0000 R CNN
+F 2 "RCJ013:MicroUSB_G30" H 20750 5900 50  0001 C CNN
+F 3 "~" H 20750 5900 50  0001 C CNN
+	1    20600 5950
+	-1   0    0    1   
+$EndComp
+Wire Wire Line
+	20300 6150 20200 6150
+Wire Wire Line
+	19900 6150 19850 6150
+Wire Wire Line
+	19850 6150 19850 6250
+NoConn ~ 10850 10200
+NoConn ~ 10950 10200
 $EndSCHEMATC
