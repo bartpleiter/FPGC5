@@ -1,0 +1,13 @@
+CompilerStructure:
+
+- parse command line arguments
+	- check for single filename
+	- check for --bdos option
+	- check for --os option
+	- show help function
+- read file (filename)
+- tokenize & get DEFINE dictionary (include all include-files)
+- process tokens, apply DEFINE dictionary
+- parse processed token list into an abstract syntax tree
+- generate IL code from ast
+- generate asm from IL code

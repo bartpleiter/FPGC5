@@ -45,8 +45,8 @@ wire [3:0] TMDS;
 
 lvds lvdsConverter(
     .datain     (TMDS),
-    .dataout    (TMDS_p),
-    .dataout_b  (TMDS_n)
+    .dataout    (TMDS_n),
+    .dataout_b  (TMDS_p) // Reversed because of a LVDS polarity swap on the V3 PCB
 );
 
 

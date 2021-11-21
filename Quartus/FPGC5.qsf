@@ -71,7 +71,7 @@ set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_location_assignment PIN_T2 -to clock
-set_location_assignment PIN_AB15 -to nreset
+set_location_assignment PIN_J1 -to nreset
 set_location_assignment PIN_E4 -to led
 set_location_assignment PIN_AB4 -to SDRAM_WEn
 set_location_assignment PIN_W7 -to SDRAM_DQM[0]
@@ -112,75 +112,84 @@ set_location_assignment PIN_V5 -to SDRAM_A[9]
 set_location_assignment PIN_W1 -to SDRAM_A[10]
 set_location_assignment PIN_Y4 -to SDRAM_A[11]
 set_location_assignment PIN_V6 -to SDRAM_A[12]
-set_location_assignment PIN_B19 -to UART0_dtr
-set_location_assignment PIN_B20 -to UART0_out
-set_location_assignment PIN_B18 -to UART0_in
-set_location_assignment PIN_F1 -to UART1_out
-set_location_assignment PIN_E1 -to UART1_in
-set_location_assignment PIN_A6 -to UART2_out
-set_location_assignment PIN_A7 -to UART2_in
-set_location_assignment PIN_AB16 -to SPI0_clk
-set_location_assignment PIN_AA18 -to SPI0_cs
-set_location_assignment PIN_AA15 -to SPI0_data
-set_location_assignment PIN_AA17 -to SPI0_q
-set_location_assignment PIN_AB17 -to SPI0_wp
-set_location_assignment PIN_AA16 -to SPI0_hold
-set_location_assignment PIN_P2 -to SPI1_clk
-set_location_assignment PIN_R2 -to SPI1_cs
-set_location_assignment PIN_N2 -to SPI1_mosi
-set_location_assignment PIN_M2 -to SPI1_miso
-set_location_assignment PIN_J2 -to SPI1_rst
-set_location_assignment PIN_H2 -to SPI1_nint
+set_location_assignment PIN_B17 -to UART0_dtr
+set_location_assignment PIN_B15 -to UART0_out
+set_location_assignment PIN_B16 -to UART0_in
+set_location_assignment PIN_C3 -to UART2_out
+set_location_assignment PIN_A5 -to UART2_in
+set_location_assignment PIN_B10 -to SPI0_clk
+set_location_assignment PIN_A15 -to SPI0_cs
+set_location_assignment PIN_B9 -to SPI0_data
+set_location_assignment PIN_B13 -to SPI0_q
+set_location_assignment PIN_B14 -to SPI0_wp
+set_location_assignment PIN_B8 -to SPI0_hold
+set_location_assignment PIN_R2 -to SPI1_clk
+set_location_assignment PIN_R1 -to SPI1_cs
+set_location_assignment PIN_N1 -to SPI1_mosi
+set_location_assignment PIN_N2 -to SPI1_miso
+set_location_assignment PIN_P1 -to SPI1_rst
+set_location_assignment PIN_P2 -to SPI1_nint
 set_location_assignment PIN_D2 -to SPI2_clk
-set_location_assignment PIN_F2 -to SPI2_cs
-set_location_assignment PIN_C1 -to SPI2_mosi
-set_location_assignment PIN_C2 -to SPI2_miso
-set_location_assignment PIN_B1 -to SPI2_rst
-set_location_assignment PIN_B2 -to SPI2_nint
-set_location_assignment PIN_P1 -to PS2_data
-set_location_assignment PIN_R1 -to PS2_clk
-set_location_assignment PIN_N1 -to SNES_clk
-set_location_assignment PIN_M1 -to SNES_latch
-set_location_assignment PIN_J1 -to SNES_data
-set_location_assignment PIN_A18 -to SPI3_cs
-set_location_assignment PIN_A19 -to SPI3_clk
+set_location_assignment PIN_M1 -to SPI2_cs
+set_location_assignment PIN_F2 -to SPI2_mosi
+set_location_assignment PIN_E1 -to SPI2_miso
+set_location_assignment PIN_H1 -to SPI2_rst
+set_location_assignment PIN_F1 -to SPI2_nint
+set_location_assignment PIN_A3 -to PS2_data
+set_location_assignment PIN_B2 -to PS2_clk
+set_location_assignment PIN_A19 -to SPI3_cs
+set_location_assignment PIN_B20 -to SPI3_clk
 set_location_assignment PIN_A20 -to SPI3_mosi
-set_location_assignment PIN_A15 -to SPI3_miso
-set_location_assignment PIN_A16 -to SPI3_nrst
-set_location_assignment PIN_A17 -to SPI3_int
-set_location_assignment PIN_A13 -to SPI4_cs
-set_location_assignment PIN_A10 -to SPI4_clk
-set_location_assignment PIN_A9 -to SPI4_mosi
-set_location_assignment PIN_A8 -to SPI4_miso
-set_location_assignment PIN_A14 -to SPI4_gp
-set_location_assignment PIN_AB19 -to composite[0]
-set_location_assignment PIN_AB20 -to composite[1]
-set_location_assignment PIN_Y21 -to composite[2]
-set_location_assignment PIN_W21 -to composite[3]
-set_location_assignment PIN_V21 -to composite[4]
-set_location_assignment PIN_U21 -to composite[5]
-set_location_assignment PIN_R21 -to composite[6]
-set_location_assignment PIN_P21 -to composite[7]
-set_location_assignment PIN_C4 -to GPI[0]
-set_location_assignment PIN_C3 -to GPI[1]
-set_location_assignment PIN_B5 -to GPI[2]
-set_location_assignment PIN_A5 -to GPI[3]
-set_location_assignment PIN_B3 -to GPO[0]
-set_location_assignment PIN_A3 -to GPO[1]
-set_location_assignment PIN_B4 -to GPO[2]
-set_location_assignment PIN_A4 -to GPO[3]
-set_location_assignment PIN_AB14 -to DIPS[0]
-set_location_assignment PIN_AA14 -to DIPS[1]
-set_location_assignment PIN_AB13 -to DIPS[2]
-set_location_assignment PIN_AA13 -to DIPS[3]
-set_location_assignment PIN_B21 -to TMDS_p[3]
-set_location_assignment PIN_B22 -to TMDS_n[3]
-set_location_assignment PIN_C21 -to TMDS_p[2]
-set_location_assignment PIN_C22 -to TMDS_n[2]
-set_location_assignment PIN_D21 -to TMDS_p[1]
-set_location_assignment PIN_D22 -to TMDS_n[1]
-set_location_assignment PIN_E21 -to TMDS_p[0]
-set_location_assignment PIN_E22 -to TMDS_n[0]
+set_location_assignment PIN_B18 -to SPI3_miso
+set_location_assignment PIN_A18 -to SPI3_nrst
+set_location_assignment PIN_B19 -to SPI3_int
+set_location_assignment PIN_AA14 -to SPI4_cs
+set_location_assignment PIN_AA15 -to SPI4_clk
+set_location_assignment PIN_AA16 -to SPI4_mosi
+set_location_assignment PIN_AA17 -to SPI4_miso
+set_location_assignment PIN_AA13 -to SPI4_gp
+set_location_assignment PIN_R22 -to GPI[0]
+set_location_assignment PIN_U22 -to GPI[1]
+set_location_assignment PIN_V22 -to GPI[2]
+set_location_assignment PIN_W22 -to GPI[3]
+set_location_assignment PIN_Y22 -to GPO[0]
+set_location_assignment PIN_AA20 -to GPO[1]
+set_location_assignment PIN_AA19 -to GPO[2]
+set_location_assignment PIN_AA18 -to GPO[3]
+set_location_assignment PIN_C2 -to DIPS[0]
+set_location_assignment PIN_H2 -to DIPS[1]
+set_location_assignment PIN_J2 -to DIPS[2]
+set_location_assignment PIN_M2 -to DIPS[3]
+set_location_assignment PIN_B22 -to TMDS_p[3]
+set_location_assignment PIN_B21 -to TMDS_n[3]
+set_location_assignment PIN_E22 -to TMDS_p[2]
+set_location_assignment PIN_E21 -to TMDS_n[2]
+set_location_assignment PIN_D22 -to TMDS_p[1]
+set_location_assignment PIN_D21 -to TMDS_n[1]
+set_location_assignment PIN_C22 -to TMDS_p[0]
+set_location_assignment PIN_C21 -to TMDS_n[0]
+set_location_assignment PIN_C1 -to led_Booted
+set_location_assignment PIN_AB17 -to led_Eth
+set_location_assignment PIN_AB19 -to led_Flash
+set_location_assignment PIN_B1 -to led_USB0
+set_location_assignment PIN_AB20 -to led_USB1
+set_location_assignment PIN_AB13 -to led_PS2
+set_location_assignment PIN_AB16 -to led_HDMI
+set_location_assignment PIN_AB18 -to led_QSPI
+set_location_assignment PIN_AB15 -to led_GPU
+set_location_assignment PIN_AB14 -to led_I2S
+set_location_assignment PIN_B6 -to I2S_SDIN
+set_location_assignment PIN_B5 -to I2S_SCLK
+set_location_assignment PIN_C4 -to I2S_LRCLK
+set_location_assignment PIN_B4 -to I2S_MCLK
+set_location_assignment PIN_Y21 -to composite[0]
+set_location_assignment PIN_W21 -to composite[1]
+set_location_assignment PIN_V21 -to composite[2]
+set_location_assignment PIN_U21 -to composite[3]
+set_location_assignment PIN_R21 -to composite[4]
+set_location_assignment PIN_P21 -to composite[5]
+set_location_assignment PIN_N21 -to composite[6]
+set_location_assignment PIN_M21 -to composite[7]
 set_instance_assignment -name IO_STANDARD LVDS -to TMDS_p[3]
 set_instance_assignment -name IO_STANDARD LVDS -to TMDS_n[3]
 set_instance_assignment -name IO_STANDARD LVDS -to TMDS_p[2]
@@ -189,9 +198,6 @@ set_instance_assignment -name IO_STANDARD LVDS -to TMDS_p[1]
 set_instance_assignment -name IO_STANDARD LVDS -to TMDS_n[1]
 set_instance_assignment -name IO_STANDARD LVDS -to TMDS_p[0]
 set_instance_assignment -name IO_STANDARD LVDS -to TMDS_n[0]
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to PS2_data
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to PS2_clk
-set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to SNES_data
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to GPI[0]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to GPI[1]
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to GPI[2]

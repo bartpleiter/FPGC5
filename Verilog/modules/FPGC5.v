@@ -66,9 +66,9 @@ module FPGC5(
     output          UART0_out,
     input           UART0_dtr,
      
-    //UART1
-    input           UART1_in,
-    output          UART1_out,
+    //UART1 (currently unused because no UART midi synth anymore)
+    //input           UART1_in,
+    //output          UART1_out,
      
     //UART2
     input           UART2_in,
@@ -76,10 +76,6 @@ module FPGC5(
      
     //PS/2
     input           PS2_clk, PS2_data,
-     
-    //SNESpad
-    output          SNES_clk, SNES_latch,
-    input           SNES_data,
      
     //Led for debugging
     output          led,
@@ -89,8 +85,32 @@ module FPGC5(
     output [3:0]    GPO,
      
     //DIP switch
-    input [3:0]     DIPS
+    input [3:0]     DIPS,
+
+    //I2S audio
+    output          I2S_SDIN, I2S_SCLK, I2S_LRCLK, I2S_MCLK,
+    
+    //Status leds
+    output          led_Booted, led_Eth, led_Flash, led_USB0, led_USB1, led_PS2, led_HDMI, led_QSPI, led_GPU, led_I2S
 );
+
+
+// TMP FIXES FOR NEW PCB
+assign led_Booted = 1'b0;
+assign led_Eth = 1'b1;
+assign led_Flash = 1'b1;
+assign led_USB0 = 1'b1;
+assign led_USB1 = 1'b1;
+assign led_PS2 = 1'b1;
+assign led_HDMI = 1'b1;
+assign led_QSPI = 1'b1;
+assign led_GPU = 1'b1;
+assign led_I2S = 1'b1;
+
+assign I2S_SDIN = 1'b0;
+assign I2S_SCLK = 1'b0;
+assign I2S_LRCLK = 1'b0;
+assign I2S_MCLK = 1'b0;
 
 
 //-------------------CLK-------------------------
@@ -395,7 +415,7 @@ wire        bus_done;
 
 //Interrupt signals
 wire        OST1_int, OST2_int, OST3_int;
-wire        UART0_rx_int, UART1_rx_int, UART2_rx_int;
+wire        UART0_rx_int, UART2_rx_int;
 wire        PS2_int;
 
 MemoryUnit mu(
@@ -467,9 +487,9 @@ MemoryUnit mu(
 .UART0_rx_interrupt (UART0_rx_int),
 
 //UART1 (APU)
-.UART1_in           (UART1_in),
-.UART1_out          (UART1_out),
-.UART1_rx_interrupt (UART1_rx_int),
+.UART1_in           (),
+.UART1_out          (),
+.UART1_rx_interrupt (),
 
 //UART2 (GP)
 .UART2_in           (UART2_in),
@@ -517,9 +537,9 @@ MemoryUnit mu(
 .OST3_int   (OST3_int),
 
 //SNESpad
-.SNES_clk   (SNES_clk),
-.SNES_latch (SNES_latch),
-.SNES_data  (SNES_data),
+.SNES_clk   (),
+.SNES_latch (),
+.SNES_data  (),
 
 //PS/2
 .PS2_clk    (PS2_clk),
@@ -543,7 +563,7 @@ CPU cpu(
 .int4           (frameDrawn_stable),   //GPU Frame Drawn
 .ext_int1       (OST3_int),            //OStimer3
 .ext_int2       (PS2_int),             //PS/2 scancode ready
-.ext_int3       (UART1_rx_int),        //UART1 rx (APU)
+.ext_int3       (1'b0),                //UART1 rx (APU)
 .ext_int4       (UART2_rx_int),        //UART2 rx (EXT)
 /*
 .address        (address),

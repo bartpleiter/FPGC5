@@ -53,32 +53,32 @@ TMDSenc TMDSb(
 );
 
 
-
+// Everything is inverted here because of a LVDS polarity swap on the V3 PCB
 ddr ddrR(
     .outclock(clkTMDS),
-    .datain_h(shiftRed[0]),
-    .datain_l(shiftRed[1]),
+    .datain_h(!shiftRed[0]),
+    .datain_l(!shiftRed[1]),
     .dataout (rTMDS)
 );
 
 ddr ddrG(
     .outclock(clkTMDS),
-    .datain_h(shiftGreen[0]),
-    .datain_l(shiftGreen[1]),
+    .datain_h(!shiftGreen[0]),
+    .datain_l(!shiftGreen[1]),
     .dataout (gTMDS)
 );
 
 ddr ddrB(
     .outclock(clkTMDS),
-    .datain_h(shiftBlue[0]),
-    .datain_l(shiftBlue[1]),
+    .datain_h(!shiftBlue[0]),
+    .datain_l(!shiftBlue[1]),
     .dataout (bTMDS)
 );
 
 ddr ddrCLK(
     .outclock(clkTMDS),
-    .datain_h(shiftClk[0]),
-    .datain_l(shiftClk[1]),
+    .datain_h(!shiftClk[0]),
+    .datain_l(!shiftClk[1]),
     .dataout (cTMDS)
 );
 

@@ -141,8 +141,8 @@ wire UART0_out;
 reg  UART0_dtr;
 
 //UART1
-reg  UART1_in;
-wire UART1_out;
+//reg  UART1_in;
+//wire UART1_out;
 
 //UART2
 reg  UART2_in;
@@ -151,11 +151,6 @@ wire UART2_out;
 //PS/2
 reg PS2_clk;
 reg PS2_data;
-
-//SNESpad
-wire SNES_clk; 
-wire SNES_latch;
-reg  SNES_data;
 
 //Led
 wire led;
@@ -233,8 +228,8 @@ FPGC5 fpgc (
 .UART0_dtr(UART0_dtr),
      
 //UART1
-.UART1_in(UART1_in),
-.UART1_out(UART1_out),
+//.UART1_in(UART1_in),
+//.UART1_out(UART1_out),
      
 //UART2
 .UART2_in(UART2_in),
@@ -243,11 +238,6 @@ FPGC5 fpgc (
 //PS/2
 .PS2_clk(PS2_clk), 
 .PS2_data(PS2_data),
-     
-//SNESpad
-.SNES_clk(SNES_clk), 
-.SNES_latch(SNES_latch),
-.SNES_data(SNES_data),
      
 //Led for debugging
 .led(led),
@@ -279,13 +269,11 @@ begin
 
     UART0_in = 1;
     UART0_dtr = 1;
-    UART1_in = 1;
+    //UART1_in = 1;
     UART2_in = 1;
 
     PS2_clk = 1;
     PS2_data = 0;
-
-    SNES_data = 1;
 
     GPI = 4'b1111;
 

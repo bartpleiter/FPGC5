@@ -16,7 +16,7 @@ then
             # convert list to binary files and send to FPGC
 
             # WSL1/Linux version
-            if [[ $1 == "flash" ||  $1 == "write" ]]
+            if [[ $2 == "flash" ||  $2 == "write" ]]
             then
                 (cd ../Programmer && bash compileROM.sh && echo "Flashing binary to FPGC flash" && python3 flash.py write)
             else
