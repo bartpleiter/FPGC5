@@ -14,7 +14,7 @@ markdown_extensions:
 repo_name: b4rt-dev/FPGC5
 repo_url: https://github.com/b4rt-dev/fpgc5
 
-site_url: https://www.b4rt.nl/fpgc5
+site_url: https://www.b4rt.nl/fpgc
 
 edit_uri: edit/master/Documentation/docs/
 
