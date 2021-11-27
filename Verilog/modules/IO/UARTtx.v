@@ -44,7 +44,7 @@ begin
     r_Tx_Data = 8'd0;
     r_Tx_Done = 1'b0;
     r_Tx_Active = 1'b0;
-    o_Tx_Serial = 1'b0;
+    o_Tx_Serial = 1'b1;
 end
 
 /*
@@ -71,7 +71,7 @@ begin
         r_Tx_Data <= 8'd0;
         r_Tx_Done <= 1'b0;
         r_Tx_Active <= 1'b0;
-        o_Tx_Serial <= 1'b0;
+        o_Tx_Serial <= 1'b1;
     end
     else
     begin

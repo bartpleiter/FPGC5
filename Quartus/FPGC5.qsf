@@ -216,6 +216,7 @@ set_global_assignment -name VERILOG_FILE modules/GPU/HDMI/TMDSenc.v
 set_global_assignment -name VERILOG_FILE modules/GPU/HDMI/RGB2HDMI.v
 set_global_assignment -name VERILOG_FILE modules/GPU/TimingGenerator.v
 set_global_assignment -name VERILOG_FILE modules/GPU/BGWrenderer.v
+set_global_assignment -name VERILOG_FILE modules/IO/LEDvisualizer.v
 set_global_assignment -name VERILOG_FILE modules/IO/SimpleSPI.v
 set_global_assignment -name VERILOG_FILE modules/IO/UARTrx.v
 set_global_assignment -name VERILOG_FILE modules/IO/UARTtx.v

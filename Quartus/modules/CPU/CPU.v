@@ -8,7 +8,8 @@ module CPU(
     output        bus_we,
     output        bus_start,
     input [31:0]  bus_q,
-    input         bus_done
+    input         bus_done,
+    output [26:0] PC
 );
 
 //-----------------------Bus-------------------------
@@ -36,6 +37,8 @@ wire [26:0] jump_addr;
 wire [26:0] pc_out;
 wire jump, reti, offset;
 wire [7:0] ext_int_id;
+
+assign PC = pc_out;
 
 PC pc(
 .clk(clk), 

@@ -43,11 +43,12 @@
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/CPU/Timer.v"
 
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/Keyboard.v"
-`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/NESpadReader.v"
+//`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/NESpadReader.v"
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/OStimer.v"
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/UARTtx.v"
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/UARTrx.v"
 `include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/SimpleSPI.v"
+`include "/home/bart/Documents/FPGA/FPGC5/Verilog/modules/IO/LEDvisualizer.v"
 
 //Define testmodule
 module FPGC_tb;

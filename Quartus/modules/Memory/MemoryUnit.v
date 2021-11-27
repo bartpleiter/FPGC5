@@ -65,10 +65,10 @@ module MemoryUnit(
     output          UART0_out,
     output          UART0_rx_interrupt,
 
-    //UART1 (APU)
-    input           UART1_in,
-    output          UART1_out,
-    output          UART1_rx_interrupt,
+    //UART1 (APU) DEPRECATED
+    //input           UART1_in,
+    //output          UART1_out,
+    //output          UART1_rx_interrupt,
 
     //UART2 (GP)
     input           UART2_in,
@@ -77,6 +77,7 @@ module MemoryUnit(
 
     //SPI0 (Flash)
     //declared under MEMORY
+    output          SPI0_QSPI,
 
     //SPI1 (USB0/CH376T)
     output          SPI1_clk,
@@ -115,10 +116,6 @@ module MemoryUnit(
     output          OST2_int,
     output          OST3_int,
 
-    //SNESpad
-    output          SNES_clk, SNES_latch,
-    input           SNES_data,
-
     //PS/2
     input           PS2_clk, PS2_data,
     output          PS2_int,            //Scan code ready signal
@@ -138,8 +135,8 @@ localparam
     A_ROM = 5,
     A_UART0RX = 6,
     A_UART0TX = 7,
-    A_UART1RX = 8,
-    A_UART1TX = 9,
+    //A_UART1RX = 8,
+    //A_UART1TX = 9,
     A_UART2RX = 10,
     A_UART2TX = 11,
     A_SPI0 = 12,
@@ -165,7 +162,7 @@ localparam
     A_TIMER2CTRL = 32,
     A_TIMER3VAL = 33,
     A_TIMER3CTRL = 34,
-    A_SNESPAD = 35,
+    //A_SNESPAD = 35,
     A_PS2 = 36,
     A_BOOTMODE = 37;
 
@@ -211,12 +208,14 @@ SPIreader sreader (
 //SPI0 (flash)
 wire SPI0_clk;
 wire SPI0_mosi;
-reg  SPI0_cs;
+reg  SPI0_cs = 1'b1;
 reg  SPI0_enable = 1'b0; //high enables SPI0 and disables SPIreader
 wire SPI0_start;
 wire [7:0] SPI0_in;
 wire [7:0] SPI0_out;
 wire SPI0_done;
+
+assign SPI0_QSPI = ~SPI0_enable;
 
 SimpleSPI #(
 .CLKS_PER_HALF_BIT(1))
@@ -329,6 +328,7 @@ UARTrx UART0_rx(
 //------------
 //UART1
 //------------
+/*
 wire UART1_r_Tx_DV, UART1_w_Tx_Done;
 wire [7:0] UART1_r_Tx_Byte;
 
@@ -351,6 +351,7 @@ UARTrx UART1_rx(
 .o_Rx_DV    (UART1_rx_interrupt),
 .o_Rx_Byte  (UART1_w_Rx_Byte)
 );
+*/
 
 
 //------------
@@ -537,6 +538,7 @@ OStimer OST3(
 //------------
 //SNES controller
 //------------
+/*
 wire [15:0] SNES_state;
 wire SNES_done;
 wire SNES_start;
@@ -550,7 +552,7 @@ NESpadReader npr (
 .nesState(SNES_state),
 .frame(SNES_start),
 .done(SNES_done)
-);
+);*/
 
 
 
@@ -608,8 +610,8 @@ assign UART0_r_Tx_DV    = bus_addr == 27'hC02723 && bus_we && bus_start;
 assign UART0_r_Tx_Byte  = bus_data;
 
 
-assign UART1_r_Tx_DV    = bus_addr == 27'hC02725 && bus_we && bus_start;
-assign UART1_r_Tx_Byte  = bus_data;
+//assign UART1_r_Tx_DV    = bus_addr == 27'hC02725 && bus_we && bus_start;
+//assign UART1_r_Tx_Byte  = bus_data;
 
 assign UART2_r_Tx_DV    = bus_addr == 27'hC02727 && bus_we && bus_start;
 assign UART2_r_Tx_Byte  = bus_data;
@@ -644,7 +646,7 @@ assign OST3_set         = (bus_addr == 27'hC0273D && bus_we);
 assign OST3_trigger     = (bus_addr == 27'hC0273E && bus_we);
 
 //SNES
-assign SNES_start       = bus_addr == 27'hC0273F && bus_start;
+//assign SNES_start       = bus_addr == 27'hC0273F && bus_start;
 
 
 
@@ -662,8 +664,8 @@ begin
     if (bus_addr >= 27'hC02522 && bus_addr < 27'hC02722) a_sel = A_ROM;
     if (bus_addr == 27'hC02722) a_sel = A_UART0RX;
     if (bus_addr == 27'hC02723) a_sel = A_UART0TX;
-    if (bus_addr == 27'hC02724) a_sel = A_UART1RX;
-    if (bus_addr == 27'hC02725) a_sel = A_UART1TX;
+    //if (bus_addr == 27'hC02724) a_sel = A_UART1RX;
+    //if (bus_addr == 27'hC02725) a_sel = A_UART1TX;
     if (bus_addr == 27'hC02726) a_sel = A_UART2RX;
     if (bus_addr == 27'hC02727) a_sel = A_UART2TX;
     if (bus_addr == 27'hC02728) a_sel = A_SPI0;
@@ -689,7 +691,7 @@ begin
     if (bus_addr == 27'hC0273C) a_sel = A_TIMER2CTRL;
     if (bus_addr == 27'hC0273D) a_sel = A_TIMER3VAL;
     if (bus_addr == 27'hC0273E) a_sel = A_TIMER3CTRL;
-    if (bus_addr == 27'hC0273F) a_sel = A_SNESPAD;
+    //if (bus_addr == 27'hC0273F) a_sel = A_SNESPAD;
     if (bus_addr == 27'hC02740) a_sel = A_PS2;
     if (bus_addr == 27'hC02741) a_sel = A_BOOTMODE;
 end
@@ -707,7 +709,7 @@ begin
         A_ROM:          bus_q_wire = ROM_q;
         A_UART0RX:      bus_q_wire = UART0_w_Rx_Byte;
         //A_UART0TX:      bus_q_wire = 
-        A_UART1RX:      bus_q_wire = UART1_w_Rx_Byte;
+        //A_UART1RX:      bus_q_wire = UART1_w_Rx_Byte;
         //A_UART1TX:      bus_q_wire = 
         A_UART2RX:      bus_q_wire = UART2_w_Rx_Byte;
         //A_UART2TX:      bus_q_wire = 
@@ -734,7 +736,7 @@ begin
         //A_TIMER2CTRL:   bus_q_wire = 
         //A_TIMER3VAL:    bus_q_wire = 
         //A_TIMER3CTRL:   bus_q_wire = 
-        A_SNESPAD:      bus_q_wire = {16'd0, SNES_state};
+        //A_SNESPAD:      bus_q_wire = {16'd0, SNES_state};
         A_PS2:          bus_q_wire = {24'd0, PS2_scanCode};
         A_BOOTMODE:     bus_q_wire = {31'd0, boot_mode};
         default:        bus_q_wire = 32'd0;
@@ -776,6 +778,12 @@ begin
         sd_d        <= 32'd0;
         sd_we       <= 1'b0;
         sd_start    <= 1'b0;
+        SPI0_cs     <= 1'b1;
+        SPI1_cs     <= 1'b1;
+        SPI2_cs     <= 1'b1;
+        SPI3_cs     <= 1'b1;
+        SPI4_cs     <= 1'b1;
+        //TODO: add reset
         
     end
     else
@@ -823,11 +831,13 @@ begin
                         bus_done <= 1'b1;
                 end
 
+                /*
                 A_UART1TX:
                 begin
                     if (UART1_w_Tx_Done)
                         bus_done <= 1'b1;
                 end
+                */
 
                 A_UART2TX:
                 begin
@@ -928,11 +938,13 @@ begin
                         bus_done <= 1'b1;
                 end
 
+                /*
                 A_SNESPAD:
                 begin
                     if (SNES_done)
                         bus_done <= 1'b1;
                 end
+                */
 
                 A_VRAM8, A_VRAM32, A_VRAMSPR:
                 begin

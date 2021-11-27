@@ -97,17 +97,6 @@ module FPGC5(
 );
 
 // TMP FIXES FOR NEW PCB
-assign led_Booted = 1'b0;
-assign led_Eth = 1'b1;
-assign led_Flash = 1'b1;
-assign led_USB0 = 1'b1;
-assign led_USB1 = 1'b1;
-assign led_PS2 = 1'b1;
-assign led_HDMI = 1'b1;
-assign led_QSPI = 1'b1;
-assign led_GPU = 1'b1;
-assign led_I2S = 1'b1;
-
 assign I2S_SDIN = 1'b0;
 assign I2S_SCLK = 1'b0;
 assign I2S_LRCLK = 1'b0;
@@ -428,6 +417,7 @@ wire        bus_done;
 wire        OST1_int, OST2_int, OST3_int;
 wire        UART0_rx_int, UART2_rx_int;
 wire        PS2_int;
+wire        SPI0_QSPI;
 
 MemoryUnit mu(
 // Clocks
@@ -498,14 +488,20 @@ MemoryUnit mu(
 .UART0_rx_interrupt (UART0_rx_int),
 
 // UART1 (APU)
+/*
 .UART1_in           (),
 .UART1_out          (),
 .UART1_rx_interrupt (),
+*/
 
 // UART2 (GP)
 .UART2_in           (UART2_in),
 .UART2_out          (UART2_out),
 .UART2_rx_interrupt (UART2_rx_int),
+
+//SPI0 (Flash)
+//declared under MEMORY
+.SPI0_QSPI      (SPI0_QSPI),
 
 // SPI1 (USB0/CH376T, bottom)
 .SPI1_clk       (SPI1_clk),
@@ -545,9 +541,11 @@ MemoryUnit mu(
 .OST3_int   (OST3_int),
 
 // SNESpad
+/*
 .SNES_clk   (),
 .SNES_latch (),
 .SNES_data  (),
+*/
 
 // PS/2
 .PS2_clk    (PS2_clk),
@@ -561,6 +559,7 @@ MemoryUnit mu(
 
 //---------------CPU----------------
 // CPU I/O
+wire [26:0] PC;
 
 CPU cpu(
 // Clock/reset
@@ -583,7 +582,77 @@ CPU cpu(
 .bus_we         (bus_we),
 .bus_start      (bus_start),
 .bus_q          (bus_q),
-.bus_done       (bus_done)
+.bus_done       (bus_done),
+.PC             (PC)
+);
+
+
+//-----------STATUS LEDS-----------
+assign led_Booted = (PC >= 27'hC02522 | reset);
+assign led_HDMI = (~selectOutput | reset);
+assign led_QSPI = (~SPI0_QSPI | reset);
+
+LEDvisualizer #(.MIN_CLK(100000))
+LEDvisUSB0
+(
+.clk(clk),
+.reset(reset),
+.activity(~SPI1_cs),
+.LED(led_USB0)
+);
+
+LEDvisualizer #(.MIN_CLK(100000))
+LEDvisUSB1
+(
+.clk(clk),
+.reset(reset),
+.activity(~SPI2_cs),
+.LED(led_USB1)
+);
+
+LEDvisualizer #(.MIN_CLK(100000))
+LEDvisEth
+(
+.clk(clk),
+.reset(reset),
+.activity(~SPI3_cs),
+.LED(led_Eth)
+);
+
+LEDvisualizer #(.MIN_CLK(100000))
+LEDvisPS2
+(
+.clk(clk),
+.reset(reset),
+.activity(PS2_int),
+.LED(led_PS2)
+);
+
+LEDvisualizer #(.MIN_CLK(100000))
+LEDvisFlash
+(
+.clk(clk),
+.reset(reset),
+.activity(~SPI0_cs),
+.LED(led_Flash)
+);
+
+LEDvisualizer #(.MIN_CLK(100000))
+LEDvisGPU
+(
+.clk(clk),
+.reset(reset),
+.activity(vram32_cpu_we|vram8_cpu_we|vramSPR_cpu_we),
+.LED(led_GPU)
+);
+
+LEDvisualizer #(.MIN_CLK(100000))
+LEDvisI2S
+(
+.clk(clk),
+.reset(reset),
+.activity(I2S_SDIN),
+.LED(led_I2S)
 );
 
 endmodule
