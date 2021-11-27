@@ -1,0 +1,11 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=FPGC HDMI
+GenericName=View HDMI video from FPGC
+Comment=Using guvcview
+Exec=bash /home/bart/Documents/FPGA/FPGC5/Graphics/HDMIview.sh
+Icon=FPGC
+Terminal=false
+Type=Application
+StartupNotify=true
+Categories=Utility;Electronics;Engineering;
