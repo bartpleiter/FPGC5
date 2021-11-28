@@ -9,7 +9,8 @@ int g() {
 
 int main() {
 	int a = 5;
-	for (int i = 0; i < 3; i++)
+	int i;
+	for (i = 0; i < 3; i++)
 	{
 		a = sum(a,i); //5, 6, 8
 	}

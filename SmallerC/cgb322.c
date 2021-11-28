@@ -283,45 +283,45 @@ void GenPrintInstr(int instr, int val)
 
   switch (instr)
   {
-  case MipsInstrNop  : p = "nop"; break;
-  case MipsInstrMov  : p = "move"; break;
-  case MipsInstrMfLo : p = "mflo"; break;
-  case MipsInstrMfHi : p = "mfhi"; break;
-  case MipsInstrLA   : p = "la"; break;
-  case MipsInstrLI   : p = "li"; break;
-//  case MipsInstrLUI  : p = "lui"; break;
-  case MipsInstrLB   : p = "lb"; break;
-  case MipsInstrLBU  : p = "lbu"; break;
-  case MipsInstrLH   : p = "lh"; break;
-  case MipsInstrLHU  : p = "lhu"; break;
-  case MipsInstrLW   : p = "lw"; break;
-  case MipsInstrSB   : p = "sb"; break;
-  case MipsInstrSH   : p = "sh"; break;
-  case MipsInstrSW   : p = "sw"; break;
-  case MipsInstrAddU : p = "addu"; break;
-  case MipsInstrSubU : p = "subu"; break;
-  case MipsInstrAnd  : p = "and"; break;
-  case MipsInstrOr   : p = "or"; break;
-  case MipsInstrXor  : p = "xor"; break;
-  case MipsInstrNor  : p = "nor"; break;
-  case MipsInstrSLL  : p = "sll"; break;
-  case MipsInstrSRL  : p = "srl"; break;
-  case MipsInstrSRA  : p = "sra"; break;
-  case MipsInstrMul  : p = "mul"; break;
-  case MipsInstrDiv  : p = "div"; break;
-  case MipsInstrDivU : p = "divu"; break;
-  case MipsInstrSLT  : p = "slt"; break;
-  case MipsInstrSLTU : p = "sltu"; break;
-  case MipsInstrJ    : p = "j"; break;
-  case MipsInstrJAL  : p = "jal"; break;
-  case MipsInstrBEQ  : p = "beq"; break;
-  case MipsInstrBNE  : p = "bne"; break;
-  case MipsInstrBLTZ : p = "bltz"; break;
-  case MipsInstrBGEZ : p = "bgez"; break;
-  case MipsInstrBLEZ : p = "blez"; break;
-  case MipsInstrBGTZ : p = "bgtz"; break;
-  case MipsInstrSeb  : p = "seb"; break;
-  case MipsInstrSeh  : p = "seh"; break;
+  case MipsInstrNop  : p = "MIPS_nop"; break;
+  case MipsInstrMov  : p = "MIPS_move"; break;
+  case MipsInstrMfLo : p = "MIPS_mflo"; break;
+  case MipsInstrMfHi : p = "MIPS_mfhi"; break;
+  case MipsInstrLA   : p = "MIPS_la"; break;
+  case MipsInstrLI   : p = "MIPS_li"; break;
+//  case MipsInstrLUI  : p = "MIPS_lui"; break;
+  case MipsInstrLB   : p = "MIPS_lb"; break;
+  case MipsInstrLBU  : p = "MIPS_lbu"; break;
+  case MipsInstrLH   : p = "MIPS_lh"; break;
+  case MipsInstrLHU  : p = "MIPS_lhu"; break;
+  case MipsInstrLW   : p = "MIPS_lw"; break;
+  case MipsInstrSB   : p = "MIPS_sb"; break;
+  case MipsInstrSH   : p = "MIPS_sh"; break;
+  case MipsInstrSW   : p = "MIPS_sw"; break;
+  case MipsInstrAddU : p = "MIPS_addu"; break;
+  case MipsInstrSubU : p = "MIPS_subu"; break;
+  case MipsInstrAnd  : p = "MIPS_and"; break;
+  case MipsInstrOr   : p = "MIPS_or"; break;
+  case MipsInstrXor  : p = "MIPS_xor"; break;
+  case MipsInstrNor  : p = "MIPS_nor"; break;
+  case MipsInstrSLL  : p = "MIPS_sll"; break;
+  case MipsInstrSRL  : p = "MIPS_srl"; break;
+  case MipsInstrSRA  : p = "MIPS_sra"; break;
+  case MipsInstrMul  : p = "MIPS_mul"; break;
+  case MipsInstrDiv  : p = "MIPS_div"; break;
+  case MipsInstrDivU : p = "MIPS_divu"; break;
+  case MipsInstrSLT  : p = "MIPS_slt"; break;
+  case MipsInstrSLTU : p = "MIPS_sltu"; break;
+  case MipsInstrJ    : p = "MIPS_j"; break;
+  case MipsInstrJAL  : p = "MIPS_jal"; break;
+  case MipsInstrBEQ  : p = "MIPS_beq"; break;
+  case MipsInstrBNE  : p = "MIPS_bne"; break;
+  case MipsInstrBLTZ : p = "MIPS_bltz"; break;
+  case MipsInstrBGEZ : p = "MIPS_bgez"; break;
+  case MipsInstrBLEZ : p = "MIPS_blez"; break;
+  case MipsInstrBGTZ : p = "MIPS_bgtz"; break;
+  case MipsInstrSeb  : p = "MIPS_seb"; break;
+  case MipsInstrSeh  : p = "MIPS_seh"; break;
 
   case B322InstrHalt       : p = "halt"; break;
   case B322InstrRead       : p = "read"; break;
@@ -918,16 +918,16 @@ void GenWriteIndirect(int regDst, int regSrc, int opSz)
 STATIC
 void GenIncDecIdent(int regDst, int opSz, int label, int tok)
 {
-  int instr = MipsInstrAddU;
+  int instr = B322InstrAdd;
 
   if (tok != tokInc)
-    instr = MipsInstrSubU;
+    instr = B322InstrSub;
 
   GenReadIdent(regDst, opSz, label);
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         regDst, 0,
-                         MipsOpConst, 1);
+                         MipsOpConst, 1,
+                         regDst, 0);
   GenWriteIdent(regDst, opSz, label);
   GenExtendRegIfNeeded(regDst, opSz);
 }
@@ -935,16 +935,16 @@ void GenIncDecIdent(int regDst, int opSz, int label, int tok)
 STATIC
 void GenIncDecLocal(int regDst, int opSz, int ofs, int tok)
 {
-  int instr = MipsInstrAddU;
+  int instr = B322InstrAdd;
 
   if (tok != tokInc)
-    instr = MipsInstrSubU;
+    instr = B322InstrSub;
 
   GenReadLocal(regDst, opSz, ofs);
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         regDst, 0,
-                         MipsOpConst, 1);
+                         MipsOpConst, 1,
+                         regDst, 0);
   GenWriteLocal(regDst, opSz, ofs);
   GenExtendRegIfNeeded(regDst, opSz);
 }
@@ -952,16 +952,16 @@ void GenIncDecLocal(int regDst, int opSz, int ofs, int tok)
 STATIC
 void GenIncDecIndirect(int regDst, int regSrc, int opSz, int tok)
 {
-  int instr = MipsInstrAddU;
+  int instr = B322InstrAdd;
 
   if (tok != tokInc)
-    instr = MipsInstrSubU;
+    instr = B322InstrSub;
 
   GenReadIndirect(regDst, regSrc, opSz);
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         regDst, 0,
-                         MipsOpConst, 1);
+                         MipsOpConst, 1,
+                         regDst, 0);
   GenWriteIndirect(regSrc, regDst, opSz);
   GenExtendRegIfNeeded(regDst, opSz);
 }
@@ -969,63 +969,84 @@ void GenIncDecIndirect(int regDst, int regSrc, int opSz, int tok)
 STATIC
 void GenPostIncDecIdent(int regDst, int opSz, int label, int tok)
 {
-  int instr = MipsInstrAddU;
+  int instr = B322InstrAdd;
 
   if (tok != tokPostInc)
-    instr = MipsInstrSubU;
+    instr = B322InstrSub;
 
   GenReadIdent(regDst, opSz, label);
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         regDst, 0,
-                         MipsOpConst, 1);
+                         MipsOpConst, 1,
+                         regDst, 0);
   GenWriteIdent(regDst, opSz, label);
+
+  // swap to change the -1 to +1
+  if (instr == B322InstrSub)
+    instr = B322InstrAdd;
+  else if (instr == B322InstrAdd)
+    instr = B322InstrSub;
+
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         regDst, 0,
-                         MipsOpConst, -1);
+                         MipsOpConst, 1,
+                         regDst, 0);
   GenExtendRegIfNeeded(regDst, opSz);
 }
 
 STATIC
 void GenPostIncDecLocal(int regDst, int opSz, int ofs, int tok)
 {
-  int instr = MipsInstrAddU;
+  int instr = B322InstrAdd;
 
   if (tok != tokPostInc)
-    instr = MipsInstrSubU;
+    instr = B322InstrSub;
 
   GenReadLocal(regDst, opSz, ofs);
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         regDst, 0,
-                         MipsOpConst, 1);
+                         MipsOpConst, 1,
+                         regDst, 0);
   GenWriteLocal(regDst, opSz, ofs);
+
+  // swap to change the -1 to +1
+  if (instr == B322InstrSub)
+    instr = B322InstrAdd;
+  else if (instr == B322InstrAdd)
+    instr = B322InstrSub;
+
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         regDst, 0,
-                         MipsOpConst, -1);
+                         MipsOpConst, 1,
+                         regDst, 0);
   GenExtendRegIfNeeded(regDst, opSz);
 }
 
 STATIC
 void GenPostIncDecIndirect(int regDst, int regSrc, int opSz, int tok)
 {
-  int instr = MipsInstrAddU;
+  int instr = B322InstrAdd;
 
   if (tok != tokPostInc)
-    instr = MipsInstrSubU;
+    instr = B322InstrSub;
 
   GenReadIndirect(regDst, regSrc, opSz);
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         regDst, 0,
-                         MipsOpConst, 1);
+                         MipsOpConst, 1,
+                         regDst, 0);
   GenWriteIndirect(regSrc, regDst, opSz);
+
+  // swap to change the -1 to +1
+  if (instr == B322InstrSub)
+    instr = B322InstrAdd;
+  else if (instr == B322InstrAdd)
+    instr = B322InstrSub;
+
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         regDst, 0,
-                         MipsOpConst, -1);
+                         MipsOpConst, 1,
+                         regDst, 0);
   GenExtendRegIfNeeded(regDst, opSz);
 }
 
@@ -1475,13 +1496,34 @@ char CmpBlocks[6/*op*/][2/*condbranch*/][3/*constness*/][2] =
 STATIC
 void GenCmp(int* idx, int op)
 {
+  // TODO: direct conversion from MIPS to B322 is very inefficient, so optimize this!
+  /*
+  MIPS:
+  slt reg, s < t (reg := 1, else reg := 0)
+
+  B322 equivalent:
+  bge s >= t 2
+  load 1 reg
+  load 0 reg
+  */
+  /*
+  Inverses:
+  BEQ a b         BNE a b
+  BNE a b         BEQ a b
+
+  BLTZ a (a < 0)  BGE a r0 (a >= 0)
+  BGEZ a (a >=0)  BGT r0 a (a < 0) == (0 > a)
+
+  BGTZ a (a > 0)  BGE r0 a (a <= 0) == (0 >= a)
+  BLEZ a (a <=0)  BGT a r0 (a > 0)
+  */
   // constness: 0 = zero const, 1 = non-zero const, 2 = non-const
   int constness = (stack[*idx - 1][0] == tokNumInt) ? (stack[*idx - 1][1] != 0) : 2;
   int constval = (constness == 1) ? truncInt(stack[*idx - 1][1]) : 0;
   // condbranch: 0 = no conditional branch, 1 = branch if true, 2 = branch if false
   int condbranch = (*idx + 1 < sp) ? (stack[*idx + 1][0] == tokIf) + (stack[*idx + 1][0] == tokIfNot) * 2 : 0;
   int unsign = op >> 4;
-  int slt = unsign ? MipsInstrSLTU : MipsInstrSLT;
+  //int slt = B322InstrBge; //unsign ? MipsInstrSLTU : MipsInstrSLT; // Currently no difference between signed and unsigned, as signed is not supported
   int label = condbranch ? stack[*idx + 1][1] : 0;
   char* p;
   int i;
@@ -1511,104 +1553,212 @@ void GenCmp(int* idx, int op)
       condbranch ^= 3;
       // fallthrough
     case 'b':
-      GenPrintInstr3Operands((condbranch == 1) ? MipsInstrBEQ : MipsInstrBNE, 0,
+      GenPrintInstr3Operands((condbranch == 1) ? B322InstrBne : B322InstrBeq, 0,
                              GenLreg, 0,
                              GenRreg, 0,
+                             MipsOpConst, 2);
+      GenPrintInstr1Operand(B322InstrJump, 0,
                              MipsOpNumLabel, label);
       break;
     case 'c':
       condbranch ^= 3;
       // fallthrough
     case 'd':
-      GenPrintInstr3Operands((condbranch == 1) ? MipsInstrBEQ : MipsInstrBNE, 0,
+      GenPrintInstr3Operands((condbranch == 1) ? B322InstrBne : B322InstrBeq, 0,
                              GenWreg, 0,
                              MipsOpRegZero, 0,
+                             MipsOpConst, 2);
+      GenPrintInstr1Operand(B322InstrJump, 0,
                              MipsOpNumLabel, label);
       break;
     case 'e':
       condbranch ^= 3;
       // fallthrough
     case 'f':
-      GenPrintInstr2Operands((condbranch == 1) ? MipsInstrBLTZ : MipsInstrBGEZ, 0,
-                             GenWreg, 0,
+      /*
+        BLTZ a (a < 0)  BGE a r0 (a >= 0)
+        BGEZ a (a >=0)  BGT r0 a (a < 0) == (0 > a)
+      */
+      if (condbranch == 1)
+      {
+        GenPrintInstr3Operands(B322InstrBge, 0,
+                               GenWreg, 0,
+                               MipsOpRegZero, 0,
+                               MipsOpConst, 2);
+      }
+      else
+      {
+        GenPrintInstr3Operands(B322InstrBgt, 0,
+                               MipsOpRegZero, 0,
+                               GenWreg, 0,
+                               MipsOpConst, 2);
+      }
+      GenPrintInstr1Operand(B322InstrJump, 0,
                              MipsOpNumLabel, label);
       break;
     case 'g':
       condbranch ^= 3;
       // fallthrough
     case 'h':
-      GenPrintInstr2Operands((condbranch == 1) ? MipsInstrBGTZ : MipsInstrBLEZ, 0,
-                             GenWreg, 0,
+      /*
+      BGTZ a (a > 0)  BGE r0 a (a <= 0) == (0 >= a)
+      BLEZ a (a <=0)  BGT a r0 (a > 0)
+      */
+      if (condbranch == 1)
+      {
+        GenPrintInstr3Operands(B322InstrBge, 0,
+                               MipsOpRegZero, 0,
+                               GenWreg, 0,
+                               MipsOpConst, 2);
+      }
+      else
+      {
+        GenPrintInstr3Operands(B322InstrBgt, 0,
+                               GenWreg, 0,
+                               MipsOpRegZero, 0,
+                               MipsOpConst, 2);
+      }
+      GenPrintInstr1Operand(B322InstrJump, 0,
                              MipsOpNumLabel, label);
       break;
     case 'i':
-      GenPrintInstr3Operands(slt, 0,
-                             GenWreg, 0,
+      GenPrintInstr3Operands(B322InstrBge, 0,
                              GenLreg, 0,
-                             GenRreg, 0);
+                             GenRreg, 0,
+                             MipsOpConst, 3);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 1,
+                               GenWreg, 0);
+      GenPrintInstr1Operand(B322InstrJumpo, 0,
+                             MipsOpConst, 2);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 0,
+                               GenWreg, 0);
       break;
     case 'j':
-      GenPrintInstr3Operands(slt, 0,
-                             GenWreg, 0,
+      GenPrintInstr3Operands(B322InstrBge, 0,
                              GenRreg, 0,
-                             GenLreg, 0);
+                             GenLreg, 0,
+                             MipsOpConst, 3);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 1,
+                               GenWreg, 0);
+      GenPrintInstr1Operand(B322InstrJumpo, 0,
+                             MipsOpConst, 2);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 0,
+                               GenWreg, 0);
       break;
     case 'k':
-      GenPrintInstr3Operands(slt, 0,
+      GenPrintInstr3Operands(B322InstrBge, 0,
                              GenWreg, 0,
-                             GenWreg, 0,
-                             MipsOpRegZero, 0);
+                             MipsOpRegZero, 0,
+                             MipsOpConst, 3);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 1,
+                               GenWreg, 0);
+      GenPrintInstr1Operand(B322InstrJumpo, 0,
+                             MipsOpConst, 2);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 0,
+                               GenWreg, 0);
       break;
     case 'l':
-      GenPrintInstr3Operands(slt, 0,
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 1,
+                               TEMP_REG_A, 0);
+      GenPrintInstr3Operands(B322InstrBge, 0,
                              GenWreg, 0,
-                             GenWreg, 0,
-                             MipsOpConst, 1);
+                             TEMP_REG_A, 0,
+                             MipsOpConst, 3);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 1,
+                               GenWreg, 0);
+      GenPrintInstr1Operand(B322InstrJumpo, 0,
+                             MipsOpConst, 2);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 0,
+                               GenWreg, 0);
       break;
     case 'n':
       constval++;
       // fallthrough
     case 'm':
-      GenPrintInstr3Operands(slt, 0,
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, constval,
+                               TEMP_REG_A, 0);
+      GenPrintInstr3Operands(B322InstrBge, 0,
                              GenWreg, 0,
-                             GenWreg, 0,
-                             MipsOpConst, constval);
+                             TEMP_REG_A, 0,
+                             MipsOpConst, 3);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 1,
+                               GenWreg, 0);
+      GenPrintInstr1Operand(B322InstrJumpo, 0,
+                             MipsOpConst, 2);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 0,
+                               GenWreg, 0);
       break;
     case 'o':
-      GenPrintInstr3Operands(slt, 0,
-                             GenWreg, 0,
+      GenPrintInstr3Operands(B322InstrBge, 0,
                              MipsOpRegZero, 0,
-                             GenWreg, 0);
+                             GenWreg, 0,
+                             MipsOpConst, 3);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 1,
+                               GenWreg, 0);
+      GenPrintInstr1Operand(B322InstrJumpo, 0,
+                             MipsOpConst, 2);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 0,
+                               GenWreg, 0);
       break;
     case 'p':
-      GenPrintInstr3Operands(MipsInstrSLTU, 0,
-                             GenWreg, 0,
+      GenPrintInstr3Operands(B322InstrBge, 0,
                              MipsOpRegZero, 0,
-                             GenWreg, 0);
+                             GenWreg, 0,
+                             MipsOpConst, 3);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 1,
+                               GenWreg, 0);
+      GenPrintInstr1Operand(B322InstrJumpo, 0,
+                             MipsOpConst, 2);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 0,
+                               GenWreg, 0);
       break;
     case 'q':
-      GenPrintInstr3Operands(MipsInstrSLTU, 0,
+      GenPrintInstr3Operands(B322InstrBge, 0,
                              GenWreg, 0,
-                             GenWreg, 0,
-                             MipsOpConst, 1);
+                             MipsOpConst, 1,
+                             MipsOpConst, 3);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 1,
+                               GenWreg, 0);
+      GenPrintInstr1Operand(B322InstrJumpo, 0,
+                             MipsOpConst, 2);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 0,
+                               GenWreg, 0);
       break;
     case 'r':
-      GenPrintInstr3Operands(MipsInstrXor, 0,
-                             GenWreg, 0,
+      GenPrintInstr3Operands(B322InstrXor, 0,
                              GenLreg, 0,
-                             GenRreg, 0);
+                             GenRreg, 0,
+                             GenWreg, 0);
       break;
     case 's':
-      GenPrintInstr3Operands(MipsInstrXor, 0,
+      GenPrintInstr3Operands(B322InstrXor, 0,
                              GenWreg, 0,
-                             GenWreg, 0,
-                             MipsOpConst, 1);
+                             MipsOpConst, 1,
+                             GenWreg, 0);
       break;
     case 't':
-      GenPrintInstr3Operands(MipsInstrXor, 0,
+      GenPrintInstr3Operands(B322InstrXor, 0,
                              GenWreg, 0,
-                             GenWreg, 0,
-                             MipsOpConst, constval);
+                             MipsOpConst, constval,
+                             GenWreg, 0);
       break;
     }
   }

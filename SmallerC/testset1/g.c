@@ -1,11 +1,10 @@
 int main() {
-	int a = 5;
-	int i;
-	for (i = 0; i < 10; i++)
+	int a = 2;
+	if (a < 2)
 	{
-		a = a + 1;
+		a = 5;
 	}
-	return a; //15
+	return a; //2
 }
 
 void int1()

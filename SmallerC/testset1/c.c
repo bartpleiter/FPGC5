@@ -1,11 +1,13 @@
+int n()
+{
+	return 9;
+}
+
 int main() {
-	int a = 5;
-	int i;
-	for (i = 0; i < 10; i++)
-	{
-		a = a + 1;
-	}
-	return a; //15
+	int a = 3;
+	int b = n();
+	int c = a + b;
+	return c; //12
 }
 
 void int1()

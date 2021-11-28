@@ -1,11 +1,10 @@
 int main() {
-	int a = 5;
-	int i;
-	for (i = 0; i < 10; i++)
-	{
-		a = a + 1;
-	}
-	return a; //15
+  int a = 3;
+  while (a > 0)
+  {
+  	a = a - 1;
+  }
+  return a; //0
 }
 
 void int1()
