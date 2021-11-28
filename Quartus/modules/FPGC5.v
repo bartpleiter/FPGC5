@@ -3,7 +3,7 @@
 */
 module FPGC5(
     input           clock, //50MHz
-    input           nreset,
+    input           nreset, nBtnl, nBtnr,
 
     //HDMI
     output [3:0]    TMDS_p,
@@ -143,6 +143,8 @@ clkMux clkmux(
 //--------------------Reset&Stabilizers-----------------------
 // Reset signals
 wire nreset_stable, UART0_dtr_stable;
+wire nreset_unstable;
+assign nreset_unstable = nreset & nBtnl & nBtnr;
 
 // Dip switch
 wire boot_mode_stable;
@@ -155,7 +157,7 @@ wire SPI1_nint_stable, SPI2_nint_stable, SPI3_int_stable, SPI4_gp_stable;
 
 MultiStabilizer multistabilizer(
 .clk    (clk),
-.u0     (nreset),
+.u0     (nreset_unstable),
 .s0     (nreset_stable),
 .u1     (UART0_dtr),
 .s1     (UART0_dtr_stable),
