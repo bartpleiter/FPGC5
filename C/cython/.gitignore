@@ -1,7 +1,0 @@
-build/
-shivyc/*.c
-shivyc/*.so
-shivyc/*/*.c
-shivyc/*/*.so
-shivyc/__pycache__/
-shivyc/*/__pycache__/

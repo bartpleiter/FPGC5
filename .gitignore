@@ -19,5 +19,5 @@ Verilog/output/*.ppm
 **/ __pycache__/
 **/*.pyc
 Quartus/*.ipregen.rpt
-C/B32C/.depend
-C/B32C/*.o
+SmallerC/*.tmp
+SmallerC/*.out
