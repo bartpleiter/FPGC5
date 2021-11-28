@@ -44,15 +44,15 @@ void GenInit(void)
   // initialization of target-specific code generator
   SizeOfWord = 4;
   OutputFormat = FormatSegmented;
-  CodeHeaderFooter[0] = "\t.text";
-  DataHeaderFooter[0] = "\t.data";
-  RoDataHeaderFooter[0] = "\t.rdata";
-  BssHeaderFooter[0] = "\t.bss";
+  CodeHeaderFooter[0] = " .text";
+  DataHeaderFooter[0] = " .data";
+  RoDataHeaderFooter[0] = " .rdata";
+  BssHeaderFooter[0] = " .bss";
   UseLeadingUnderscores = 0;
 #ifdef REORDER_WORKAROUND
-  FileHeader = "\t.set\tnoreorder";
+  FileHeader = " .set noreorder";
 #else
-  FileHeader = "\t.set\treorder";
+  FileHeader = " .set reorder";
 #endif
 }
 
@@ -79,14 +79,14 @@ void GenInitFinalize(void)
 STATIC
 void GenStartCommentLine(void)
 {
-  printf2(" # ");
+  printf2(" ; ");
 }
 
 STATIC
 void GenWordAlignment(int bss)
 {
   (void)bss;
-  printf2("\t.align 2\n");
+  printf2(" .align 2\n");
 }
 
 STATIC
@@ -94,7 +94,7 @@ void GenLabel(char* Label, int Static)
 {
   {
     if (!Static && GenExterns)
-      printf2("\t.globl\t%s\n", Label);
+      printf2(" .globl %s\n", Label);
     printf2("%s:\n", Label);
   }
 }
@@ -126,7 +126,7 @@ STATIC
 void GenZeroData(unsigned Size, int bss)
 {
   (void)bss;
-  printf2("\t.space\t%u\n", truncUint(Size)); // or ".fill size"
+  printf2(" .space %u\n", truncUint(Size)); // or ".fill size"
 }
 
 STATIC
@@ -134,17 +134,17 @@ void GenIntData(int Size, int Val)
 {
   Val = truncInt(Val);
   if (Size == 1)
-    printf2("\t.byte\t%d\n", Val);
+    printf2(" .byte %d\n", Val);
   else if (Size == 2)
-    printf2("\t.half\t%d\n", Val);
+    printf2(" .half %d\n", Val);
   else if (Size == 4)
-    printf2("\t.word\t%d\n", Val);
+    printf2(" .word %d\n", Val);
 }
 
 STATIC
 void GenStartAsciiString(void)
 {
-  printf2("\t.ascii\t");
+  printf2(" .ascii ");
 }
 
 STATIC
@@ -152,11 +152,11 @@ void GenAddrData(int Size, char* Label, int ofs)
 {
   ofs = truncInt(ofs);
   if (Size == 1)
-    printf2("\t.byte\t");
+    printf2(" .byte ");
   else if (Size == 2)
-    printf2("\t.half\t");
+    printf2(" .half ");
   else if (Size == 4)
-    printf2("\t.word\t");
+    printf2(" .word ");
   GenPrintLabel(Label);
   if (ofs)
     printf2(" %+d", ofs);
@@ -266,7 +266,7 @@ void GenPrintInstr(int instr, int val)
   case MipsInstrSeh  : p = "seh"; break;
   }
 
-  printf2("\t%s\t", p);
+  printf2(" %s ", p);
 }
 
 #define MipsOpRegZero                    0x00 //0  0
@@ -314,7 +314,7 @@ void GenPrintInstr(int instr, int val)
 STATIC
 void GenNop(void)
 {
-  puts2("\tnop");
+  puts2(" nop");
 }
 #endif
 
@@ -323,11 +323,11 @@ void GenPrintOperand(int op, int val)
 {
   if (op >= MipsOpRegZero && op <= MipsOpRegRa)
   {
-    printf2("$%d", op);
+    printf2("r%d", op);
   }
   else if (op >= MipsOpIndRegZero && op <= MipsOpIndRegRa)
   {
-    printf2("%d($%d)", truncInt(val), op - MipsOpIndRegZero);
+    printf2("%d r%d", truncInt(val), op - MipsOpIndRegZero);
   }
   else
   {
@@ -337,7 +337,7 @@ void GenPrintOperand(int op, int val)
     case MipsOpLabelLo:
       printf2("%%lo(");
       GenPrintLabel(IdentTable + val);
-      printf2(")($1)");
+      printf2(")(r1)");
       break;
     case MipsOpLabel: GenPrintLabel(IdentTable + val); break;
     case MipsOpNumLabel: GenPrintNumLabel(val); break;
@@ -497,7 +497,7 @@ STATIC
 void GenJumpIfZero(int label)
 {
 #ifndef NO_ANNOTATIONS
-  printf2(" # JumpIfZero\n");
+  printf2(" ; JumpIfZero\n");
 #endif
   GenPrintInstr3Operands(MipsInstrBEQ, 0,
                          GenWreg, 0,
@@ -509,7 +509,7 @@ STATIC
 void GenJumpIfNotZero(int label)
 {
 #ifndef NO_ANNOTATIONS
-  printf2(" # JumpIfNotZero\n");
+  printf2(" ; JumpIfNotZero\n");
 #endif
   GenPrintInstr3Operands(MipsInstrBNE, 0,
                          GenWreg, 0,
@@ -524,10 +524,10 @@ STATIC
 void GenWriteFrameSize(void)
 {
   unsigned size = 8/*RA + FP*/ - CurFxnMinLocalOfs;
-  printf2("\tsubu\t$13, $13, %10u\n", size); // 10 chars are enough for 32-bit unsigned ints
-  printf2("\tsw\t$14, %10u($13)\n", size - 8);
-  printf2("\taddu\t$14, $13, %10u\n", size - 8);
-  printf2("\t%csw\t$15, 4($14)\n", GenLeaf ? '#' : ' ');
+  printf2(" subu r13, r13, %10u\n", size); // 10 chars are enough for 32-bit unsigned ints
+  printf2(" sw r14, %10u r13\n", size - 8);
+  printf2(" addu r14, r13, %10u\n", size - 8);
+  printf2(" %csw r15, 4 r14\n", GenLeaf ? ';' : ' ');
 }
 
 STATIC
@@ -671,7 +671,7 @@ int GenGetBinaryOperatorInstr(int tok)
 STATIC
 void GenPreIdentAccess(int label)
 {
-  printf2("\t.set\tnoat\n\tlui\t$1, %%hi(");
+  printf2(" .set noat\n lui r1, %%hi(");
   GenPrintLabel(IdentTable + label);
   puts2(")");
 }
@@ -679,7 +679,7 @@ void GenPreIdentAccess(int label)
 STATIC
 void GenPostIdentAccess(void)
 {
-  puts2("\t.set\tat");
+  puts2(" .set at");
 }
 
 STATIC
@@ -1302,43 +1302,43 @@ void GenPrep(int* idx)
       l <[u] const   // slt[u] w, w, const                        "m"
       l <[u] r       // slt[u] w, l, r                            "i"
 * if (l <    0)      // bgez w, Lskip                             "f"
-  if (l <[u] const)  // slt[u] w, w, const; beq w, $0, Lskip      "mc"
-  if (l <[u] r)      // slt[u] w, l, r; beq w, $0, Lskip          "ic"
+  if (l <[u] const)  // slt[u] w, w, const; beq w, r0, Lskip      "mc"
+  if (l <[u] r)      // slt[u] w, l, r; beq w, r0, Lskip          "ic"
 
 ;     l <=[u] 0      // slt[u] w, w, 1                            "l"
       l <=[u] const  // slt[u] w, w, const + 1                    "n"
       l <=[u] r      // slt[u] w, r, l; xor w, w, 1               "js"
 * if (l <=    0)     // bgtz w, Lskip                             "g"
-  if (l <=[u] const) // slt[u] w, w, const + 1; beq w, $0, Lskip  "nc"
-  if (l <=[u] r)     // slt[u] w, r, l; bne w, $0, Lskip          "jd"
+  if (l <=[u] const) // slt[u] w, w, const + 1; beq w, r0, Lskip  "nc"
+  if (l <=[u] r)     // slt[u] w, r, l; bne w, r0, Lskip          "jd"
 
-      l >[u] 0       // slt[u] w, $0, w                           "o"
+      l >[u] 0       // slt[u] w, r0, w                           "o"
       l >[u] const   // slt[u] w, w, const + 1; xor w, w, 1       "ns"
       l >[u] r       // slt[u] w, r, l                            "j"
 * if (l >    0)      // blez w, Lskip                             "h"
-**if (l >u   0)      // beq w, $0, Lskip
-  if (l >[u] const)  // slt[u] w, w, const + 1; bne w, $0, Lskip  "nd"
-  if (l >[u] r)      // slt[u] w, r, l; beq w, $0, Lskip          "jc"
+**if (l >u   0)      // beq w, r0, Lskip
+  if (l >[u] const)  // slt[u] w, w, const + 1; bne w, r0, Lskip  "nd"
+  if (l >[u] r)      // slt[u] w, r, l; beq w, r0, Lskip          "jc"
 
 ;     l >=[u] 0      // slt[u] w, w, 0; xor w, w, 1               "ks"
       l >=[u] const  // slt[u] w, w, const; xor w, w, 1           "ms"
       l >=[u] r      // slt[u] w, l, r; xor w, w, 1               "is"
 * if (l >=    0)     // bltz w, Lskip                             "e"
-  if (l >=[u] const) // slt[u] w, w, const; bne w, $0, Lskip      "md"
-  if (l >=[u] r)     // slt[u] w, l, r; bne w, $0, Lskip          "id"
+  if (l >=[u] const) // slt[u] w, w, const; bne w, r0, Lskip      "md"
+  if (l >=[u] r)     // slt[u] w, l, r; bne w, r0, Lskip          "id"
 
       l == 0         // sltu w, w, 1                              "q"
       l == const     // xor w, w, const; sltu w, w, 1             "tq"
       l == r         // xor w, l, r; sltu w, w, 1                 "rq"
-  if (l == 0)        // bne w, $0, Lskip                          "d"
-  if (l == const)    // xor w, w, const; bne w, $0, Lskip         "td"
+  if (l == 0)        // bne w, r0, Lskip                          "d"
+  if (l == const)    // xor w, w, const; bne w, r0, Lskip         "td"
   if (l == r)        // bne l, r, Lskip                           "b"
 
-      l != 0         // sltu w, $0, w                             "p"
-      l != const     // xor w, w, const; sltu w, $0, w            "tp"
-      l != r         // xor w, l, r; sltu w, $0, w                "rp"
-  if (l != 0)        // beq w, $0, Lskip                          "c"
-  if (l != const)    // xor w, w, const; beq w, $0, Lskip         "tc"
+      l != 0         // sltu w, r0, w                             "p"
+      l != const     // xor w, w, const; sltu w, r0, w            "tp"
+      l != r         // xor w, l, r; sltu w, r0, w                "rp"
+  if (l != 0)        // beq w, r0, Lskip                          "c"
+  if (l != const)    // xor w, w, const; beq w, r0, Lskip         "tc"
   if (l != r)        // beq l, r, Lskip                           "a"
 */
 char CmpBlocks[6/*op*/][2/*condbranch*/][3/*constness*/][2] =
@@ -1569,21 +1569,21 @@ void GenExpr0(void)
 #ifndef NO_ANNOTATIONS
     switch (tok)
     {
-    case tokNumInt: printf2(" # %d\n", truncInt(v)); break;
-    //case tokNumUint: printf2(" # %uu\n", truncUint(v)); break;
-    case tokIdent: case tokRevIdent: printf2(" # %s\n", IdentTable + v); break;
-    case tokLocalOfs: case tokRevLocalOfs: printf2(" # local ofs\n"); break;
-    case ')': printf2(" # ) fxn call\n"); break;
-    case tokUnaryStar: printf2(" # * (read dereference)\n"); break;
-    case '=': printf2(" # = (write dereference)\n"); break;
-    case tokShortCirc: printf2(" # short-circuit "); break;
-    case tokGoto: printf2(" # sh-circ-goto "); break;
-    case tokLogAnd: printf2(" # short-circuit && target\n"); break;
-    case tokLogOr: printf2(" # short-circuit || target\n"); break;
+    case tokNumInt: printf2(" ; %d\n", truncInt(v)); break;
+    //case tokNumUint: printf2(" ; %uu\n", truncUint(v)); break;
+    case tokIdent: case tokRevIdent: printf2(" ; %s\n", IdentTable + v); break;
+    case tokLocalOfs: case tokRevLocalOfs: printf2(" ; local ofs\n"); break;
+    case ')': printf2(" ; ) fxn call\n"); break;
+    case tokUnaryStar: printf2(" ; * (read dereference)\n"); break;
+    case '=': printf2(" ; = (write dereference)\n"); break;
+    case tokShortCirc: printf2(" ; short-circuit "); break;
+    case tokGoto: printf2(" ; sh-circ-goto "); break;
+    case tokLogAnd: printf2(" ; short-circuit && target\n"); break;
+    case tokLogOr: printf2(" ; short-circuit || target\n"); break;
     case tokIf: case tokIfNot: case tokReturn: break;
-    case tokNum0: printf2(" # 0\n"); break;
-    case tokAssign0:  printf2(" # =\n"); break;
-    default: printf2(" # %s\n", GetTokenName(tok)); break;
+    case tokNum0: printf2(" ; 0\n"); break;
+    case tokAssign0:  printf2(" ; =\n"); break;
+    default: printf2(" ; %s\n", GetTokenName(tok)); break;
     }
 #endif
 
@@ -2206,20 +2206,20 @@ void GenFin(void)
 
     GenNumLabel(StructCpyLabel);
 
-    puts2("\tmove\t$2, $6\n"
-          "\tmove\t$3, $6");
+    puts2(" move r2, r6\n"
+          " move r3, r6");
     GenNumLabel(lbl);
-    puts2("\tlbu\t$6, 0($5)\n"
-          "\taddiu\t$5, $5, 1\n"
-          "\taddiu\t$4, $4, -1\n"
-          "\tsb\t$6, 0($3)\n"
-          "\taddiu\t$3, $3, 1");
-    printf2("\tbne\t$4, $0, "); GenPrintNumLabel(lbl);
+    puts2(" lbu r6, 0 r5\n"
+          " addiu r5, r5, 1\n"
+          " addiu r4, r4, -1\n"
+          " sb r6, 0 r3\n"
+          " addiu r3, r3, 1");
+    printf2(" bne r4, r0, "); GenPrintNumLabel(lbl);
     puts2("");
 #ifdef REORDER_WORKAROUND
     GenNop();
 #endif
-    puts2("\tj\t$15");
+    puts2(" j r15");
 #ifdef REORDER_WORKAROUND
     GenNop();
 #endif
@@ -2236,27 +2236,27 @@ void GenFin(void)
 
     GenNumLabel(StructPushLabel);
 
-    puts2("\tmove\t$6, $5\n"
-          "\taddiu\t$6, $6, 3\n"
-          "\tli\t$3, -4\n"
-          "\tand\t$6, $6, $3\n"
-          "\tsubu\t$13, $13, $6\n"
-          "\taddiu\t$3, $13, 16\n"
-          "\tmove\t$2, $3");
+    puts2(" move r6, r5\n"
+          " addiu r6, r6, 3\n"
+          " li r3, -4\n"
+          " and r6, r6, r3\n"
+          " subu r13, r13, r6\n"
+          " addiu r3, r13, 16\n"
+          " move r2, r3");
     GenNumLabel(lbl);
-    puts2("\tlbu\t$6, 0($4)\n"
-          "\taddiu\t$4, $4, 1\n"
-          "\taddiu\t$5, $5, -1\n"
-          "\tsb\t$6, 0($3)\n"
-          "\taddiu\t$3, $3, 1");
-    printf2("\tbne\t$5, $0, "); GenPrintNumLabel(lbl);
+    puts2(" lbu r6, 0 r4\n"
+          " addiu r4, r4, 1\n"
+          " addiu r5, r5, -1\n"
+          " sb r6, 0 r3\n"
+          " addiu r3, r3, 1");
+    printf2(" bne r5, r0, "); GenPrintNumLabel(lbl);
     puts2("");
 #ifdef REORDER_WORKAROUND
     GenNop();
 #endif
-    puts2("\tlw\t$2, 0($2)\n"
-          "\taddiu\t$13, $13, 4\n"
-          "\tj\t$15");
+    puts2(" lw r2, 0 r2\n"
+          " addiu r13, r13, 4\n"
+          " j r15");
 #ifdef REORDER_WORKAROUND
     GenNop();
 #endif
