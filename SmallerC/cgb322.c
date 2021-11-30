@@ -35,6 +35,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*                                                                           */
 /*****************************************************************************/
 
+/* SPECIFIC TODOs:
+- when using char* colors[] = { "red", "green", "blue" };, let assembler move .rdata away from .data,
+   such that the indexes work again
+- remove all multiples of 2 and 4 for short and int respectively
+*/
+
 /* MAIN TODOs:
 - Convert all MIPS instructions to B322 instructions (with hotfixes included) #core
 - Modify memory addresses to work with 32-bit addressable words, (eg, no +4 address when writing an integer) #optimize
@@ -50,13 +56,13 @@ STATIC
 void GenInit(void)
 {
   // initialization of target-specific code generator
-  // Temporarily commented out MIPS stuff for B322
+  // Assembler should move all .data and .rdata parts away from the code
   SizeOfWord = 4;
   OutputFormat = FormatSegmented;
-  CodeHeaderFooter[0] = " ; .text";
-  DataHeaderFooter[0] = " ; .data";
-  RoDataHeaderFooter[0] = " ; .rdata";
-  BssHeaderFooter[0] = " ; .bss";
+  CodeHeaderFooter[0] = ".code";
+  DataHeaderFooter[0] = ".data";
+  RoDataHeaderFooter[0] = ".rdata";
+  BssHeaderFooter[0] = ".bss"; // global vars???
   UseLeadingUnderscores = 0;
 }
 
@@ -80,6 +86,7 @@ void GenInitFinalize(void)
   // finalization of initialization of target-specific code generator
   // Put all C specific wrapper code (start) here TODO: depend on flags (os, userBDOS, etc.)
   printf2("\
+.code\n\
 ; Setup stack and return function before jumping to Main of C program\n\
 Main:\n\
     load32 0 r14            ; initialize base pointer address\n\
@@ -112,7 +119,7 @@ STATIC
 void GenWordAlignment(int bss)
 {
   (void)bss;
-  printf2(" ; .align 2\n");
+  printf2("; .align 2\n"); // should not be needed for b322???
 }
 
 STATIC
@@ -120,7 +127,7 @@ void GenLabel(char* Label, int Static)
 {
   {
     if (!Static && GenExterns)
-      printf2(" ; .globl %s\n", Label);
+      printf2("; .globl %s\n", Label);
     printf2("%s:\n", Label);
   }
 }
@@ -152,37 +159,58 @@ STATIC
 void GenZeroData(unsigned Size, int bss)
 {
   (void)bss;
-  printf2(" ; .space %u\n", truncUint(Size)); // or ".fill size"
+  printf2("; .space %u\n", truncUint(Size)); // or ".fill size"
+
+  // B322 version:
+  if (Size > 0)
+  {
+    printf2(".dw");
+    int i;
+    for (i = 0; i < Size; i++)
+    {
+      printf2(" 0");
+    }
+    printf2("\n");
+  }
+
 }
 
 STATIC
 void GenIntData(int Size, int Val)
 {
   Val = truncInt(Val);
+  printf2(".dw %d\n", Val);
+
+  /* always use word alignment
   if (Size == 1)
     printf2(" .db %d\n", Val);
   else if (Size == 2)
     printf2(" .dd %d\n", Val);
   else if (Size == 4)
     printf2(" .dw %d\n", Val);
+  */
 }
 
 STATIC
 void GenStartAsciiString(void)
 {
-  printf2(" .ds ");
+  printf2(".dw "); // String should be converted into 1 character per word
 }
 
 STATIC
 void GenAddrData(int Size, char* Label, int ofs)
 {
   ofs = truncInt(ofs);
+  printf2(".dl ");
+  /* always use word alignment
   if (Size == 1)
     printf2(" .db ");
   else if (Size == 2)
     printf2(" .dd ");
   else if (Size == 4)
     printf2(" .dw ");
+  */
+
   GenPrintLabel(Label);
   if (ofs)
     printf2(" %+d", ofs);
@@ -454,6 +482,7 @@ void GenPrintInstr1Operand(int instr, int instrval, int operand, int operandval)
 STATIC
 void GenPrintInstr2Operands(int instr, int instrval, int operand1, int operand1val, int operand2, int operand2val)
 {
+  // TODO: figure out if this ever happens because ADD and SUB need 3 args
   if (operand2 == MipsOpConst && operand2val == 0 &&
       (instr == B322InstrAdd || instr == B322InstrSub))
     return;
@@ -475,6 +504,22 @@ void GenPrintInstr3Operands(int instr, int instrval,
       (instr == B322InstrAdd || instr == B322InstrSub) &&
       operand1 == operand2)
     return;
+
+  // If constant is negative, swap B322InstrAdd for B322InstrSUB and vice versa
+  // and flip sign of constant
+  if (operand2 == MipsOpConst && operand2val < 0)
+  {
+    if (instr == B322InstrAdd)
+    {
+      instr = B322InstrSub;
+      operand2val = -operand2val;
+    }
+    else if (instr == B322InstrSub)
+    {
+      instr = B322InstrAdd;
+      operand2val = -operand2val;
+    }
+  }
 
   GenPrintInstr(instr, instrval);
   GenPrintOperand(operand1, operand1val);
@@ -773,8 +818,8 @@ void GenPostIdentAccess(void)
 STATIC
 void GenReadIdent(int regDst, int opSz, int label)
 {
-  int instr = B322InstrRead;
-  GenPreIdentAccess(label);
+  int instr = B322InstrAddr2reg;
+  //GenPreIdentAccess(label);
   /* Always LW, because no byte addressable memory, and no distinction between neg and pos
   if (opSz == -1)
   {
@@ -794,9 +839,9 @@ void GenReadIdent(int regDst, int opSz, int label)
   }
   */
   GenPrintInstr2Operands(instr, 0,
-                         MipsOpLabelLo, label,
+                         MipsOpLabel, label,
                          regDst, 0);
-  GenPostIdentAccess();
+  //GenPostIdentAccess();
 }
 
 STATIC
@@ -856,8 +901,15 @@ void GenReadIndirect(int regDst, int regSrc, int opSz)
 STATIC
 void GenWriteIdent(int regSrc, int opSz, int label)
 {
-  int instr = B322InstrWrite;
-  GenPreIdentAccess(label);
+  GenPrintInstr2Operands(B322InstrAddr2reg, 0,
+                         MipsOpLabel, label,
+                         MipsOpRegAt, 0);
+
+  GenPrintInstr2Operands(B322InstrWrite, 0,
+                         MipsOpRegAt, 0,
+                         regSrc, 0);
+  //int instr = B322InstrWrite;
+  //GenPreIdentAccess(label);
 
   /* Always SW, because no byte addressable memory
   if (opSz == -1 || opSz == 1)
@@ -869,10 +921,8 @@ void GenWriteIdent(int regSrc, int opSz, int label)
     instr = MipsInstrSH;
   }
   */
-  GenPrintInstr2Operands(instr, 0,
-                         MipsOpLabelLo, label,
-                         regSrc, 0);
-  GenPostIdentAccess();
+  
+  //GenPostIdentAccess();
 }
 
 STATIC
@@ -981,15 +1031,9 @@ void GenPostIncDecIdent(int regDst, int opSz, int label, int tok)
                          regDst, 0);
   GenWriteIdent(regDst, opSz, label);
 
-  // swap to change the -1 to +1
-  if (instr == B322InstrSub)
-    instr = B322InstrAdd;
-  else if (instr == B322InstrAdd)
-    instr = B322InstrSub;
-
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         MipsOpConst, 1,
+                         MipsOpConst, -1,
                          regDst, 0);
   GenExtendRegIfNeeded(regDst, opSz);
 }
@@ -1009,15 +1053,9 @@ void GenPostIncDecLocal(int regDst, int opSz, int ofs, int tok)
                          regDst, 0);
   GenWriteLocal(regDst, opSz, ofs);
 
-  // swap to change the -1 to +1
-  if (instr == B322InstrSub)
-    instr = B322InstrAdd;
-  else if (instr == B322InstrAdd)
-    instr = B322InstrSub;
-
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         MipsOpConst, 1,
+                         MipsOpConst, -1,
                          regDst, 0);
   GenExtendRegIfNeeded(regDst, opSz);
 }
@@ -1037,15 +1075,9 @@ void GenPostIncDecIndirect(int regDst, int regSrc, int opSz, int tok)
                          regDst, 0);
   GenWriteIndirect(regSrc, regDst, opSz);
 
-  // swap to change the -1 to +1
-  if (instr == B322InstrSub)
-    instr = B322InstrAdd;
-  else if (instr == B322InstrAdd)
-    instr = B322InstrSub;
-
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         MipsOpConst, 1,
+                         MipsOpConst, -1,
                          regDst, 0);
   GenExtendRegIfNeeded(regDst, opSz);
 }
@@ -1155,14 +1187,14 @@ void GenPopReg(void)
     return;
   }
 
-  GenPrintInstr2Operands(MipsInstrLW, 0,
-                         TEMP_REG_A, 0,
-                         MipsOpIndRegSp, 0);
+  GenPrintInstr2Operands(B322InstrRead, 0,
+                         MipsOpIndRegSp, 0,
+                         TEMP_REG_A, 0);
 
-  GenPrintInstr3Operands(MipsInstrAddU, 0,
+  GenPrintInstr3Operands(B322InstrAdd, 0,
                          MipsOpRegSp, 0,
-                         MipsOpRegSp, 0,
-                         MipsOpConst, 4);
+                         MipsOpConst, 4,
+                         MipsOpRegSp, 0);
   GenLreg = TEMP_REG_A;
   GenRreg = GenWreg;
 }
@@ -1873,9 +1905,9 @@ void GenExpr0(void)
                            t == tokPostInc ||
                            t == tokPostDec)))
       {
-        GenPrintInstr2Operands(MipsInstrLA, 0,
-                               GenWreg, 0,
-                               MipsOpLabel, v);
+        GenPrintInstr2Operands(B322InstrAddr2reg, 0,
+                               MipsOpLabel, v,
+                               GenWreg, 0);
       }
       gotUnary = 1;
       break;
@@ -1889,10 +1921,10 @@ void GenExpr0(void)
                            t == tokPostInc ||
                            t == tokPostDec)))
       {
-        GenPrintInstr3Operands(MipsInstrAddU, 0,
-                               GenWreg, 0,
+        GenPrintInstr3Operands(B322InstrAdd, 0,
                                MipsOpRegFp, 0,
-                               MipsOpConst, v);
+                               MipsOpConst, v,
+                               GenWreg, 0);
       }
       gotUnary = 1;
       break;
@@ -1998,16 +2030,20 @@ void GenExpr0(void)
 
     case tokUnaryPlus:
       break;
-    case '~':
-      GenPrintInstr3Operands(MipsInstrNor, 0,
+    case '~': //nor
+      GenPrintInstr3Operands(B322InstrOr, 0,
                              GenWreg, 0,
                              GenWreg, 0,
                              GenWreg, 0);
+      GenPrintInstr2Operands(B322InstrNot, 0,
+                             GenWreg, 0,
+                             GenWreg, 0);
+
       break;
     case tokUnaryMinus:
-      GenPrintInstr3Operands(MipsInstrSubU, 0,
-                             GenWreg, 0,
+      GenPrintInstr3Operands(B322InstrSub, 0,
                              MipsOpRegZero, 0,
+                             GenWreg, 0,
                              GenWreg, 0);
       break;
 
@@ -2442,16 +2478,20 @@ void GenDumpChar(int ch)
   if (ch < 0)
   {
     if (TokenStringLen)
-      printf2("\"\n");
+      printf2("\n");
     return;
   }
 
   if (TokenStringLen == 0)
   {
     GenStartAsciiString();
-    printf2("\"");
+    //printf2("\"");
   }
 
+  // Just print as ascii value
+  printf2("%d ", ch);
+
+  /*
   if (ch >= 0x20 && ch <= 0x7E)
   {
     if (ch == '"' || ch == '\\')
@@ -2462,6 +2502,7 @@ void GenDumpChar(int ch)
   {
     printf2("\\%03o", ch);
   }
+  */
 }
 
 STATIC
@@ -2473,6 +2514,7 @@ void GenExpr(void)
 STATIC
 void GenFin(void)
 {
+  // No idea what this does (something with structs??), so I just literally converted it to B322 asm
   if (StructCpyLabel)
   {
     int lbl = LabelCnt++;
@@ -2481,21 +2523,38 @@ void GenFin(void)
 
     GenNumLabel(StructCpyLabel);
 
-    puts2(" move r2, r6\n"
-          " move r3, r6");
+    //puts2(" move r2, r6\n" //r2 := r6
+    //      " move r3, r6"); //r3 := r3
+    puts2(" or r0 r6 r2\n"
+          " or r0 r6 r3");
+
+
     GenNumLabel(lbl);
-    puts2(" lbu r6, 0 r5\n"
-          " addiu r5, r5, 1\n"
-          " addiu r4, r4, -1\n"
-          " sb r6, 0 r3\n"
-          " addiu r3, r3, 1");
-    printf2(" bne r4, r0, "); GenPrintNumLabel(lbl);
+
+    //puts2(" lbu r6, 0 r5\n"       // r6:=mem[r5]
+    //      " addiu r5, r5, 1\n"    // r5:= r5+1
+    //      " addiu r4, r4, -1\n"   // r4:= r4-1
+    //      " sb r6, 0 r3\n"        // mem[r3]:=r6
+    //      " addiu r3, r3, 1");    // r3:= r3+1
+
+    puts2(" read 0 r5 r6\n"
+          " add r5 1 r5\n"
+          " sub r4 1 r4\n"
+          " write 0 r3 r6\n"
+          " add r3 1 r3");
+
+    //printf2(" bne r4, r0, "); GenPrintNumLabel(lbl); // if r4 != 0, jump to lbl
+    printf2("beq r4 r0 2\n");
+    printf2("jump ");GenPrintNumLabel(lbl);
+
+
     puts2("");
-    puts2(" j r15");
+    puts2(" jumpr 0 r15");
 
     puts2(CodeHeaderFooter[1]);
   }
 
+/* should not be defined, so commented out to remove confusion
 #ifndef NO_STRUCT_BY_VAL
   if (StructPushLabel)
   {
@@ -2527,6 +2586,7 @@ void GenFin(void)
     puts2(CodeHeaderFooter[1]);
   }
 #endif
+*/
 
 
   // Put all ending C specific wrapper code here TODO: depend on flags like os, userBDOS, etc.
@@ -2541,6 +2601,7 @@ void GenFin(void)
 ; will jump to when it is done\n\
 \n\
 \n\
+.code\n\
 Int1:\n\
     reti ; TODO remove and fix calls to enable interrupts! backup registers\n\
     push r1\n\

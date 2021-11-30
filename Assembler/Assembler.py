@@ -29,15 +29,29 @@ def parseLines(fileName):
                 parsedLine = line.strip().split(";",maxsplit=1)[0].split()
                 if (parsedLine != []):
                     parsedLines.append((i, parsedLine))
+
+    parsedLines.append((0, ['.EOF'])) # add end of file token
     return parsedLines
 
 def moveDataDown(parsedLines):
-    parsedLines.append((0, ['.EOF'])) # add end of file token to indicate when to stop looking for .data
     for idx, line in enumerate(parsedLines):
         if (line[1][0] == ".EOF"): # return when gone through entire file
             return parsedLines
         if (line[1][0] == ".data"): # when we found the start of a .data segment
-            while (parsedLines[idx][1][0] != ".code" and parsedLines[idx][1][0] != ".EOF"): # move all lines to the end until .code or .EOF
+            while (parsedLines[idx][1][0] != ".code" and parsedLines[idx][1][0] != ".rdata" and parsedLines[idx][1][0] != ".EOF"): # move all lines to the end until .code, .rdata or .EOF
+                parsedLines.append(parsedLines.pop(idx))
+
+    # should not get here
+    print("SHOULD NOT GET HERE")
+    sys.exit(1)
+    return None
+
+def moveRDataDown(parsedLines):
+    for idx, line in enumerate(parsedLines):
+        if (line[1][0] == ".EOF"): # return when gone through entire file
+            return parsedLines
+        if (line[1][0] == ".rdata"): # when we found the start of a .rdata segment
+            while (parsedLines[idx][1][0] != ".code" and parsedLines[idx][1][0] != ".data" and parsedLines[idx][1][0] != ".EOF"): # move all lines to the end until .code, .data or .EOF
                 parsedLines.append(parsedLines.pop(idx))
 
     # should not get here
@@ -47,7 +61,7 @@ def moveDataDown(parsedLines):
 
 
 def removeAssemblerDirectives(parsedLines):
-    return [line for line in parsedLines if line[1][0] not in [".code", ".data", ".EOF"]]
+    return [line for line in parsedLines if line[1][0] not in [".code", ".rdata", ".data", ".EOF"]]
 
 
 
@@ -238,10 +252,18 @@ def moveLabels(parsedLines):
                     while idx+i < len(parsedLines) - 1 and not labelDone:
                         if parsedLines[idx+i][1].lower().split()[0] != "label":
                             labelDone = True
-                            parsedLines[idx+i] = (parsedLines[idx+i][0], "$*" + line[1].split()[1] + "*$ " + parsedLines[idx+i][1] + " @" + line[1].split()[1][:-1])
+                            parsedLines[idx+i] = (parsedLines[idx+i][0], "$*" + line[1].split()[1] + "*$ " + parsedLines[idx+i][1])
+                            # add label in comments, but only if the line does not need to have a second pass
+                            # TODO implement this!
+                            #if parsedLines[idx+i][1].split()[1][0] == "0" or parsedLines[idx+i][1].split()[1][0] == "1":
+                            #    parsedLines[idx+i][1] = parsedLines[idx+i][1] + " @" + line[1].split()[1][:-1]
                         i+=1
                 else:
-                    parsedLines[idx+1] = (parsedLines[idx+1][0], "$*" + line[1].split()[1] + "*$ " + parsedLines[idx+1][1] + " @" + line[1].split()[1][:-1])
+                    parsedLines[idx+1] = (parsedLines[idx+1][0], "$*" + line[1].split()[1] + "*$ " + parsedLines[idx+1][1])
+                    # add label in comments, but only if the line does not need to have a second pass
+                    # TODO implement this!
+                    #if parsedLines[idx+1][1].split()[1][0] == "0" or parsedLines[idx+1][1].split()[1][0] == "1":
+                    #    parsedLines[idx+1][1] = parsedLines[idx+1][1] + " @" + line[1].split()[1][:-1]
             else:
                 print("Error: label " + line[1].split()[1] + " has no instructions below it")
                 print("Assembler will now exit")
@@ -347,7 +369,10 @@ def main():
     #move .data sections down
     parsedLines = moveDataDown(parsedLines)
 
-    #remove all .code, .data. and .EOF lines
+    #move .rdata sections down
+    parsedLines = moveRDataDown(parsedLines)
+
+    #remove all .code, .data, .rdata and .EOF lines
     parsedLines = removeAssemblerDirectives(parsedLines)
 
     #insert libraries
