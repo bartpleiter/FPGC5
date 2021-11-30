@@ -626,12 +626,21 @@ extern int GenWreg; // GenWreg is defined below
 STATIC
 void GenJumpIfEqual(int val, int label)
 {
-  GenPrintInstr2Operands(MipsInstrLI, 0,
-                         TEMP_REG_B, 0,
-                         MipsOpConst, val);
+
+  GenPrintInstr2Operands(B322InstrLoad, 0,
+                         MipsOpConst, val,
+                         TEMP_REG_B, 0);
+  /*
   GenPrintInstr3Operands(MipsInstrBEQ, 0,
                          GenWreg, 0,
                          TEMP_REG_B, 0,
+                         MipsOpNumLabel, label);
+  */
+  GenPrintInstr3Operands(B322InstrBne, 0,
+                         GenWreg, 0,
+                         TEMP_REG_B, 0,
+                         MipsOpConst, 2);
+  GenPrintInstr1Operand(B322InstrJump, 0,
                          MipsOpNumLabel, label);
 }
 
@@ -641,9 +650,17 @@ void GenJumpIfZero(int label)
 #ifndef NO_ANNOTATIONS
   printf2(" ; JumpIfZero\n");
 #endif
+  /* if Wreg == 0, jump to label
   GenPrintInstr3Operands(MipsInstrBEQ, 0,
                          GenWreg, 0,
                          MipsOpRegZero, 0,
+                         MipsOpNumLabel, label);
+  */
+  GenPrintInstr3Operands(B322InstrBne, 0,
+                         GenWreg, 0,
+                         MipsOpRegZero, 0,
+                         MipsOpConst, 2);
+  GenPrintInstr1Operand(B322InstrJump, 0,
                          MipsOpNumLabel, label);
 }
 
@@ -653,9 +670,17 @@ void GenJumpIfNotZero(int label)
 #ifndef NO_ANNOTATIONS
   printf2(" ; JumpIfNotZero\n");
 #endif
+  /* if Wreg != 0, jump to label
   GenPrintInstr3Operands(MipsInstrBNE, 0,
                          GenWreg, 0,
                          MipsOpRegZero, 0,
+                         MipsOpNumLabel, label);
+  */
+  GenPrintInstr3Operands(B322InstrBeq, 0,
+                         GenWreg, 0,
+                         MipsOpRegZero, 0,
+                         MipsOpConst, 2);
+  GenPrintInstr1Operand(B322InstrJump, 0,
                          MipsOpNumLabel, label);
 }
 
@@ -2398,10 +2423,27 @@ void GenExpr0(void)
     case tokNEQ:      GenCmp(&i, 0x05); break;
 
     case tok_Bool:
+      /* if 0 < wreg (if wreg > 0)
+          wreg = 1
+         else
+          wreg = 0
       GenPrintInstr3Operands(MipsInstrSLTU, 0,
                              GenWreg, 0,
                              MipsOpRegZero, 0,
                              GenWreg, 0);
+      */
+      GenPrintInstr3Operands(B322InstrBgt, 0,
+                             GenWreg, 0,
+                             MipsOpRegZero, 0,
+                             MipsOpConst, 3);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 0,
+                               GenWreg, 0);
+      GenPrintInstr1Operand(B322InstrJumpo, 0,
+                             MipsOpConst, 2);
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 1,
+                               GenWreg, 0);
       break;
 
     case tokSChar:
