@@ -2676,7 +2676,6 @@ void GenFin(void)
 \n\
 .code\n\
 Int1:\n\
-    reti ; TODO remove and fix calls to enable interrupts! backup registers\n\
     push r1\n\
     push r2\n\
     push r3\n\
@@ -2694,16 +2693,15 @@ Int1:\n\
     push r15\n\
 \n\
     load32 0x7FFFFF r13     ; initialize (BDOS) int stack address\n\
+    load32 0 r14            ; initialize base pointer address\n\
     addr2reg Return_Interrupt r1 ; get address of return function\n\
-    sub r1 4 r1             ; remove 4 from address, since function return has offset 4\n\
-    write 0 r13 r1          ; write return address on stack\n\
+    or r0 r1 r15            ; copy return addr to r15\n\
     jump int1               ; jump to interrupt handler of C program\n\
                             ; should return to the address we just put on the stack\n\
     halt                    ; should not get here\n\
 \n\
 \n\
 Int2:\n\
-    reti ; TODO remove and fix calls to enable interrupts! backup registers\n\
     push r1\n\
     push r2\n\
     push r3\n\
@@ -2721,16 +2719,15 @@ Int2:\n\
     push r15\n\
 \n\
     load32 0x7FFFFF r13     ; initialize (BDOS) int stack address\n\
+    load32 0 r14            ; initialize base pointer address\n\
     addr2reg Return_Interrupt r1 ; get address of return function\n\
-    sub r1 4 r1             ; remove 4 from address, since function return has offset 4\n\
-    write 0 r13 r1          ; write return address on stack\n\
+    or r0 r1 r15            ; copy return addr to r15\n\
     jump int2               ; jump to interrupt handler of C program\n\
                             ; should return to the address we just put on the stack\n\
     halt                    ; should not get here\n\
 \n\
 \n\
 Int3:\n\
-    reti ; TODO remove and fix calls to enable interrupts! backup registers\n\
     push r1\n\
     push r2\n\
     push r3\n\
@@ -2748,16 +2745,15 @@ Int3:\n\
     push r15\n\
 \n\
     load32 0x7FFFFF r13     ; initialize (BDOS) int stack address\n\
+    load32 0 r14            ; initialize base pointer address\n\
     addr2reg Return_Interrupt r1 ; get address of return function\n\
-    sub r1 4 r1             ; remove 4 from address, since function return has offset 4\n\
-    write 0 r13 r1          ; write return address on stack\n\
+    or r0 r1 r15            ; copy return addr to r15\n\
     jump int3               ; jump to interrupt handler of C program\n\
                             ; should return to the address we just put on the stack\n\
     halt                    ; should not get here\n\
 \n\
 \n\
 Int4:\n\
-    reti ; TODO remove and fix calls to enable interrupts! backup registers\n\
     push r1\n\
     push r2\n\
     push r3\n\
@@ -2775,9 +2771,9 @@ Int4:\n\
     push r15\n\
 \n\
     load32 0x7FFFFF r13     ; initialize (BDOS) int stack address\n\
+    load32 0 r14            ; initialize base pointer address\n\
     addr2reg Return_Interrupt r1 ; get address of return function\n\
-    sub r1 4 r1             ; remove 4 from address, since function return has offset 4\n\
-    write 0 r13 r1          ; write return address on stack\n\
+    or r0 r1 r15            ; copy return addr to r15\n\
     jump int4               ; jump to interrupt handler of C program\n\
                             ; should return to the address we just put on the stack\n\
     halt                    ; should not get here\n\
@@ -2786,7 +2782,6 @@ Int4:\n\
 ; Function that is called after any interrupt handler from C has returned\n\
 ; Restores all registers and issues RETI instruction to continue from original code\n\
 Return_Interrupt:\n\
-    ; restore registers\n\
     pop r15\n\
     pop r14\n\
     pop r13\n\
