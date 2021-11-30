@@ -189,16 +189,16 @@ STATIC
 void GenIntData(int Size, int Val)
 {
   Val = truncInt(Val);
-  printf2(".dw %d\n", Val);
+  //printf2(".dw %d\n", Val);
 
-  /* always use word alignment
+  // Print multiple times, since the compiler does not know yet B322 is word addressable
   if (Size == 1)
-    printf2(" .db %d\n", Val);
-  else if (Size == 2)
-    printf2(" .dd %d\n", Val);
-  else if (Size == 4)
     printf2(" .dw %d\n", Val);
-  */
+  else if (Size == 2)
+    printf2(" .dw %d %d\n", Val, Val);
+  else if (Size == 4)
+    printf2(" .dw %d %d %d %d\n", Val, Val, Val, Val);
+  
 }
 
 STATIC
@@ -211,20 +211,25 @@ STATIC
 void GenAddrData(int Size, char* Label, int ofs)
 {
   ofs = truncInt(ofs);
-  printf2(".dl ");
-  /* always use word alignment
-  if (Size == 1)
-    printf2(" .db ");
-  else if (Size == 2)
-    printf2(" .dd ");
-  else if (Size == 4)
-    printf2(" .dw ");
-  */
 
-  GenPrintLabel(Label);
-  if (ofs)
-    printf2(" %+d", ofs);
-  puts2("");
+  int i;
+  for (i = 0; i < 4; i++) // label is 4 "bytes", hotfix since the compiler does not know yet B322 is word addressable
+  {
+    printf2(".dl ");
+    /* always use word alignment
+    if (Size == 1)
+      printf2(" .db ");
+    else if (Size == 2)
+      printf2(" .dd ");
+    else if (Size == 4)
+      printf2(" .dw ");
+    */
+
+    GenPrintLabel(Label);
+    if (ofs)
+      printf2(" %+d", ofs);
+    puts2("");
+  }
 }
 
 STATIC
