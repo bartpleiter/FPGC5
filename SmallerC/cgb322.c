@@ -72,7 +72,7 @@ void GenInit(void)
   CodeHeaderFooter[0] = ".code";
   DataHeaderFooter[0] = ".data";
   RoDataHeaderFooter[0] = ".rdata";
-  BssHeaderFooter[0] = ".bss"; // global vars???
+  BssHeaderFooter[0] = ".bss"; // object data
   UseLeadingUnderscores = 0;
 }
 
@@ -550,6 +550,7 @@ void GenExtendRegIfNeeded(int reg, int opSz)
 {
   if (opSz == -1)
   {
+/* // Sign extension is currently not a thing in B322
 #ifdef DONT_USE_SEH
     GenPrintInstr3Operands(MipsInstrSLL, 0,
                            reg, 0,
@@ -564,16 +565,18 @@ void GenExtendRegIfNeeded(int reg, int opSz)
                            reg, 0,
                            reg, 0);
 #endif
+*/
   }
   else if (opSz == 1)
   {
-    GenPrintInstr3Operands(MipsInstrAnd, 0,
+    GenPrintInstr3Operands(B322InstrAnd, 0,
                            reg, 0,
-                           reg, 0,
-                           MipsOpConst, 0xFF);
+                           MipsOpConst, 0xFF,
+                           reg, 0);
   }
   else if (opSz == -2)
   {
+/* // Sign extension is currently not a thing in B322
 #ifdef DONT_USE_SEH
     GenPrintInstr3Operands(MipsInstrSLL, 0,
                            reg, 0,
@@ -588,13 +591,26 @@ void GenExtendRegIfNeeded(int reg, int opSz)
                            reg, 0,
                            reg, 0);
 #endif
+*/
   }
   else if (opSz == 2)
   {
+    /*
     GenPrintInstr3Operands(MipsInstrAnd, 0,
                            reg, 0,
                            reg, 0,
                            MipsOpConst, 0xFFFF);
+    */
+    // Use shiftl 16 and shiftr 16 as equivalent to AND 0xFFFF
+    //  (because constants in ARITH can only be 11 bits)
+    GenPrintInstr3Operands(B322InstrShiftl, 0,
+                           reg, 0,
+                           MipsOpConst, 16,
+                           reg, 0);
+    GenPrintInstr3Operands(B322InstrShiftr, 0,
+                           reg, 0,
+                           MipsOpConst, 16,
+                           reg, 0);
   }
 }
 

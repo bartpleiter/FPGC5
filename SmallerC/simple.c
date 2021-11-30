@@ -1,13 +1,18 @@
-int y[] = {5,6,7};
+struct home_address{
+     int local_street;
+     char *town;
+     char *my_city;
+     char *my_country;
+   }addr;
+   
+int main() {
+   
 
-char* colors[] = { "red", "green", "blue" };
+   addr.local_street = 7;
+   addr.town = "Agra";
 
-int main()
-{
-    int x[] = {1,2,3};
-    return x[2] + y[1] + colors[2][1]; // 6+3+108 = 117
+   return addr.local_street; //7
 }
-
 
 void int1()
 {
@@ -16,15 +21,15 @@ void int1()
 
 void int2()
 {
-    
+	
 }
 
 void int3()
 {
-    
+	
 }
 
 void int4()
 {
-    
+	
 }

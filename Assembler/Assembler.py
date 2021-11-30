@@ -38,7 +38,7 @@ def moveDataDown(parsedLines):
         if (line[1][0] == ".EOF"): # return when gone through entire file
             return parsedLines
         if (line[1][0] == ".data"): # when we found the start of a .data segment
-            while (parsedLines[idx][1][0] != ".code" and parsedLines[idx][1][0] != ".rdata" and parsedLines[idx][1][0] != ".EOF"): # move all lines to the end until .code, .rdata or .EOF
+            while (parsedLines[idx][1][0] != ".code" and parsedLines[idx][1][0] != ".rdata" and parsedLines[idx][1][0] != ".bss" and parsedLines[idx][1][0] != ".EOF"): # move all lines to the end until .code, .rdata or .EOF
                 parsedLines.append(parsedLines.pop(idx))
 
     # should not get here
@@ -51,7 +51,20 @@ def moveRDataDown(parsedLines):
         if (line[1][0] == ".EOF"): # return when gone through entire file
             return parsedLines
         if (line[1][0] == ".rdata"): # when we found the start of a .rdata segment
-            while (parsedLines[idx][1][0] != ".code" and parsedLines[idx][1][0] != ".data" and parsedLines[idx][1][0] != ".EOF"): # move all lines to the end until .code, .data or .EOF
+            while (parsedLines[idx][1][0] != ".code" and parsedLines[idx][1][0] != ".data" and parsedLines[idx][1][0] != ".bss" and parsedLines[idx][1][0] != ".EOF"): # move all lines to the end until .code, .data or .EOF
+                parsedLines.append(parsedLines.pop(idx))
+
+    # should not get here
+    print("SHOULD NOT GET HERE")
+    sys.exit(1)
+    return None
+
+def moveBssDown(parsedLines):
+    for idx, line in enumerate(parsedLines):
+        if (line[1][0] == ".EOF"): # return when gone through entire file
+            return parsedLines
+        if (line[1][0] == ".bss"): # when we found the start of a .rdata segment
+            while (parsedLines[idx][1][0] != ".code" and parsedLines[idx][1][0] != ".data" and parsedLines[idx][1][0] != ".rdata" and parsedLines[idx][1][0] != ".EOF"): # move all lines to the end until .code, .data or .EOF
                 parsedLines.append(parsedLines.pop(idx))
 
     # should not get here
@@ -61,7 +74,7 @@ def moveRDataDown(parsedLines):
 
 
 def removeAssemblerDirectives(parsedLines):
-    return [line for line in parsedLines if line[1][0] not in [".code", ".rdata", ".data", ".EOF"]]
+    return [line for line in parsedLines if line[1][0] not in [".code", ".rdata", ".data", ".bss", ".EOF"]]
 
 
 
@@ -372,7 +385,10 @@ def main():
     #move .rdata sections down
     parsedLines = moveRDataDown(parsedLines)
 
-    #remove all .code, .data, .rdata and .EOF lines
+    #move .bss sections down
+    parsedLines = moveBssDown(parsedLines)
+
+    #remove all .code, .data, .rdata, .bss and .EOF lines
     parsedLines = removeAssemblerDirectives(parsedLines)
 
     #insert libraries
