@@ -1271,6 +1271,43 @@ def compileDs(line):
     return compileDb(dbList)
 
 
+#compiles .dl
+#should have 1 argument or a label
+#arg1 should be a positive number that is within 27 bits unsigned
+def compileDl(line):
+    if len(line) != 2:
+        raise Exception("Incorrect number of arguments. Expected 1, but got " + str(len(line)-1))
+
+    instruction = ""
+    ARG1isAlabel = False
+
+
+    try:
+        getNumber(line[1])
+        ARG1isAlabel = False
+    except:
+        ARG1isAlabel = True
+
+
+    #if no label is given
+    if not ARG1isAlabel:
+
+        #convert arg1 to number
+        arg1Int = getNumber(line[1])
+
+        #convert arg1 to binary
+        CheckFitsInBits(arg1Int, 27)
+        const27 = format(arg1Int, '027b')
+
+        #create data (only the label address)
+        instruction = "00000" + const27 + " //Label data " + line[1]
+
+    #if a label is given, process it later
+    else:
+        instruction = " ".join(line)
+
+    return instruction
+
 #compiles readintid instruction
 #should have 1 argument
 #arg1 should be a valid register

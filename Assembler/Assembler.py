@@ -31,6 +31,26 @@ def parseLines(fileName):
                     parsedLines.append((i, parsedLine))
     return parsedLines
 
+def moveDataDown(parsedLines):
+    parsedLines.append((0, ['.EOF'])) # add end of file token to indicate when to stop looking for .data
+    for idx, line in enumerate(parsedLines):
+        if (line[1][0] == ".EOF"): # return when gone through entire file
+            return parsedLines
+        if (line[1][0] == ".data"): # when we found the start of a .data segment
+            while (parsedLines[idx][1][0] != ".code" and parsedLines[idx][1][0] != ".EOF"): # move all lines to the end until .code or .EOF
+                parsedLines.append(parsedLines.pop(idx))
+
+    # should not get here
+    print("SHOULD NOT GET HERE")
+    sys.exit(1)
+    return None
+
+
+def removeAssemblerDirectives(parsedLines):
+    return [line for line in parsedLines if line[1][0] not in [".code", ".data", ".EOF"]]
+
+
+
 def insertLibraries(parsedLines):
     returnList = []
     returnList.extend(parsedLines)
@@ -86,6 +106,7 @@ def compileLine(line):
         ".dd"       : CompileInstruction.compileDd,
         ".db"       : CompileInstruction.compileDb,
         ".ds"       : CompileInstruction.compileDs,
+        ".dl"       : CompileInstruction.compileDl,
         "loadlabellow" : CompileInstruction.compileLoadLabelLow,
         "loadlabelhigh" : CompileInstruction.compileLoadLabelHigh,
         "readintid" : CompileInstruction.compileReadIntID,
@@ -206,11 +227,21 @@ def moveLabels(parsedLines):
         line = parsedLines[idx]
         if line[1].lower().split()[0] == "label":
             if idx < len(parsedLines) - 1:
-                # if we have a label directly below, insert a nop as a quick fix
+                
                 if parsedLines[idx+1][1].lower().split()[0] == "label":
-                    parsedLines.insert(idx+1, (0, "_*" + line[1].split()[1] + "*_ " +"00000000000000000000000000000000 //NOP to quickfix double labels"))
+                    # (OLD) if we have a label directly below, insert a nop as a quick fix
+                    #parsedLines.insert(idx+1, (0, "$*" + line[1].split()[1] + "*$ " +"00000000000000000000000000000000 //NOP to quickfix double labels"))
+
+                    # if we have a label directly below, insert the label in the first non-label line
+                    i = 2
+                    labelDone = False
+                    while idx+i < len(parsedLines) - 1 and not labelDone:
+                        if parsedLines[idx+i][1].lower().split()[0] != "label":
+                            labelDone = True
+                            parsedLines[idx+i] = (parsedLines[idx+i][0], "$*" + line[1].split()[1] + "*$ " + parsedLines[idx+i][1] + " @" + line[1].split()[1][:-1])
+                        i+=1
                 else:
-                    parsedLines[idx+1] = (parsedLines[idx+1][0], "_*" + line[1].split()[1] + "*_ " + parsedLines[idx+1][1])
+                    parsedLines[idx+1] = (parsedLines[idx+1][0], "$*" + line[1].split()[1] + "*$ " + parsedLines[idx+1][1] + " @" + line[1].split()[1][:-1])
             else:
                 print("Error: label " + line[1].split()[1] + " has no instructions below it")
                 print("Assembler will now exit")
@@ -235,32 +266,34 @@ def redoLineNumbering(parsedLines):
     return returnList
 
 #removes label prefix and returns a map of labels to line numbers
+#assumes that $* does not occur somewhere else, and that labels are seperated by space
 def getLabelMap(parsedLines):
     labelMap = {}
     returnList = []
 
     for line in parsedLines:
-        if line[1].split()[0][:2] == "_*" and line[1].split()[0][-3:] == ":*_":
-            if (line[1].split()[0][2:-3] in labelMap):
-                print("Error: label " + line[1].split()[0][2:-3] + " is already defined")
-                print("Assembler will now exit")
-                sys.exit(1)
+        numberOfLabels = line[1].count("$*")
+        for i in range(numberOfLabels):
+            if line[1].split()[i][:2] == "$*" and line[1].split()[i][-3:] == ":*$":
+                if (line[1].split()[i][2:-3] in labelMap):
+                    print("Error: label " + line[1].split()[i][2:-3] + " is already defined")
+                    print("Assembler will now exit")
+                    sys.exit(1)
 
-            labelMap[line[1].split()[0][2:-3]] = line[0]
+                labelMap[line[1].split()[i][2:-3]] = line[0]
 
-
-    for line in parsedLines:
-        if line[1].split()[0][:2] == "_*" and line[1].split()[0][-2:] == "*_":
-            returnList.append((line[0], line[1].split("*_ ", maxsplit=1)[1]))
+        if line[1].split()[0][:2] == "$*" and line[1].split()[0][-2:] == "*$":
+            returnList.append((line[0], line[1].split("*$ ")[-1]))
         else:
             returnList.append(line)
+        
 
     return returnList, labelMap
 
 #compiles all labels
 def passTwo(parsedLines, labelMap):
     #lines that start with these names should be compiled
-    toCompileList = ["jump", "beq", "bne", "bgt", "bge", "loadlabellow" ,"loadlabelhigh"]
+    toCompileList = ["jump", "beq", "bne", "bgt", "bge", "loadlabellow" ,"loadlabelhigh", ".dl"]
 
     for idx, line in enumerate(parsedLines):
         if line[1].lower().split()[0] in toCompileList:
@@ -276,12 +309,12 @@ def passTwo(parsedLines, labelMap):
 
 #check if all labels are compiled
 def checkNoLabels(parsedLines):
-    toCompileList = ["jump", "beq", "bne", "bgt", "bge", "loadlabellow" ,"loadlabelhigh"]
+    toCompileList = ["jump", "beq", "bne", "bgt", "bge", "loadlabellow" ,"loadlabelhigh", ".dl"]
     
     for idx, line in enumerate(parsedLines):
         if line[1].lower().split()[0] in toCompileList:
             labelPos = 0
-            if line[1].lower().split()[0] in ["jump", "loadlabellow" ,"loadlabelhigh"]:
+            if line[1].lower().split()[0] in ["jump", "loadlabellow", "loadlabelhigh", ".dl"]:
                 labelPos = 1
             if line[1].lower().split()[0] in ["beq", "bne", "bgt", "bge"]:
                 labelPos = 3
@@ -310,6 +343,12 @@ def main():
 
     #parse lines from file
     parsedLines = parseLines("code.asm")
+
+    #move .data sections down
+    parsedLines = moveDataDown(parsedLines)
+
+    #remove all .code, .data. and .EOF lines
+    parsedLines = removeAssemblerDirectives(parsedLines)
 
     #insert libraries
     parsedLines = insertLibraries(parsedLines)
