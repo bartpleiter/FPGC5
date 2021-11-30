@@ -46,9 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 /* SPECIFIC TODOs:
-- when using char* colors[] = { "red", "green", "blue" };, let assembler move .rdata away from .data,
-   such that the indexes work again
-- remove all multiples of 2 and 4 for short and int respectively
+- Automatically detect the path of the (first?) C file to compile, add this to -I argument, so includes work like gcc
 */
 
 /* MAIN TODOs:
@@ -874,7 +872,16 @@ void GenPostIdentAccess(void)
 STATIC
 void GenReadIdent(int regDst, int opSz, int label)
 {
-  int instr = B322InstrAddr2reg;
+  GenPrintInstr2Operands(B322InstrAddr2reg, 0,
+                         MipsOpLabel, label,
+                         MipsOpRegAt, 0);
+
+  GenPrintInstr3Operands(B322InstrRead, 0,
+                         MipsOpConst, 0,
+                         MipsOpRegAt, 0,
+                         regDst, 0);
+
+  //int instr = B322InstrAddr2reg;
   //GenPreIdentAccess(label);
   /* Always LW, because no byte addressable memory, and no distinction between neg and pos
   if (opSz == -1)
@@ -894,9 +901,9 @@ void GenReadIdent(int regDst, int opSz, int label)
     instr = MipsInstrLHU;
   }
   */
-  GenPrintInstr2Operands(instr, 0,
-                         MipsOpLabel, label,
-                         regDst, 0);
+  //GenPrintInstr2Operands(instr, 0,
+  //                       MipsOpLabel, label,
+  //                       regDst, 0);
   //GenPostIdentAccess();
 }
 
@@ -961,7 +968,8 @@ void GenWriteIdent(int regSrc, int opSz, int label)
                          MipsOpLabel, label,
                          MipsOpRegAt, 0);
 
-  GenPrintInstr2Operands(B322InstrWrite, 0,
+  GenPrintInstr3Operands(B322InstrWrite, 0,
+                         MipsOpConst, 0,
                          MipsOpRegAt, 0,
                          regSrc, 0);
   //int instr = B322InstrWrite;
