@@ -35,6 +35,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*                                                                           */
 /*****************************************************************************/
 
+/* WORDSIZE issue tags
+
+//WORDSIZE
+//CurFxnLocalOfs (smlrc.c)
+
+
+
+*/
+
+
 /* SPECIFIC TODOs:
 - when using char* colors[] = { "red", "green", "blue" };, let assembler move .rdata away from .data,
    such that the indexes work again
@@ -632,7 +642,7 @@ fpos_t GenPrologPos;
 int GenLeaf;
 
 STATIC
-void GenWriteFrameSize(void)
+void GenWriteFrameSize(void) //WORDSIZE
 {
   unsigned size = 8/*RA + FP*/ - CurFxnMinLocalOfs;
   //printf2(" subu r13, r13, %10u\n", size); // 10 chars are enough for 32-bit unsigned ints
@@ -665,7 +675,7 @@ void GenFxnProlog(void)
   {
     int i, cnt = CurFxnParamCntMax;
     if (cnt > 4)
-      cnt = 4;
+      cnt = 4; //WORDSIZE?
     // TBD!!! for structure passing use the cumulative parameter size
     // instead of the number of parameters. Currently this bug is masked
     // by the subroutine that pushes structures on the stack (it copies
@@ -673,7 +683,7 @@ void GenFxnProlog(void)
     // in registers from assembly code won't always work.
     for (i = 0; i < cnt; i++)
       GenPrintInstr2Operands(B322InstrWrite, 0,
-                             MipsOpIndRegSp, 4 * i,
+                             MipsOpIndRegSp, 4 * i, //WORDSIZE
                              MipsOpRegA0 + i, 0);
   }
 
@@ -684,7 +694,7 @@ void GenFxnProlog(void)
 }
 
 STATIC
-void GenGrowStack(int size)
+void GenGrowStack(int size) //WORDSIZE
 {
   if (!size)
     return;
@@ -712,7 +722,7 @@ void GenFxnEpilog(void)
 
   if (!GenLeaf)
     GenPrintInstr2Operands(B322InstrRead, 0,
-                           MipsOpIndRegFp, 4,
+                           MipsOpIndRegFp, 4, //WORDSIZE
                            MipsOpRegRa, 0);
 
   GenPrintInstr2Operands(B322InstrRead, 0,
@@ -721,7 +731,7 @@ void GenFxnEpilog(void)
 
   GenPrintInstr3Operands(B322InstrAdd, 0,
                          MipsOpRegSp, 0,
-                         MipsOpConst, 8/*RA + FP*/ - CurFxnMinLocalOfs,
+                         MipsOpConst, 8/*RA + FP*/ - CurFxnMinLocalOfs, //WORDSIZE
                          MipsOpRegSp, 0);
 
   GenPrintInstr2Operands(B322InstrJumpr, 0,
@@ -1164,7 +1174,7 @@ void GenPushReg(void)
 
   GenPrintInstr3Operands(B322InstrSub, 0,
                          MipsOpRegSp, 0,
-                         MipsOpConst, 4,
+                         MipsOpConst, 4, //WORDSIZE
                          MipsOpRegSp, 0);
 
   GenPrintInstr2Operands(B322InstrWrite, 0,
@@ -1193,7 +1203,7 @@ void GenPopReg(void)
 
   GenPrintInstr3Operands(B322InstrAdd, 0,
                          MipsOpRegSp, 0,
-                         MipsOpConst, 4,
+                         MipsOpConst, 4, //WORDSIZE
                          MipsOpRegSp, 0);
   GenLreg = TEMP_REG_A;
   GenRreg = GenWreg;

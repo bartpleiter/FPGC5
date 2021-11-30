@@ -1,6 +1,9 @@
+int x[] = {1,2,3};
+
 int main()
 {
-    return 37;
+    
+    return x[1];
 }
 
 
