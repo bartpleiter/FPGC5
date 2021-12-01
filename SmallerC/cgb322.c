@@ -93,28 +93,27 @@ void GenInitFinalize(void)
 {
   // finalization of initialization of target-specific code generator
   // Put all C specific wrapper code (start) here TODO: depend on flags (os, userBDOS, etc.)
-  printf2("\
-.code\n\
-; Setup stack and return function before jumping to Main of C program\n\
-Main:\n\
-    load32 0 r14            ; initialize base pointer address\n\
-    load32 0x77FFFF r13     ; initialize main stack address\n\
-    addr2reg Return_UART r1 ; get address of return function\n\
-    or r0 r1 r15            ; copy return addr to r15\n\
-    jump main               ; jump to main of C program\n\
-                            ; should return to the address in r15\n\
-    halt                    ; should not get here\n\
-\n\
-; Function that is called after Main of C program has returned\n\
-; Return value should be in R1\n\
-; Send it over UART and halt afterwards\n\
-Return_UART:\n\
-    load32 0xC02723 r1          ; r1 = 0xC02723 | UART tx\n\
-    write 0 r1 r2               ; write r2 over UART\n\
-    halt                        ; halt\n\
-\n\
-; COMPILED C CODE HERE\n\
-");
+  printf2(
+".code\n"
+"; Setup stack and return function before jumping to Main of C program\n"
+"Main:\n"
+"    load32 0 r14            ; initialize base pointer address\n"
+"    load32 0x77FFFF r13     ; initialize main stack address\n"
+"    addr2reg Return_UART r1 ; get address of return function\n"
+"    or r0 r1 r15            ; copy return addr to r15\n"
+"    jump main               ; jump to main of C program\n"
+"                            ; should return to the address in r15\n"
+"    halt                    ; should not get here\n"
+"\n"
+"; Function that is called after Main of C program has returned\n"
+"; Return value should be in R1\n"
+"; Send it over UART and halt afterwards\n"
+"Return_UART:\n"
+"    load32 0xC02723 r1          ; r1 = 0xC02723 | UART tx\n"
+"    write 0 r1 r2               ; write r2 over UART\n"
+"    halt                        ; halt\n"
+"\n"
+"; COMPILED C CODE HERE\n");
 }
 
 STATIC
@@ -2035,21 +2034,21 @@ void GenExpr0(void)
       if (maxCallDepth != 1)
       {
         if (v >= 4)
-          GenPrintInstr2Operands(MipsInstrLW, 0,
-                                 MipsOpRegA0, 0,
-                                 MipsOpIndRegSp, 0);
+          GenPrintInstr2Operands(B322InstrRead, 0,
+                                 MipsOpIndRegSp, 0,
+                                 MipsOpRegA0, 0);
         if (v >= 8)
-          GenPrintInstr2Operands(MipsInstrLW, 0,
-                                 MipsOpRegA1, 0,
-                                 MipsOpIndRegSp, 4);
+          GenPrintInstr2Operands(B322InstrRead, 0,
+                                 MipsOpIndRegSp, 4,
+                                 MipsOpRegA1, 0);
         if (v >= 12)
-          GenPrintInstr2Operands(MipsInstrLW, 0,
-                                 MipsOpRegA2, 0,
-                                 MipsOpIndRegSp, 8);
+          GenPrintInstr2Operands(B322InstrRead, 0,
+                                 MipsOpIndRegSp, 8,
+                                 MipsOpRegA2, 0);
         if (v >= 16)
-          GenPrintInstr2Operands(MipsInstrLW, 0,
-                                 MipsOpRegA3, 0,
-                                 MipsOpIndRegSp, 12);
+          GenPrintInstr2Operands(B322InstrRead, 0,
+                                 MipsOpIndRegSp, 12,
+                                 MipsOpRegA3, 0);
       }
       else
       {
@@ -2061,7 +2060,7 @@ void GenExpr0(void)
                               MipsOpRegRa, 0);
         GenPrintInstr3Operands(B322InstrAdd, 0,
                              MipsOpRegRa, 0,
-                             MipsOpConst, 3, // TODO find good value here to precicely get back to the next line
+                             MipsOpConst, 3,
                              MipsOpRegRa, 0);
         GenPrintInstr1Operand(B322InstrJump, 0,
                               MipsOpLabel, stack[i - 1][1]);
@@ -2072,7 +2071,7 @@ void GenExpr0(void)
                               MipsOpRegRa, 0);
         GenPrintInstr3Operands(B322InstrAdd, 0,
                              MipsOpRegRa, 0,
-                             MipsOpConst, 3, // TODO find good value here to precicely get back to the next line
+                             MipsOpConst, 3,
                              MipsOpRegRa, 0);
         GenPrintInstr2Operands(B322InstrJumpr, 0,
                               MipsOpConst, 0,
@@ -2455,48 +2454,45 @@ void GenExpr0(void)
       break;
 
     case tokSChar:
-#ifdef DONT_USE_SEH
-      GenPrintInstr3Operands(MipsInstrSLL, 0,
+    GenPrintInstr3Operands(B322InstrShiftl, 0,
                              GenWreg, 0,
-                             GenWreg, 0,
-                             MipsOpConst, 24);
-      GenPrintInstr3Operands(MipsInstrSRA, 0,
-                             GenWreg, 0,
-                             GenWreg, 0,
-                             MipsOpConst, 24);
-#else
-      GenPrintInstr2Operands(MipsInstrSeb, 0,
-                             GenWreg, 0,
+                             MipsOpConst, 24,
                              GenWreg, 0);
-#endif
+      GenPrintInstr3Operands(B322InstrShiftr, 0, //TODO this should have also replicated the sign bit (SRA)
+                             GenWreg, 0,
+                             MipsOpConst, 24,
+                             GenWreg, 0);
       break;
     case tokUChar:
-      GenPrintInstr3Operands(MipsInstrAnd, 0,
+      GenPrintInstr3Operands(B322InstrAnd, 0,
                              GenWreg, 0,
-                             GenWreg, 0,
-                             MipsOpConst, 0xFF);
+                             MipsOpConst, 0xFF,
+                             GenWreg, 0);
       break;
     case tokShort:
-#ifdef DONT_USE_SEH
-      GenPrintInstr3Operands(MipsInstrSLL, 0,
+      GenPrintInstr3Operands(B322InstrShiftl, 0,
                              GenWreg, 0,
-                             GenWreg, 0,
-                             MipsOpConst, 16);
-      GenPrintInstr3Operands(MipsInstrSRA, 0,
-                             GenWreg, 0,
-                             GenWreg, 0,
-                             MipsOpConst, 16);
-#else
-      GenPrintInstr2Operands(MipsInstrSeh, 0,
-                             GenWreg, 0,
+                             MipsOpConst, 16,
                              GenWreg, 0);
-#endif
+      GenPrintInstr3Operands(B322InstrShiftr, 0, //TODO this should have also replicated the sign bit (SRA)
+                             GenWreg, 0,
+                             MipsOpConst, 16,
+                             GenWreg, 0);
       break;
     case tokUShort:
+      /*
       GenPrintInstr3Operands(MipsInstrAnd, 0,
                              GenWreg, 0,
                              GenWreg, 0,
-                             MipsOpConst, 0xFFFF);
+                             MipsOpConst, 0xFFFF);*/
+      GenPrintInstr3Operands(B322InstrShiftl, 0,
+                             GenWreg, 0,
+                             MipsOpConst, 16,
+                             GenWreg, 0);
+      GenPrintInstr3Operands(B322InstrShiftr, 0,
+                             GenWreg, 0,
+                             MipsOpConst, 16,
+                             GenWreg, 0);
       break;
 
     case tokShortCirc:
@@ -2671,144 +2667,143 @@ void GenFin(void)
 
 
   // Put all ending C specific wrapper code here TODO: depend on flags like os, userBDOS, etc.
-  printf2("\
-; END OF COMPILED C CODE\n\
-\n\
-; Interrupt handlers\n\
-; Has some administration before jumping to Label_int[ID]\n\
-; To prevent interfering with other stacks, they have their own stack\n\
-; Also, all registers have to be backed up and restored to hardware stack\n\
-; A return function has to be put on the stack as wel that the C code interrupt handler\n\
-; will jump to when it is done\n\
-\n\
-\n\
-.code\n\
-Int1:\n\
-    push r1\n\
-    push r2\n\
-    push r3\n\
-    push r4\n\
-    push r5\n\
-    push r6\n\
-    push r7\n\
-    push r8\n\
-    push r9\n\
-    push r10\n\
-    push r11\n\
-    push r12\n\
-    push r13\n\
-    push r14\n\
-    push r15\n\
-\n\
-    load32 0x7FFFFF r13     ; initialize (BDOS) int stack address\n\
-    load32 0 r14            ; initialize base pointer address\n\
-    addr2reg Return_Interrupt r1 ; get address of return function\n\
-    or r0 r1 r15            ; copy return addr to r15\n\
-    jump int1               ; jump to interrupt handler of C program\n\
-                            ; should return to the address we just put on the stack\n\
-    halt                    ; should not get here\n\
-\n\
-\n\
-Int2:\n\
-    push r1\n\
-    push r2\n\
-    push r3\n\
-    push r4\n\
-    push r5\n\
-    push r6\n\
-    push r7\n\
-    push r8\n\
-    push r9\n\
-    push r10\n\
-    push r11\n\
-    push r12\n\
-    push r13\n\
-    push r14\n\
-    push r15\n\
-\n\
-    load32 0x7FFFFF r13     ; initialize (BDOS) int stack address\n\
-    load32 0 r14            ; initialize base pointer address\n\
-    addr2reg Return_Interrupt r1 ; get address of return function\n\
-    or r0 r1 r15            ; copy return addr to r15\n\
-    jump int2               ; jump to interrupt handler of C program\n\
-                            ; should return to the address we just put on the stack\n\
-    halt                    ; should not get here\n\
-\n\
-\n\
-Int3:\n\
-    push r1\n\
-    push r2\n\
-    push r3\n\
-    push r4\n\
-    push r5\n\
-    push r6\n\
-    push r7\n\
-    push r8\n\
-    push r9\n\
-    push r10\n\
-    push r11\n\
-    push r12\n\
-    push r13\n\
-    push r14\n\
-    push r15\n\
-\n\
-    load32 0x7FFFFF r13     ; initialize (BDOS) int stack address\n\
-    load32 0 r14            ; initialize base pointer address\n\
-    addr2reg Return_Interrupt r1 ; get address of return function\n\
-    or r0 r1 r15            ; copy return addr to r15\n\
-    jump int3               ; jump to interrupt handler of C program\n\
-                            ; should return to the address we just put on the stack\n\
-    halt                    ; should not get here\n\
-\n\
-\n\
-Int4:\n\
-    push r1\n\
-    push r2\n\
-    push r3\n\
-    push r4\n\
-    push r5\n\
-    push r6\n\
-    push r7\n\
-    push r8\n\
-    push r9\n\
-    push r10\n\
-    push r11\n\
-    push r12\n\
-    push r13\n\
-    push r14\n\
-    push r15\n\
-\n\
-    load32 0x7FFFFF r13     ; initialize (BDOS) int stack address\n\
-    load32 0 r14            ; initialize base pointer address\n\
-    addr2reg Return_Interrupt r1 ; get address of return function\n\
-    or r0 r1 r15            ; copy return addr to r15\n\
-    jump int4               ; jump to interrupt handler of C program\n\
-                            ; should return to the address we just put on the stack\n\
-    halt                    ; should not get here\n\
-\n\
-\n\
-; Function that is called after any interrupt handler from C has returned\n\
-; Restores all registers and issues RETI instruction to continue from original code\n\
-Return_Interrupt:\n\
-    pop r15\n\
-    pop r14\n\
-    pop r13\n\
-    pop r12\n\
-    pop r11\n\
-    pop r10\n\
-    pop r9\n\
-    pop r8\n\
-    pop r7\n\
-    pop r6\n\
-    pop r5\n\
-    pop r4\n\
-    pop r3\n\
-    pop r2\n\
-    pop r1\n\
-\n\
-    reti        ; return from interrrupt\n\
-\n\
-    halt        ; should not get here\
-");
+  printf2(
+"; END OF COMPILED C CODE\n"
+"\n"
+"; Interrupt handlers\n"
+"; Has some administration before jumping to Label_int[ID]\n"
+"; To prevent interfering with other stacks, they have their own stack\n"
+"; Also, all registers have to be backed up and restored to hardware stack\n"
+"; A return function has to be put on the stack as wel that the C code interrupt handler\n"
+"; will jump to when it is done\n"
+"\n"
+"\n"
+".code\n"
+"Int1:\n"
+"    push r1\n"
+"    push r2\n"
+"    push r3\n"
+"    push r4\n"
+"    push r5\n"
+"    push r6\n"
+"    push r7\n"
+"    push r8\n"
+"    push r9\n"
+"    push r10\n"
+"    push r11\n"
+"    push r12\n"
+"    push r13\n"
+"    push r14\n"
+"    push r15\n"
+"\n"
+"    load32 0x7FFFFF r13     ; initialize (BDOS) int stack address\n"
+"    load32 0 r14            ; initialize base pointer address\n"
+"    addr2reg Return_Interrupt r1 ; get address of return function\n"
+"    or r0 r1 r15            ; copy return addr to r15\n"
+"    jump int1               ; jump to interrupt handler of C program\n"
+"                            ; should return to the address we just put on the stack\n"
+"    halt                    ; should not get here\n"
+"\n"
+"\n"
+"Int2:\n"
+"    push r1\n"
+"    push r2\n"
+"    push r3\n"
+"    push r4\n"
+"    push r5\n"
+"    push r6\n"
+"    push r7\n"
+"    push r8\n"
+"    push r9\n"
+"    push r10\n"
+"    push r11\n"
+"    push r12\n"
+"    push r13\n"
+"    push r14\n"
+"    push r15\n"
+"\n"
+"    load32 0x7FFFFF r13     ; initialize (BDOS) int stack address\n"
+"    load32 0 r14            ; initialize base pointer address\n"
+"    addr2reg Return_Interrupt r1 ; get address of return function\n"
+"    or r0 r1 r15            ; copy return addr to r15\n"
+"    jump int2               ; jump to interrupt handler of C program\n"
+"                            ; should return to the address we just put on the stack\n"
+"    halt                    ; should not get here\n"
+"\n"
+"\n"
+"Int3:\n"
+"    push r1\n"
+"    push r2\n"
+"    push r3\n"
+"    push r4\n"
+"    push r5\n"
+"    push r6\n"
+"    push r7\n"
+"    push r8\n"
+"    push r9\n"
+"    push r10\n"
+"    push r11\n"
+"    push r12\n"
+"    push r13\n"
+"    push r14\n"
+"    push r15\n"
+"\n"
+"    load32 0x7FFFFF r13     ; initialize (BDOS) int stack address\n"
+"    load32 0 r14            ; initialize base pointer address\n"
+"    addr2reg Return_Interrupt r1 ; get address of return function\n"
+"    or r0 r1 r15            ; copy return addr to r15\n"
+"    jump int3               ; jump to interrupt handler of C program\n"
+"                            ; should return to the address we just put on the stack\n"
+"    halt                    ; should not get here\n"
+"\n"
+"\n"
+"Int4:\n"
+"    push r1\n"
+"    push r2\n"
+"    push r3\n"
+"    push r4\n"
+"    push r5\n"
+"    push r6\n"
+"    push r7\n"
+"    push r8\n"
+"    push r9\n"
+"    push r10\n"
+"    push r11\n"
+"    push r12\n"
+"    push r13\n"
+"    push r14\n"
+"    push r15\n"
+"\n"
+"    load32 0x7FFFFF r13     ; initialize (BDOS) int stack address\n"
+"    load32 0 r14            ; initialize base pointer address\n"
+"    addr2reg Return_Interrupt r1 ; get address of return function\n"
+"    or r0 r1 r15            ; copy return addr to r15\n"
+"    jump int4               ; jump to interrupt handler of C program\n"
+"                            ; should return to the address we just put on the stack\n"
+"    halt                    ; should not get here\n"
+"\n"
+"\n"
+"; Function that is called after any interrupt handler from C has returned\n"
+"; Restores all registers and issues RETI instruction to continue from original code\n"
+"Return_Interrupt:\n"
+"    pop r15\n"
+"    pop r14\n"
+"    pop r13\n"
+"    pop r12\n"
+"    pop r11\n"
+"    pop r10\n"
+"    pop r9\n"
+"    pop r8\n"
+"    pop r7\n"
+"    pop r6\n"
+"    pop r5\n"
+"    pop r4\n"
+"    pop r3\n"
+"    pop r2\n"
+"    pop r1\n"
+"\n"
+"    reti        ; return from interrrupt\n"
+"\n"
+"    halt        ; should not get here");
 
 }
