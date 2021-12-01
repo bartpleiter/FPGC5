@@ -366,8 +366,8 @@ void GenPrintInstr(int instr, int val)
   case B322InstrLoadhi     : p = "loadhi"; break;
   case B322InstrBeq        : p = "beq"; break;
   case B322InstrBne        : p = "bne"; break;
-  case B322InstrBgt        : p = "bgt"; break;
-  case B322InstrBge        : p = "bge"; break;
+  case B322InstrBgt        : p = "bgts"; break; // HACK: always use signed comparison, because 32 bit should be large enough for most things
+  case B322InstrBge        : p = "bges"; break; // HACK: always use signed comparison, because 32 bit should be large enough for most things
   case B322InstrSavpc      : p = "savpc"; break;
   case B322InstrReti       : p = "reti"; break;
   case B322InstrOr         : p = "or"; break;

@@ -6,18 +6,18 @@
 
 int main() 
 {
-	int b = DERP;
-	int c = add(YEET, b); //190 + 16
-	int x = doo(DERP, c);
+    int b = DERP;
+    int c = add(YEET, b); //190 + 16
+    int x = doo(DERP, c);
 
-	char *ptr  		= "ghijkl";
+    char *ptr       = "ghijkl";
 
-	int d = 0xf3; //243
-	int e = 69; //69
+    int d = 0xf3; //243
+    int e = 69; //69
 
-	int f = NOPE;
+    int f = NOPE;
 
-	return (d - c) + e; //122 - 16 = 106
+    return (d - c) + e; //122 - 16 = 106
 }
 
 void int1()

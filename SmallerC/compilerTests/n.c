@@ -1,7 +1,7 @@
 int main() {
 
-   int a = 60;	      //0011 1100 60
-   int b = 13;	      //0000 1101 13
+   int a = 60;       //0011 1100 60
+   int b = 13;       //0000 1101 13
 
    int c = a && b;   //1    (logical and)
    int d = a || b;   //1    (logical or)

@@ -3,14 +3,14 @@ int buff[10];
 
 int main() 
 {
-	
-	
-	int i = 9;
-	int *p = buff;
+    
+    
+    int i = 9;
+    int *p = buff;
 
-	*(p+i) = 7;
+    *(p+i) = 7;
 
-	return buff[9]; //7
+    return buff[9]; //7
 }
 
 

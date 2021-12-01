@@ -6,14 +6,14 @@ int buff[3];
 
 int f()
 {
-	return glob;
+    return glob;
 }
 
 int main() 
 {
-	
-	glob += 3;
-	return f(); //18
+    
+    glob += 3;
+    return f(); //18
 }
 
 
