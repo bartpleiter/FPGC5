@@ -35,27 +35,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*                                                                           */
 /*****************************************************************************/
 
-/* WORDSIZE issue tags
-
+/* WORDSIZE issue tags (to look into if I will ever try to fix it)
 //WORDSIZE
 //CurFxnLocalOfs (smlrc.c)
-
-
-
-*/
-
-
-/* SPECIFIC TODOs:
-- Automatically detect the path of the (first?) C file to compile, add this to -I argument, so includes work like gcc
 */
 
 /* MAIN TODOs:
-- Convert all MIPS instructions to B322 instructions (with hotfixes included) #core
-- Modify memory addresses to work with 32-bit addressable words, (eg, no +4 address when writing an integer) #optimize
-- Remove all MIPS code leftovers #optimize
-- Look at register reordering, since now almost everything is put on the stack #optional
-- Look at other things to improve #optimize
-- Move assembly wrappers to file to clean up code # optimize
+- Signed numbers (after implementing in hardware + assembler)
+- Add wrappers for BDOS and UserBDOS
+- Remove all MIPS code leftovers
+- Do optimizations (like size stuff)
 */
 
 // Reordering is not a thing for B322, since there is no pipeline
