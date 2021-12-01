@@ -1150,6 +1150,10 @@ void IncludeFile(int quot)
           break;
        }
     }
+    if (len == 0) // remove directory if there is none
+    {
+      cFileDir[0] = '\0';
+    }
     strcpy(FileNames[FileCnt], TokenValueString);
     strcat(cFileDir, FileNames[FileCnt]);
     Files[FileCnt] = fopen(cFileDir, "r");
