@@ -539,6 +539,44 @@ def compileBgt(line):
     return instruction
 
 
+#compiles bgts instruction
+#should have 3 arguments
+#arg1 should be a valid register
+#arg2 should be a valid register
+#arg3 should be a positive number that is within 16 bits unsigned
+def compileBgts(line):
+    if len(line) != 4:
+        raise Exception("Incorrect number of arguments. Expected 3, but got " + str(len(line)-1))
+
+    const16 = ""
+
+    #convert arg1 to number
+    arg1Int = getReg(line[1])
+
+    #convert arg1 to binary
+    areg = format(arg1Int, '04b')
+
+    #convert arg2 to number
+    arg2Int = getReg(line[2])
+
+    #convert arg2 to binary
+    breg = format(arg2Int, '04b')
+
+    arg3Int = 0
+
+    #convert arg3 to number
+    arg3Int = getNumber(line[3])
+
+    #convert arg3 to binary
+    CheckFitsInBits(arg3Int, 16)
+    const16 = format(arg3Int, '016b')
+
+    #create instruction
+    instruction = "0100" + const16 + areg + breg + "0001" + " //(signed) If " + line[1] + " > " + line[2] + ", then jump to offset " + line[3]
+
+    return instruction
+
+
 #compiles bge instruction
 #should have 3 arguments
 #arg1 should be a valid register
@@ -573,6 +611,44 @@ def compileBge(line):
 
     #create instruction
     instruction = "0011" + const16 + areg + breg + "0000" + " //If " + line[1] + " >= " + line[2] + ", then jump to offset " + line[3]
+
+    return instruction
+
+
+#compiles bges instruction
+#should have 3 arguments
+#arg1 should be a valid register
+#arg2 should be a valid register
+#arg3 should be a positive number that is within 16 bits unsigned
+def compileBges(line):
+    if len(line) != 4:
+        raise Exception("Incorrect number of arguments. Expected 3, but got " + str(len(line)-1))
+
+    const16 = ""
+
+    #convert arg1 to number
+    arg1Int = getReg(line[1])
+
+    #convert arg1 to binary
+    areg = format(arg1Int, '04b')
+
+    #convert arg2 to number
+    arg2Int = getReg(line[2])
+
+    #convert arg2 to binary
+    breg = format(arg2Int, '04b')
+
+    arg3Int = 0
+
+    #convert arg3 to number
+    arg3Int = getNumber(line[3])
+
+    #convert arg3 to binary
+    CheckFitsInBits(arg3Int, 16)
+    const16 = format(arg3Int, '016b')
+
+    #create instruction
+    instruction = "0011" + const16 + areg + breg + "0001" + " //(signed) If " + line[1] + " >= " + line[2] + ", then jump to offset " + line[3]
 
     return instruction
 

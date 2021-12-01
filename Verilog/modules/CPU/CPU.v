@@ -107,6 +107,7 @@ wire [3:0] opcode;
 wire [31:0] input_b;
 wire bga, bea;          //flags
 wire skip;
+wire sig; //signed comparison
 
 ALU alu (
 .a(data_a),
@@ -115,6 +116,7 @@ ALU alu (
 .y(data_d),
 .bga(bga),
 .bea(bea),
+.sig(sig),
 .skip(skip)
 );
 
@@ -146,6 +148,7 @@ InstructionDecoder instDec(
 .oe(oe),
 .n1(n1),
 .n2(n2),
+.sig(sig),
 .intf(intf)
 );
 

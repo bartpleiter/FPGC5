@@ -115,6 +115,8 @@ def compileLine(line):
         "bne"       : CompileInstruction.compileBne,
         "bgt"       : CompileInstruction.compileBgt,
         "bge"       : CompileInstruction.compileBge,
+        "bgts"      : CompileInstruction.compileBgts,
+        "bges"      : CompileInstruction.compileBges,
         "savpc"     : CompileInstruction.compileSavpc,
         "reti"      : CompileInstruction.compileReti,
         "or"        : CompileInstruction.compileOr,
@@ -328,7 +330,7 @@ def getLabelMap(parsedLines):
 #compiles all labels
 def passTwo(parsedLines, labelMap):
     #lines that start with these names should be compiled
-    toCompileList = ["jump", "beq", "bne", "bgt", "bge", "loadlabellow" ,"loadlabelhigh", ".dl"]
+    toCompileList = ["jump", "beq", "bne", "bgt", "bge", "bgts", "bges", "loadlabellow" ,"loadlabelhigh", ".dl"]
 
     for idx, line in enumerate(parsedLines):
         if line[1].lower().split()[0] in toCompileList:
@@ -344,14 +346,14 @@ def passTwo(parsedLines, labelMap):
 
 #check if all labels are compiled
 def checkNoLabels(parsedLines):
-    toCompileList = ["jump", "beq", "bne", "bgt", "bge", "loadlabellow" ,"loadlabelhigh", ".dl"]
+    toCompileList = ["jump", "beq", "bne", "bgt", "bge", "bgts", "bges", "loadlabellow" ,"loadlabelhigh", ".dl"]
     
     for idx, line in enumerate(parsedLines):
         if line[1].lower().split()[0] in toCompileList:
             labelPos = 0
             if line[1].lower().split()[0] in ["jump", "loadlabellow", "loadlabelhigh", ".dl"]:
                 labelPos = 1
-            if line[1].lower().split()[0] in ["beq", "bne", "bgt", "bge"]:
+            if line[1].lower().split()[0] in ["beq", "bne", "bgt", "bge", "bgts", "bges",]:
                 labelPos = 3
             print("Error: label " + line[1].split()[labelPos] + " is undefined")
             print("Assembler will now exit")

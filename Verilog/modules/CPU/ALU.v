@@ -8,6 +8,7 @@ module ALU(
     input       [31:0]  a, b,
     input       [3:0]   opcode,
     input               skip,   //do not do any operation, pass on b
+    input               sig,    //do signed comparison
     output reg  [31:0]  y,
     output              bga,    //b greater than a
     output              bea     //b equals a
@@ -33,7 +34,7 @@ localparam
     OP_U7       = 4'b1111; //Unimplemented
 
 // Flags
-assign bga  = (b >  a);
+assign bga  = (sig) ? ($signed(b) >  $signed(a)) : (b >  a);
 assign bea  = (b == a);
 
 // Calculate outputs

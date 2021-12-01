@@ -18,8 +18,8 @@ Each instruction is 32 bits and can be one of the following instructions:
 9 LOAD     0  1  1  1||----------------16 BIT CONSTANT---------------| x  x  x |H| x  x  x  x |--D REG---|
 10 BEQ     0  1  1  0||----------------16 BIT CONSTANT---------------||--A REG---||--B REG---| x  x  x  x
 11 BNE     0  1  0  1||----------------16 BIT CONSTANT---------------||--A REG---||--B REG---| x  x  x  x
-12 BGT     0  1  0  0||----------------16 BIT CONSTANT---------------||--A REG---||--B REG---| x  x  x  x
-13 BGE     0  0  1  1||----------------16 BIT CONSTANT---------------||--A REG---||--B REG---| x  x  x  x
+12 BGT     0  1  0  0||----------------16 BIT CONSTANT---------------||--A REG---||--B REG---| x  x  x  S
+13 BGE     0  0  1  1||----------------16 BIT CONSTANT---------------||--A REG---||--B REG---| x  x  x  S
 14 SAVPC   0  0  1  0| 0  0  0  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x |--D REG---|
 15 RETI    0  0  0  1| x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x  x
 16 ARITH   0  0  0  0||C||--OPCODE--||--------11 BIT CONSTANT--------||--A REG---||--B REG---||--D REG---|
@@ -36,8 +36,8 @@ Each instruction is 32 bits and can be one of the following instructions:
 5.  `LOAD`:   Write 16 bit constant to DREG. If H is 0, then write data to lowest 16 bits and set highest 16 bits to 0. If H is 1, then write data to highest 16 bits and ignore lowest 16 bits.
 11. `BEQ`:    If AREG == BREG, add 16 bit constant to PC.
 12. `BNE`:    If AREG != BREG, add 16 bit constant to PC.
-13. `BGT`:    If AREG >  BREG, add 16 bit constant to PC.
-14. `BGE`:    If AREG >= BREG, add 16 bit constant to PC.
+13. `BGT`:    If AREG >  BREG, add 16 bit constant to PC. Signed comparison if S.
+14. `BGE`:    If AREG >= BREG, add 16 bit constant to PC. Signed comparison if S.
 15. `SAVPC`:  Save current PC to DREG.
 16. `RETI`:   Restore PC after interrupt and re-enable interrupts.
 10. `ARITH`:  Execute operation specified by OPCODE on AREG and BREG. Write result to DREG. Use 11-bit constant in stead of BREG if C is 1.

@@ -74,6 +74,8 @@ BEQ     | R     | R     | C16   || If Arg1 == Arg2, jump to 16 bit offset in Arg
 BNE     | R     | R     | C16   || If Arg1 != Arg2, jump to 16 bit offset in Arg3
 BGT     | R     | R     | C16   || If Arg1 >  Arg2, jump to 16 bit offset in Arg3
 BGE     | R     | R     | C16   || If Arg1 >= Arg2, jump to 16 bit offset in Arg3
+BGTS    | R     | R     | C16   || (signed) If Arg1 >  Arg2, jump to 16 bit offset in Arg3
+BGES    | R     | R     | C16   || (signed) If Arg1 >= Arg2, jump to 16 bit offset in Arg3
 SAVPC   | R     |       |       || Save program counter to Arg1
 RETI    |       |       |       || Return from interrupt
 OR      | R     | C11/R | R     || Compute Arg1 OR  Arg2, write result to Arg3
