@@ -1,29 +1,24 @@
-//TODO: make a real test for this, with some expected return value
-
-int g(char* buf, int s)
+void g(char* buf, int s)
 {
-	int i = s;
-
-	return i;
+    buf[s] = s+1;
 }
 
-void f(int s)
+int f(int x)
 {
-	int i = 0;
+    return x + 2;
 }
 
 int main() 
 {
-	int s = 3;
+    int s = 3;
 
-	char buf[4];
+    char buf[10];
 
-	f(s);
-	g(&buf[0], s);
+    int x = f(s); //5
 
-	buf[s] = 19;
+    g(buf, x);
 
-	return 42;
+    return buf[5]; //6
 }
 
 

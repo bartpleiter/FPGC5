@@ -1,5 +1,5 @@
 
-int buff[10] = 0;
+int buff[10];
 
 int main() 
 {
