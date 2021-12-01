@@ -1,3 +1,4 @@
+from bitstring import Bits #pip install bitstring if you have not already
 '''
 Library for compiling single instructions
 '''
@@ -1161,21 +1162,33 @@ def compileLoad32(line):
     const32 = ""
 
     #convert arg1 to number
-    arg1Int = getNumber(line[1])
+    arg1Int, neg= getNumber(line[1], True)
+    if neg:
+        arg1Int = -arg1Int # because getNumber does ABS on it
 
 
     #check if it fits in 16 bits, so we can skip the loadhi
-    try:
-        CheckFitsInBits(arg1Int, 16)
-        return compileLoad(line)
-    except:
-        pass #continue
+    if not neg:
+        try:
+            CheckFitsInBits(arg1Int, 16)
+            return compileLoad(line)
+        except:
+            pass #continue
 
     #check if it fits in 32 bits
-    CheckFitsInBits(arg1Int, 32)
+    if not neg:
+        CheckFitsInBits(arg1Int, 32)
+    else:
+        if arg1Int < -2147483648:
+            raise ValueError("Negative value " + str(arg1Int) + " does not fit in 32 bits (signed)")
 
     #convert to 32 bit
-    const32 = format(arg1Int, '032b')
+    const32 = ""
+    if not neg:
+        const32 = format(arg1Int, '032b')
+    else:
+        b = Bits(int=arg1Int, length=32) #signed binary notation
+        const32 = b.bin
 
     constLow = int(const32[0:16], 2)
     constHigh = int(const32[16:32], 2)
