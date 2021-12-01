@@ -1136,8 +1136,23 @@ void IncludeFile(int quot)
   // unlike gcc, which uses the same directory as the current file)
   if (quot == '"')
   {
+    // Get path from c file to compile, so it can be appended to the include paths
+    char cFileDir[255] = "";
+    strcpy(cFileDir, FileNames[0]);
+
+    int len = strlen(cFileDir);  
+    while (len > 0) 
+    {
+       len--;
+       if (cFileDir[len] == '/') 
+       {
+          cFileDir[len+1] = '\0'; // keep the slash
+          break;
+       }
+    }
     strcpy(FileNames[FileCnt], TokenValueString);
-    Files[FileCnt] = fopen(FileNames[FileCnt], "r");
+    strcat(cFileDir, FileNames[FileCnt]);
+    Files[FileCnt] = fopen(cFileDir, "r");
   }
 
   // Next, iterate the search paths trying to open "file" or <file>.

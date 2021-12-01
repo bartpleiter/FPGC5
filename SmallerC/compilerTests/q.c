@@ -1,5 +1,5 @@
-#include "compilerTests/process.h" 
-#include "compilerTests/twice.h"
+#include "process.h" 
+#include "twice.h"
 
 #define YEET 23
 #define DERP 0xA7 //167
