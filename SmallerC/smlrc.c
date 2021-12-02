@@ -772,6 +772,10 @@ int verbose = 0;
 int warnings = 0;
 int warnCnt = 0;
 
+// custom compiler flags
+int compileUserBDOS = 0;
+int compileOS = 0;
+
 // prep.c data
 
 // TBD!!! get rid of TokenIdentName[] and TokenValueString[]
@@ -10023,6 +10027,16 @@ int main(int argc, char** argv)
     // the code generator
     if (GenInitParams(argc, argv, &i))
     {
+      continue;
+    }
+    else if (!strcmp(argv[i], "--os"))
+    {
+      compileOS = 1;
+      continue;
+    }
+    else if (!strcmp(argv[i], "--bdos"))
+    {
+      compileUserBDOS = 1;
       continue;
     }
     else if (!strcmp(argv[i], "-signed-char"))

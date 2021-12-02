@@ -7,7 +7,7 @@ do
     echo "Processing: $filename"
     # for each c file, compile and run
     echo "Compiling C code to B332 ASM"
-    if (./a.out $filename ../Assembler/code.asm) # compile c code and write compiled code to code.asm in Assembler folder
+    if (./bcc $filename ../Assembler/code.asm) # compile c code and write compiled code to code.asm in Assembler folder
     then
         echo "C code successfully compiled"
 
@@ -31,7 +31,7 @@ do
             echo "Failed to assemble B332 ASM code"
             cd ../Assembler && python3 Assembler.py
         fi
-    else # compile failed, run again to show error
+    else # compile failed
         echo "Failed to compile C code"
     fi
 
