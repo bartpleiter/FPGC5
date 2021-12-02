@@ -8,12 +8,13 @@ CFLAGS  =
 
 # the build target executable:
 SOURCE = smlrc
-TARGET = bcc
+TARGET = bccALWAYSRECOMPILE
+TARGETNAME = bcc
 
 all: $(TARGET)
 
 $(TARGET): $(SOURCE).c
-	$(CC) -o $(TARGET) $(SOURCE).c $(CFLAGS)
+	$(CC) -o $(TARGETNAME) $(SOURCE).c $(CFLAGS)
 
 clean:
-	$(RM) $(TARGET)
+	$(RM) $(TARGETNAME)

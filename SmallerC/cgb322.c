@@ -2704,6 +2704,7 @@ void GenFin(void)
   if (compileUserBDOS)
   {
     printf2(
+      ".code\n"
       "; END OF COMPILED C CODE\n"
       "\n"
       "; Interrupt handlers for BDOS user program\n"
@@ -2770,6 +2771,7 @@ void GenFin(void)
   else
   {
     printf2(
+      ".code\n"
       "; END OF COMPILED C CODE\n"
       "\n"
       "; Interrupt handlers\n"
@@ -2912,6 +2914,7 @@ void GenFin(void)
   if (compileOS)
   {
     printf2(
+      ".code\n"
       "\n; Syscall handler for OS\n"
       "; Because this is not called during an interrupt, we use a different stack\n"
       ";  located at the end of BDOS heap\n"

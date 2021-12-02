@@ -21,3 +21,4 @@ Verilog/output/*.ppm
 Quartus/*.ipregen.rpt
 SmallerC/*.tmp
 SmallerC/*.out
+SmallerC/bcc
