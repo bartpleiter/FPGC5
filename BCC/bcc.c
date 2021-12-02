@@ -25,16 +25,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************/
 /*                                                                           */
-/*                                 Smaller C                                 */
+/*                           BCC (B322 C Compiler)                           */
 /*                                                                           */
+/*                           C compiler for B322                             */
+/*                                                                           */
+/*                            Based on SmallerC:                             */
 /*                 A simple and small single-pass C compiler                 */
 /*                                                                           */
-/*            Produces 16/32-bit 80386 assembly output for NASM.             */
-/*             Produces 32-bit MIPS assembly output for gcc/as.              */
-/*                                                                           */
-/*                                 Main file                                 */
+/*                                Main file                                  */
 /*                                                                           */
 /*****************************************************************************/
+
+// NOTE: still has a lot of extras in it that are not needed
+//  only the "MIPS" part is needed with no extras
 
 // Making most functions static helps with code optimization,
 // use that to further reduce compiler's code size on RetroBSD.
@@ -2637,20 +2640,11 @@ void errorRedecl(char* s)
   error("Invalid or unsupported redeclaration of '%s'\n", s);
 }
 
-#ifdef MIPS
 #ifndef CAN_COMPILE_32BIT
-#error MIPS target requires a 32-bit compiler
+#error target requires a 32-bit compiler
 #endif
 
-#ifdef B322
-#include "cgb322.c"
-#else
-#include "cgmips.c"
-#endif
-
-#else
-#include "cgx86.c"
-#endif // #ifdef MIPS
+#include "backend.c"
 
 // expr.c code
 

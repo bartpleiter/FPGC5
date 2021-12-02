@@ -25,29 +25,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /*****************************************************************************/
 /*                                                                           */
-/*                                Smaller C                                  */
+/*                           BCC (B322 C Compiler)                           */
 /*                                                                           */
+/*                           C compiler for B322                             */
+/*                                                                           */
+/*                            Based on SmallerC:                             */
 /*                 A simple and small single-pass C compiler                 */
 /*                                                                           */
 /*                           B322 code generator                             */
-/*           By hacking the MIPS generator to output B322 instead            */
-/*      Progress: just started modifying, not done yet by a long shot        */
+/*                  Modified from the MIPS code generator                    */
 /*                                                                           */
 /*****************************************************************************/
 
-/* WORDSIZE issue tags (to look into if I will ever try to fix it)
-//WORDSIZE
-//CurFxnLocalOfs (smlrc.c)
-*/
+// NOTE: Very clearly inefficient, because of the direct-ish translation from MIPS to B322
 
 /* MAIN TODOs:
-- Signed numbers (after implementing in hardware + assembler)
-- Add wrappers for BDOS and UserBDOS
 - Remove all MIPS code leftovers
 - Do optimizations (like size stuff)
 */
 
-// Reordering is not a thing for B322, since there is no pipeline
+/* WORDSIZE issue tags (to look into if I will ever try to fix it)
+//WORDSIZE
+//CurFxnLocalOfs (gcc.c)
+*/
+
 
 STATIC
 void GenInit(void)
@@ -66,14 +67,6 @@ void GenInit(void)
 STATIC
 int GenInitParams(int argc, char** argv, int* idx)
 {
-  (void)argc;
-  // initialization of target-specific code generator with parameters
-  if (!strcmp(argv[*idx], "-v"))
-  {
-    // RetroBSD's cc may supply this parameter. Just need to consume it.
-    return 1;
-  }
-
   return 0;
 }
 
@@ -83,11 +76,6 @@ void GenInitFinalize(void)
   // finalization of initialization of target-specific code generator
   // Put all C specific wrapper code (start) here
 
-  //if (compileOS)
-  //{
-
-  //}
-  //else 
   if (compileUserBDOS)
   {
     printf2(
@@ -148,11 +136,12 @@ void GenStartCommentLine(void)
   printf2(" ; ");
 }
 
+// No alignment needed on B322
 STATIC
 void GenWordAlignment(int bss)
 {
   (void)bss;
-  printf2("; .align 2\n"); // should not be needed for b322???
+  printf2("; .align 2\n");
 }
 
 STATIC
@@ -192,9 +181,9 @@ STATIC
 void GenZeroData(unsigned Size, int bss)
 {
   (void)bss;
-  printf2("; .space %u\n", truncUint(Size)); // or ".fill size"
+  printf2("; .space %u\n", truncUint(Size));
 
-  // B322 version:
+  // B322 implementation of .space:
   if (Size > 0)
   {
     printf2(".dw");
@@ -212,7 +201,6 @@ STATIC
 void GenIntData(int Size, int Val)
 {
   Val = truncInt(Val);
-  //printf2(".dw %d\n", Val);
 
   // Print multiple times, since the compiler does not know yet B322 is word addressable
   if (Size == 1)
@@ -239,16 +227,10 @@ void GenAddrData(int Size, char* Label, int ofs)
   for (i = 0; i < 4; i++) // label is 4 "bytes", hotfix since the compiler does not know yet B322 is word addressable
   {
     printf2(".dl ");
-    /* always use word alignment
-    if (Size == 1)
-      printf2(" .db ");
-    else if (Size == 2)
-      printf2(" .dd ");
-    else if (Size == 4)
-      printf2(" .dw ");
-    */
 
     GenPrintLabel(Label);
+
+    // Still not sure if this ever gets called (and probably will not work until an Assembler update)
     if (ofs)
       printf2(" %+d", ofs);
     puts2("");
@@ -267,46 +249,6 @@ void GenRecordFxnSize(char* startLabelName, int endLabelNo)
   (void)startLabelName;
   (void)endLabelNo;
 }
-
-#define MipsInstrNop    0x00
-#define MipsInstrMov    0x01
-#define MipsInstrMfLo   0x02
-#define MipsInstrMfHi   0x03
-#define MipsInstrLA     0x06
-#define MipsInstrLI     0x07
-//#define MipsInstrLUI
-#define MipsInstrLB     0x08
-#define MipsInstrLBU    0x09
-#define MipsInstrLH     0x0A
-#define MipsInstrLHU    0x0B
-#define MipsInstrLW     0x0C
-#define MipsInstrSB     0x0D
-#define MipsInstrSH     0x0E
-#define MipsInstrSW     0x0F
-#define MipsInstrAddU   0x10
-#define MipsInstrSubU   0x11
-#define MipsInstrAnd    0x12
-#define MipsInstrOr     0x13
-#define MipsInstrXor    0x14
-#define MipsInstrNor    0x15
-#define MipsInstrSLL    0x16
-#define MipsInstrSRL    0x17
-#define MipsInstrSRA    0x18
-#define MipsInstrMul    0x19
-#define MipsInstrDiv    0x1A
-#define MipsInstrDivU   0x1B
-#define MipsInstrSLT    0x1C
-#define MipsInstrSLTU   0x1D
-#define MipsInstrJ      0x1E
-#define MipsInstrJAL    0x1F
-#define MipsInstrBEQ    0x20
-#define MipsInstrBNE    0x21
-#define MipsInstrBLTZ   0x22
-#define MipsInstrBGEZ   0x23
-#define MipsInstrBLEZ   0x24
-#define MipsInstrBGTZ   0x25
-#define MipsInstrSeb    0x26
-#define MipsInstrSeh    0x27
 
 #define B322InstrHalt       0x30
 #define B322InstrRead       0x31
@@ -349,46 +291,6 @@ void GenPrintInstr(int instr, int val)
 
   switch (instr)
   {
-  case MipsInstrNop  : p = "MIPS_nop"; break;
-  case MipsInstrMov  : p = "MIPS_move"; break;
-  case MipsInstrMfLo : p = "MIPS_mflo"; break;
-  case MipsInstrMfHi : p = "MIPS_mfhi"; break;
-  case MipsInstrLA   : p = "MIPS_la"; break;
-  case MipsInstrLI   : p = "MIPS_li"; break;
-//  case MipsInstrLUI  : p = "MIPS_lui"; break;
-  case MipsInstrLB   : p = "MIPS_lb"; break;
-  case MipsInstrLBU  : p = "MIPS_lbu"; break;
-  case MipsInstrLH   : p = "MIPS_lh"; break;
-  case MipsInstrLHU  : p = "MIPS_lhu"; break;
-  case MipsInstrLW   : p = "MIPS_lw"; break;
-  case MipsInstrSB   : p = "MIPS_sb"; break;
-  case MipsInstrSH   : p = "MIPS_sh"; break;
-  case MipsInstrSW   : p = "MIPS_sw"; break;
-  case MipsInstrAddU : p = "MIPS_addu"; break;
-  case MipsInstrSubU : p = "MIPS_subu"; break;
-  case MipsInstrAnd  : p = "MIPS_and"; break;
-  case MipsInstrOr   : p = "MIPS_or"; break;
-  case MipsInstrXor  : p = "MIPS_xor"; break;
-  case MipsInstrNor  : p = "MIPS_nor"; break;
-  case MipsInstrSLL  : p = "MIPS_sll"; break;
-  case MipsInstrSRL  : p = "MIPS_srl"; break;
-  case MipsInstrSRA  : p = "MIPS_sra"; break;
-  case MipsInstrMul  : p = "MIPS_mul"; break;
-  case MipsInstrDiv  : p = "MIPS_div"; break;
-  case MipsInstrDivU : p = "MIPS_divu"; break;
-  case MipsInstrSLT  : p = "MIPS_slt"; break;
-  case MipsInstrSLTU : p = "MIPS_sltu"; break;
-  case MipsInstrJ    : p = "MIPS_j"; break;
-  case MipsInstrJAL  : p = "MIPS_jal"; break;
-  case MipsInstrBEQ  : p = "MIPS_beq"; break;
-  case MipsInstrBNE  : p = "MIPS_bne"; break;
-  case MipsInstrBLTZ : p = "MIPS_bltz"; break;
-  case MipsInstrBGEZ : p = "MIPS_bgez"; break;
-  case MipsInstrBLEZ : p = "MIPS_blez"; break;
-  case MipsInstrBGTZ : p = "MIPS_bgtz"; break;
-  case MipsInstrSeb  : p = "MIPS_seb"; break;
-  case MipsInstrSeh  : p = "MIPS_seh"; break;
-
   case B322InstrHalt       : p = "halt"; break;
   case B322InstrRead       : p = "read"; break;
   case B322InstrWrite      : p = "write"; break;
@@ -424,70 +326,70 @@ void GenPrintInstr(int instr, int val)
   printf2(" %s ", p);
 }
 
-#define MipsOpRegZero                    0x00 //0  0
-#define MipsOpRegAt                      0x01 //1  at
-#define MipsOpRegV0                      0x02 //2  ret0
-#define MipsOpRegV1                      0x03 //3  ret1
-#define MipsOpRegA0                      0x04 //4  arg0
-#define MipsOpRegA1                      0x05 //5  arg1
-#define MipsOpRegA2                      0x06 //6  arg2
-#define MipsOpRegA3                      0x07 //7  arg3
-#define MipsOpRegT0                      0x08 //8  gp0
-#define MipsOpRegT1                      0x09 //9  gp1
-#define MipsOpRegT2                      0x0A //10 gp2
-#define MipsOpRegT8                      0x0B //11 tempa
-#define MipsOpRegT9                      0x0C //12 tempb
-#define MipsOpRegSp                      0x0D //13 sp
-#define MipsOpRegFp                      0x0E //14 fp
-#define MipsOpRegRa                      0x0F //15 retaddr
+#define B322OpRegZero                    0x00 //0  0
+#define B322OpRegAt                      0x01 //1  at
+#define B322OpRegV0                      0x02 //2  ret0
+#define B322OpRegV1                      0x03 //3  ret1
+#define B322OpRegA0                      0x04 //4  arg0
+#define B322OpRegA1                      0x05 //5  arg1
+#define B322OpRegA2                      0x06 //6  arg2
+#define B322OpRegA3                      0x07 //7  arg3
+#define B322OpRegT0                      0x08 //8  gp0
+#define B322OpRegT1                      0x09 //9  gp1
+#define B322OpRegT2                      0x0A //10 gp2
+#define B322OpRegT8                      0x0B //11 tempa
+#define B322OpRegT9                      0x0C //12 tempb
+#define B322OpRegSp                      0x0D //13 sp
+#define B322OpRegFp                      0x0E //14 fp
+#define B322OpRegRa                      0x0F //15 retaddr
 
-#define MipsOpIndRegZero                 0x20
-#define MipsOpIndRegAt                   0x21
-#define MipsOpIndRegV0                   0x22
-#define MipsOpIndRegV1                   0x23
-#define MipsOpIndRegA0                   0x24
-#define MipsOpIndRegA1                   0x25
-#define MipsOpIndRegA2                   0x26
-#define MipsOpIndRegA3                   0x27
-#define MipsOpIndRegT0                   0x28
-#define MipsOpIndRegT1                   0x29
-#define MipsOpIndRegSp                   0x2D
-#define MipsOpIndRegFp                   0x2E
-#define MipsOpIndRegRa                   0x2F
+#define B322OpIndRegZero                 0x20
+#define B322OpIndRegAt                   0x21
+#define B322OpIndRegV0                   0x22
+#define B322OpIndRegV1                   0x23
+#define B322OpIndRegA0                   0x24
+#define B322OpIndRegA1                   0x25
+#define B322OpIndRegA2                   0x26
+#define B322OpIndRegA3                   0x27
+#define B322OpIndRegT0                   0x28
+#define B322OpIndRegT1                   0x29
+#define B322OpIndRegSp                   0x2D
+#define B322OpIndRegFp                   0x2E
+#define B322OpIndRegRa                   0x2F
 
-#define MipsOpConst                      0x80
-#define MipsOpLabel                      0x81
-#define MipsOpNumLabel                   0x82
-#define MipsOpLabelLo                    0x83
-#define MipsOpIndLocal                   MipsOpIndRegFp
+#define B322OpConst                      0x80
+#define B322OpLabel                      0x81
+#define B322OpNumLabel                   0x82
+#define B322OpLabelLo                    0x83
+#define B322OpIndLocal                   B322OpIndRegFp
 
 #define MAX_TEMP_REGS 3 // this many temp registers used beginning with T0 to hold subexpression results
-#define TEMP_REG_A MipsOpRegT8 // two temporary registers used for momentary operations, similarly to the AT register
-#define TEMP_REG_B MipsOpRegT9
+#define TEMP_REG_A B322OpRegT8 // two temporary registers used for momentary operations, similarly to the AT register
+#define TEMP_REG_B B322OpRegT9
 
 STATIC
 void GenPrintOperand(int op, int val)
 {
-  if (op >= MipsOpRegZero && op <= MipsOpRegRa)
+  if (op >= B322OpRegZero && op <= B322OpRegRa)
   {
     printf2("r%d", op);
   }
-  else if (op >= MipsOpIndRegZero && op <= MipsOpIndRegRa)
+  else if (op >= B322OpIndRegZero && op <= B322OpIndRegRa)
   {
-    printf2("%d r%d", truncInt(val), op - MipsOpIndRegZero);
+    printf2("%d r%d", truncInt(val), op - B322OpIndRegZero);
   }
   else
   {
     switch (op)
     {
-    case MipsOpConst: printf2("%d", truncInt(val)); break;
-    case MipsOpLabelLo:
+    case B322OpConst: printf2("%d", truncInt(val)); break;
+    case B322OpLabelLo:
       printf2("%%lo(");
       GenPrintLabel(IdentTable + val);
       printf2(")(r1)");
       break;
-    case MipsOpLabel: GenPrintLabel(IdentTable + val); break;
-    case MipsOpNumLabel: GenPrintNumLabel(val); break;
+    case B322OpLabel: GenPrintLabel(IdentTable + val); break;
+    case B322OpNumLabel: GenPrintNumLabel(val); break;
 
     default:
       //error("WTF!\n");
@@ -521,7 +423,7 @@ STATIC
 void GenPrintInstr2Operands(int instr, int instrval, int operand1, int operand1val, int operand2, int operand2val)
 {
   // TODO: figure out if this ever happens because ADD and SUB need 3 args
-  if (operand2 == MipsOpConst && operand2val == 0 &&
+  if (operand2 == B322OpConst && operand2val == 0 &&
       (instr == B322InstrAdd || instr == B322InstrSub))
     return;
 
@@ -538,14 +440,14 @@ void GenPrintInstr3Operands(int instr, int instrval,
                             int operand2, int operand2val,
                             int operand3, int operand3val)
 {
-  if (operand3 == MipsOpConst && operand3val == 0 &&
+  if (operand3 == B322OpConst && operand3val == 0 &&
       (instr == B322InstrAdd || instr == B322InstrSub) &&
       operand1 == operand2)
     return;
 
   // If constant is negative, swap B322InstrAdd for B322InstrSUB and vice versa
   // and flip sign of constant
-  if (operand2 == MipsOpConst && operand2val < 0)
+  if (operand2 == B322OpConst && operand2val < 0)
   {
     if (instr == B322InstrAdd)
     {
@@ -578,11 +480,11 @@ void GenExtendRegIfNeeded(int reg, int opSz)
     GenPrintInstr3Operands(MipsInstrSLL, 0,
                            reg, 0,
                            reg, 0,
-                           MipsOpConst, 24);
+                           B322OpConst, 24);
     GenPrintInstr3Operands(MipsInstrSRA, 0,
                            reg, 0,
                            reg, 0,
-                           MipsOpConst, 24);
+                           B322OpConst, 24);
 #else
     GenPrintInstr2Operands(MipsInstrSeb, 0,
                            reg, 0,
@@ -594,7 +496,7 @@ void GenExtendRegIfNeeded(int reg, int opSz)
   {
     GenPrintInstr3Operands(B322InstrAnd, 0,
                            reg, 0,
-                           MipsOpConst, 0xFF,
+                           B322OpConst, 0xFF,
                            reg, 0);
   }
   else if (opSz == -2)
@@ -604,11 +506,11 @@ void GenExtendRegIfNeeded(int reg, int opSz)
     GenPrintInstr3Operands(MipsInstrSLL, 0,
                            reg, 0,
                            reg, 0,
-                           MipsOpConst, 16);
+                           B322OpConst, 16);
     GenPrintInstr3Operands(MipsInstrSRA, 0,
                            reg, 0,
                            reg, 0,
-                           MipsOpConst, 16);
+                           B322OpConst, 16);
 #else
     GenPrintInstr2Operands(MipsInstrSeh, 0,
                            reg, 0,
@@ -622,17 +524,17 @@ void GenExtendRegIfNeeded(int reg, int opSz)
     GenPrintInstr3Operands(MipsInstrAnd, 0,
                            reg, 0,
                            reg, 0,
-                           MipsOpConst, 0xFFFF);
+                           B322OpConst, 0xFFFF);
     */
     // Use shiftl 16 and shiftr 16 as equivalent to AND 0xFFFF
     //  (because constants in ARITH can only be 11 bits)
     GenPrintInstr3Operands(B322InstrShiftl, 0,
                            reg, 0,
-                           MipsOpConst, 16,
+                           B322OpConst, 16,
                            reg, 0);
     GenPrintInstr3Operands(B322InstrShiftr, 0,
                            reg, 0,
-                           MipsOpConst, 16,
+                           B322OpConst, 16,
                            reg, 0);
   }
 }
@@ -641,7 +543,7 @@ STATIC
 void GenJumpUncond(int label)
 {
   GenPrintInstr1Operand(B322InstrJump, 0,
-                        MipsOpNumLabel, label);
+                        B322OpNumLabel, label);
 }
 
 extern int GenWreg; // GenWreg is defined below
@@ -651,20 +553,20 @@ void GenJumpIfEqual(int val, int label)
 {
 
   GenPrintInstr2Operands(B322InstrLoad, 0,
-                         MipsOpConst, val,
+                         B322OpConst, val,
                          TEMP_REG_B, 0);
   /*
   GenPrintInstr3Operands(MipsInstrBEQ, 0,
                          GenWreg, 0,
                          TEMP_REG_B, 0,
-                         MipsOpNumLabel, label);
+                         B322OpNumLabel, label);
   */
   GenPrintInstr3Operands(B322InstrBne, 0,
                          GenWreg, 0,
                          TEMP_REG_B, 0,
-                         MipsOpConst, 2);
+                         B322OpConst, 2);
   GenPrintInstr1Operand(B322InstrJump, 0,
-                         MipsOpNumLabel, label);
+                         B322OpNumLabel, label);
 }
 
 STATIC
@@ -676,15 +578,15 @@ void GenJumpIfZero(int label)
   /* if Wreg == 0, jump to label
   GenPrintInstr3Operands(MipsInstrBEQ, 0,
                          GenWreg, 0,
-                         MipsOpRegZero, 0,
-                         MipsOpNumLabel, label);
+                         B322OpRegZero, 0,
+                         B322OpNumLabel, label);
   */
   GenPrintInstr3Operands(B322InstrBne, 0,
                          GenWreg, 0,
-                         MipsOpRegZero, 0,
-                         MipsOpConst, 2);
+                         B322OpRegZero, 0,
+                         B322OpConst, 2);
   GenPrintInstr1Operand(B322InstrJump, 0,
-                         MipsOpNumLabel, label);
+                         B322OpNumLabel, label);
 }
 
 STATIC
@@ -696,15 +598,15 @@ void GenJumpIfNotZero(int label)
   /* if Wreg != 0, jump to label
   GenPrintInstr3Operands(MipsInstrBNE, 0,
                          GenWreg, 0,
-                         MipsOpRegZero, 0,
-                         MipsOpNumLabel, label);
+                         B322OpRegZero, 0,
+                         B322OpNumLabel, label);
   */
   GenPrintInstr3Operands(B322InstrBeq, 0,
                          GenWreg, 0,
-                         MipsOpRegZero, 0,
-                         MipsOpConst, 2);
+                         B322OpRegZero, 0,
+                         B322OpConst, 2);
   GenPrintInstr1Operand(B322InstrJump, 0,
-                         MipsOpNumLabel, label);
+                         B322OpNumLabel, label);
 }
 
 fpos_t GenPrologPos;
@@ -752,8 +654,8 @@ void GenFxnProlog(void)
     // in registers from assembly code won't always work.
     for (i = 0; i < cnt; i++)
       GenPrintInstr2Operands(B322InstrWrite, 0,
-                             MipsOpIndRegSp, 4 * i, //WORDSIZE
-                             MipsOpRegA0 + i, 0);
+                             B322OpIndRegSp, 4 * i, //WORDSIZE
+                             B322OpRegA0 + i, 0);
   }
 
   GenLeaf = 1; // will be reset to 0 if a call is generated
@@ -771,16 +673,16 @@ void GenGrowStack(int size) //WORDSIZE
   if (size > 0)
   {
     GenPrintInstr3Operands(B322InstrSub, 0,
-                           MipsOpRegSp, 0,
-                           MipsOpConst, size,
-                           MipsOpRegSp, 0);
+                           B322OpRegSp, 0,
+                           B322OpConst, size,
+                           B322OpRegSp, 0);
   }
   else
   {
     GenPrintInstr3Operands(B322InstrAdd, 0,
-                           MipsOpRegSp, 0,
-                           MipsOpConst, -size,
-                           MipsOpRegSp, 0);
+                           B322OpRegSp, 0,
+                           B322OpConst, -size,
+                           B322OpRegSp, 0);
   }
 }
 
@@ -791,21 +693,21 @@ void GenFxnEpilog(void)
 
   if (!GenLeaf)
     GenPrintInstr2Operands(B322InstrRead, 0,
-                           MipsOpIndRegFp, 4, //WORDSIZE
-                           MipsOpRegRa, 0);
+                           B322OpIndRegFp, 4, //WORDSIZE
+                           B322OpRegRa, 0);
 
   GenPrintInstr2Operands(B322InstrRead, 0,
-                         MipsOpIndRegFp, 0,
-                         MipsOpRegFp, 0);
+                         B322OpIndRegFp, 0,
+                         B322OpRegFp, 0);
 
   GenPrintInstr3Operands(B322InstrAdd, 0,
-                         MipsOpRegSp, 0,
-                         MipsOpConst, 8/*RA + FP*/ - CurFxnMinLocalOfs, //WORDSIZE
-                         MipsOpRegSp, 0);
+                         B322OpRegSp, 0,
+                         B322OpConst, 8/*RA + FP*/ - CurFxnMinLocalOfs, //WORDSIZE
+                         B322OpRegSp, 0);
 
   GenPrintInstr2Operands(B322InstrJumpr, 0,
-                        MipsOpConst, 0,
-                        MipsOpRegRa, 0);
+                        B322OpConst, 0,
+                        B322OpRegRa, 0);
 }
 
 STATIC
@@ -854,12 +756,14 @@ int GenGetBinaryOperatorInstr(int tok)
   case '%':
   case tokAssignDiv:
   case tokAssignMod:
-    return MipsInstrDiv;
+    printf("DIVISION/MOD is not supported!\n");
+    return B322InstrHalt;
   case tokUDiv:
   case tokUMod:
   case tokAssignUDiv:
   case tokAssignUMod:
-    return MipsInstrDivU;
+    printf("DIVISION/MOD is not supported!\n");
+    return B322InstrHalt;
   case tokLShift:
   case tokAssignLSh:
     return B322InstrShiftl;
@@ -898,12 +802,12 @@ STATIC
 void GenReadIdent(int regDst, int opSz, int label)
 {
   GenPrintInstr2Operands(B322InstrAddr2reg, 0,
-                         MipsOpLabel, label,
-                         MipsOpRegAt, 0);
+                         B322OpLabel, label,
+                         B322OpRegAt, 0);
 
   GenPrintInstr3Operands(B322InstrRead, 0,
-                         MipsOpConst, 0,
-                         MipsOpRegAt, 0,
+                         B322OpConst, 0,
+                         B322OpRegAt, 0,
                          regDst, 0);
 
   //int instr = B322InstrAddr2reg;
@@ -927,7 +831,7 @@ void GenReadIdent(int regDst, int opSz, int label)
   }
   */
   //GenPrintInstr2Operands(instr, 0,
-  //                       MipsOpLabel, label,
+  //                       B322OpLabel, label,
   //                       regDst, 0);
   //GenPostIdentAccess();
 }
@@ -955,7 +859,7 @@ void GenReadLocal(int regDst, int opSz, int ofs)
   }
   */
   GenPrintInstr2Operands(instr, 0,
-                         MipsOpIndRegFp, ofs,
+                         B322OpIndRegFp, ofs,
                          regDst, 0);
 }
 
@@ -982,7 +886,7 @@ void GenReadIndirect(int regDst, int regSrc, int opSz)
   }
   */
   GenPrintInstr2Operands(instr, 0,
-                         regSrc + MipsOpIndRegZero, 0,
+                         regSrc + B322OpIndRegZero, 0,
                          regDst, 0);
 }
 
@@ -990,12 +894,12 @@ STATIC
 void GenWriteIdent(int regSrc, int opSz, int label)
 {
   GenPrintInstr2Operands(B322InstrAddr2reg, 0,
-                         MipsOpLabel, label,
-                         MipsOpRegAt, 0);
+                         B322OpLabel, label,
+                         B322OpRegAt, 0);
 
   GenPrintInstr3Operands(B322InstrWrite, 0,
-                         MipsOpConst, 0,
-                         MipsOpRegAt, 0,
+                         B322OpConst, 0,
+                         B322OpRegAt, 0,
                          regSrc, 0);
   //int instr = B322InstrWrite;
   //GenPreIdentAccess(label);
@@ -1030,7 +934,7 @@ void GenWriteLocal(int regSrc, int opSz, int ofs)
   }
   */
   GenPrintInstr2Operands(instr, 0,
-                         MipsOpIndRegFp, ofs,
+                         B322OpIndRegFp, ofs,
                          regSrc, 0);
 }
 
@@ -1050,7 +954,7 @@ void GenWriteIndirect(int regDst, int regSrc, int opSz)
   }
   */
   GenPrintInstr2Operands(instr, 0,
-                         regDst + MipsOpIndRegZero, 0,
+                         regDst + B322OpIndRegZero, 0,
                          regSrc, 0);
 }
 
@@ -1065,7 +969,7 @@ void GenIncDecIdent(int regDst, int opSz, int label, int tok)
   GenReadIdent(regDst, opSz, label);
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         MipsOpConst, 1,
+                         B322OpConst, 1,
                          regDst, 0);
   GenWriteIdent(regDst, opSz, label);
   GenExtendRegIfNeeded(regDst, opSz);
@@ -1082,7 +986,7 @@ void GenIncDecLocal(int regDst, int opSz, int ofs, int tok)
   GenReadLocal(regDst, opSz, ofs);
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         MipsOpConst, 1,
+                         B322OpConst, 1,
                          regDst, 0);
   GenWriteLocal(regDst, opSz, ofs);
   GenExtendRegIfNeeded(regDst, opSz);
@@ -1099,7 +1003,7 @@ void GenIncDecIndirect(int regDst, int regSrc, int opSz, int tok)
   GenReadIndirect(regDst, regSrc, opSz);
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         MipsOpConst, 1,
+                         B322OpConst, 1,
                          regDst, 0);
   GenWriteIndirect(regSrc, regDst, opSz);
   GenExtendRegIfNeeded(regDst, opSz);
@@ -1116,13 +1020,13 @@ void GenPostIncDecIdent(int regDst, int opSz, int label, int tok)
   GenReadIdent(regDst, opSz, label);
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         MipsOpConst, 1,
+                         B322OpConst, 1,
                          regDst, 0);
   GenWriteIdent(regDst, opSz, label);
 
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         MipsOpConst, -1,
+                         B322OpConst, -1,
                          regDst, 0);
   GenExtendRegIfNeeded(regDst, opSz);
 }
@@ -1138,13 +1042,13 @@ void GenPostIncDecLocal(int regDst, int opSz, int ofs, int tok)
   GenReadLocal(regDst, opSz, ofs);
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         MipsOpConst, 1,
+                         B322OpConst, 1,
                          regDst, 0);
   GenWriteLocal(regDst, opSz, ofs);
 
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         MipsOpConst, -1,
+                         B322OpConst, -1,
                          regDst, 0);
   GenExtendRegIfNeeded(regDst, opSz);
 }
@@ -1160,20 +1064,20 @@ void GenPostIncDecIndirect(int regDst, int regSrc, int opSz, int tok)
   GenReadIndirect(regDst, regSrc, opSz);
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         MipsOpConst, 1,
+                         B322OpConst, 1,
                          regDst, 0);
   GenWriteIndirect(regSrc, regDst, opSz);
 
   GenPrintInstr3Operands(instr, 0,
                          regDst, 0,
-                         MipsOpConst, -1,
+                         B322OpConst, -1,
                          regDst, 0);
   GenExtendRegIfNeeded(regDst, opSz);
 }
 
 int CanUseTempRegs;
 int TempsUsed;
-int GenWreg = MipsOpRegV0; // current working register (V0 or Tn or An)
+int GenWreg = B322OpRegV0; // current working register (V0 or Tn or An)
 int GenLreg, GenRreg; // left operand register and right operand register after GenPopReg()
 
 /*
@@ -1226,16 +1130,16 @@ void GenWregInc(int inc)
   if (inc > 0)
   {
     // Advance the current working register to the next available temporary register
-    if (GenWreg == MipsOpRegV0)
-      GenWreg = MipsOpRegT0;
+    if (GenWreg == B322OpRegV0)
+      GenWreg = B322OpRegT0;
     else
       GenWreg++;
   }
   else
   {
     // Return to the previous current working register
-    if (GenWreg == MipsOpRegT0)
-      GenWreg = MipsOpRegV0;
+    if (GenWreg == B322OpRegT0)
+      GenWreg = B322OpRegV0;
     else
       GenWreg--;
   }
@@ -1252,12 +1156,12 @@ void GenPushReg(void)
   }
 
   GenPrintInstr3Operands(B322InstrSub, 0,
-                         MipsOpRegSp, 0,
-                         MipsOpConst, 4, //WORDSIZE
-                         MipsOpRegSp, 0);
+                         B322OpRegSp, 0,
+                         B322OpConst, 4, //WORDSIZE
+                         B322OpRegSp, 0);
 
   GenPrintInstr2Operands(B322InstrWrite, 0,
-                         MipsOpIndRegSp, 0,
+                         B322OpIndRegSp, 0,
                          GenWreg, 0);
 
   TempsUsed++;
@@ -1277,13 +1181,13 @@ void GenPopReg(void)
   }
 
   GenPrintInstr2Operands(B322InstrRead, 0,
-                         MipsOpIndRegSp, 0,
+                         B322OpIndRegSp, 0,
                          TEMP_REG_A, 0);
 
   GenPrintInstr3Operands(B322InstrAdd, 0,
-                         MipsOpRegSp, 0,
-                         MipsOpConst, 4, //WORDSIZE
-                         MipsOpRegSp, 0);
+                         B322OpRegSp, 0,
+                         B322OpConst, 4, //WORDSIZE
+                         B322OpRegSp, 0);
   GenLreg = TEMP_REG_A;
   GenRreg = GenWreg;
 }
@@ -1677,9 +1581,9 @@ void GenCmp(int* idx, int op)
       GenPrintInstr3Operands((condbranch == 1) ? B322InstrBne : B322InstrBeq, 0,
                              GenLreg, 0,
                              GenRreg, 0,
-                             MipsOpConst, 2);
+                             B322OpConst, 2);
       GenPrintInstr1Operand(B322InstrJump, 0,
-                             MipsOpNumLabel, label);
+                             B322OpNumLabel, label);
       break;
     case 'c':
       condbranch ^= 3;
@@ -1687,10 +1591,10 @@ void GenCmp(int* idx, int op)
     case 'd':
       GenPrintInstr3Operands((condbranch == 1) ? B322InstrBne : B322InstrBeq, 0,
                              GenWreg, 0,
-                             MipsOpRegZero, 0,
-                             MipsOpConst, 2);
+                             B322OpRegZero, 0,
+                             B322OpConst, 2);
       GenPrintInstr1Operand(B322InstrJump, 0,
-                             MipsOpNumLabel, label);
+                             B322OpNumLabel, label);
       break;
     case 'e':
       condbranch ^= 3;
@@ -1704,18 +1608,18 @@ void GenCmp(int* idx, int op)
       {
         GenPrintInstr3Operands(B322InstrBge, 0,
                                GenWreg, 0,
-                               MipsOpRegZero, 0,
-                               MipsOpConst, 2);
+                               B322OpRegZero, 0,
+                               B322OpConst, 2);
       }
       else
       {
         GenPrintInstr3Operands(B322InstrBgt, 0,
-                               MipsOpRegZero, 0,
+                               B322OpRegZero, 0,
                                GenWreg, 0,
-                               MipsOpConst, 2);
+                               B322OpConst, 2);
       }
       GenPrintInstr1Operand(B322InstrJump, 0,
-                             MipsOpNumLabel, label);
+                             B322OpNumLabel, label);
       break;
     case 'g':
       condbranch ^= 3;
@@ -1728,77 +1632,77 @@ void GenCmp(int* idx, int op)
       if (condbranch == 1)
       {
         GenPrintInstr3Operands(B322InstrBge, 0,
-                               MipsOpRegZero, 0,
+                               B322OpRegZero, 0,
                                GenWreg, 0,
-                               MipsOpConst, 2);
+                               B322OpConst, 2);
       }
       else
       {
         GenPrintInstr3Operands(B322InstrBgt, 0,
                                GenWreg, 0,
-                               MipsOpRegZero, 0,
-                               MipsOpConst, 2);
+                               B322OpRegZero, 0,
+                               B322OpConst, 2);
       }
       GenPrintInstr1Operand(B322InstrJump, 0,
-                             MipsOpNumLabel, label);
+                             B322OpNumLabel, label);
       break;
     case 'i':
       GenPrintInstr3Operands(B322InstrBge, 0,
                              GenLreg, 0,
                              GenRreg, 0,
-                             MipsOpConst, 3);
+                             B322OpConst, 3);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 1,
+                               B322OpConst, 1,
                                GenWreg, 0);
       GenPrintInstr1Operand(B322InstrJumpo, 0,
-                             MipsOpConst, 2);
+                             B322OpConst, 2);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 0,
+                               B322OpConst, 0,
                                GenWreg, 0);
       break;
     case 'j':
       GenPrintInstr3Operands(B322InstrBge, 0,
                              GenRreg, 0,
                              GenLreg, 0,
-                             MipsOpConst, 3);
+                             B322OpConst, 3);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 1,
+                               B322OpConst, 1,
                                GenWreg, 0);
       GenPrintInstr1Operand(B322InstrJumpo, 0,
-                             MipsOpConst, 2);
+                             B322OpConst, 2);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 0,
+                               B322OpConst, 0,
                                GenWreg, 0);
       break;
     case 'k':
       GenPrintInstr3Operands(B322InstrBge, 0,
                              GenWreg, 0,
-                             MipsOpRegZero, 0,
-                             MipsOpConst, 3);
+                             B322OpRegZero, 0,
+                             B322OpConst, 3);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 1,
+                               B322OpConst, 1,
                                GenWreg, 0);
       GenPrintInstr1Operand(B322InstrJumpo, 0,
-                             MipsOpConst, 2);
+                             B322OpConst, 2);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 0,
+                               B322OpConst, 0,
                                GenWreg, 0);
       break;
     case 'l':
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 1,
+                               B322OpConst, 1,
                                TEMP_REG_A, 0);
       GenPrintInstr3Operands(B322InstrBge, 0,
                              GenWreg, 0,
                              TEMP_REG_A, 0,
-                             MipsOpConst, 3);
+                             B322OpConst, 3);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 1,
+                               B322OpConst, 1,
                                GenWreg, 0);
       GenPrintInstr1Operand(B322InstrJumpo, 0,
-                             MipsOpConst, 2);
+                             B322OpConst, 2);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 0,
+                               B322OpConst, 0,
                                GenWreg, 0);
       break;
     case 'n':
@@ -1806,64 +1710,64 @@ void GenCmp(int* idx, int op)
       // fallthrough
     case 'm':
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, constval,
+                               B322OpConst, constval,
                                TEMP_REG_A, 0);
       GenPrintInstr3Operands(B322InstrBge, 0,
                              GenWreg, 0,
                              TEMP_REG_A, 0,
-                             MipsOpConst, 3);
+                             B322OpConst, 3);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 1,
+                               B322OpConst, 1,
                                GenWreg, 0);
       GenPrintInstr1Operand(B322InstrJumpo, 0,
-                             MipsOpConst, 2);
+                             B322OpConst, 2);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 0,
+                               B322OpConst, 0,
                                GenWreg, 0);
       break;
     case 'o':
       GenPrintInstr3Operands(B322InstrBge, 0,
-                             MipsOpRegZero, 0,
+                             B322OpRegZero, 0,
                              GenWreg, 0,
-                             MipsOpConst, 3);
+                             B322OpConst, 3);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 1,
+                               B322OpConst, 1,
                                GenWreg, 0);
       GenPrintInstr1Operand(B322InstrJumpo, 0,
-                             MipsOpConst, 2);
+                             B322OpConst, 2);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 0,
+                               B322OpConst, 0,
                                GenWreg, 0);
       break;
     case 'p':
       GenPrintInstr3Operands(B322InstrBge, 0,
-                             MipsOpRegZero, 0,
+                             B322OpRegZero, 0,
                              GenWreg, 0,
-                             MipsOpConst, 3);
+                             B322OpConst, 3);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 1,
+                               B322OpConst, 1,
                                GenWreg, 0);
       GenPrintInstr1Operand(B322InstrJumpo, 0,
-                             MipsOpConst, 2);
+                             B322OpConst, 2);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 0,
+                               B322OpConst, 0,
                                GenWreg, 0);
       break;
     case 'q':
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 1,
-                               MipsOpRegAt, 0);
+                               B322OpConst, 1,
+                               B322OpRegAt, 0);
       GenPrintInstr3Operands(B322InstrBge, 0,
                              GenWreg, 0,
-                             MipsOpRegAt, 0,
-                             MipsOpConst, 3);
+                             B322OpRegAt, 0,
+                             B322OpConst, 3);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 1,
+                               B322OpConst, 1,
                                GenWreg, 0);
       GenPrintInstr1Operand(B322InstrJumpo, 0,
-                             MipsOpConst, 2);
+                             B322OpConst, 2);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 0,
+                               B322OpConst, 0,
                                GenWreg, 0);
       break;
     case 'r':
@@ -1874,20 +1778,20 @@ void GenCmp(int* idx, int op)
       break;
     case 's':
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 1,
-                               MipsOpRegAt, 0);
+                               B322OpConst, 1,
+                               B322OpRegAt, 0);
       GenPrintInstr3Operands(B322InstrXor, 0,
                              GenWreg, 0,
-                             MipsOpRegAt, 0,
+                             B322OpRegAt, 0,
                              GenWreg, 0);
       break;
     case 't':
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, constval,
-                               MipsOpRegAt, 0);
+                               B322OpConst, constval,
+                               B322OpRegAt, 0);
       GenPrintInstr3Operands(B322InstrXor, 0,
                              GenWreg, 0,
-                             MipsOpRegAt, 0,
+                             B322OpRegAt, 0,
                              GenWreg, 0);
       break;
     }
@@ -1941,7 +1845,7 @@ void GenExpr0(void)
 
   CanUseTempRegs = maxCallDepth == 0;
   TempsUsed = 0;
-  if (GenWreg != MipsOpRegV0)
+  if (GenWreg != B322OpRegV0)
     errorInternal(102);
 
   for (i = 0; i < sp; i++)
@@ -1987,7 +1891,7 @@ void GenExpr0(void)
           GenPushReg();
 
         GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, v,
+                               B322OpConst, v,
                                GenWreg, 0);
       }
       gotUnary = 1;
@@ -2004,7 +1908,7 @@ void GenExpr0(void)
                            t == tokPostDec)))
       {
         GenPrintInstr2Operands(B322InstrAddr2reg, 0,
-                               MipsOpLabel, v,
+                               B322OpLabel, v,
                                GenWreg, 0);
       }
       gotUnary = 1;
@@ -2020,8 +1924,8 @@ void GenExpr0(void)
                            t == tokPostDec)))
       {
         GenPrintInstr3Operands(B322InstrAdd, 0,
-                               MipsOpRegFp, 0,
-                               MipsOpConst, v,
+                               B322OpRegFp, 0,
+                               B322OpConst, v,
                                GenWreg, 0);
       }
       gotUnary = 1;
@@ -2037,7 +1941,7 @@ void GenExpr0(void)
       if (maxCallDepth == 1 && paramOfs >= 0 && paramOfs <= 12)
       {
         // Work directly in A0-A3 instead of working in V0 and avoid copying V0 to A0-A3
-        GenWreg = MipsOpRegA0 + division(paramOfs, 4);
+        GenWreg = B322OpRegA0 + division(paramOfs, 4);
       }
       break;
 
@@ -2049,7 +1953,7 @@ void GenExpr0(void)
           // Got the last on-stack parameter, the rest will go in A0-A3
           GenPushReg();
           gotUnary = 0;
-          GenWreg = MipsOpRegA3;
+          GenWreg = B322OpRegA3;
         }
         if (paramOfs >= 0 && paramOfs <= 12)
         {
@@ -2057,7 +1961,7 @@ void GenExpr0(void)
           if (paramOfs)
             GenWreg--;
           else
-            GenWreg = MipsOpRegV0;
+            GenWreg = B322OpRegV0;
           gotUnary = 0;
         }
         paramOfs -= 4;
@@ -2070,20 +1974,20 @@ void GenExpr0(void)
       {
         if (v >= 4)
           GenPrintInstr2Operands(B322InstrRead, 0,
-                                 MipsOpIndRegSp, 0,
-                                 MipsOpRegA0, 0);
+                                 B322OpIndRegSp, 0,
+                                 B322OpRegA0, 0);
         if (v >= 8)
           GenPrintInstr2Operands(B322InstrRead, 0,
-                                 MipsOpIndRegSp, 4,
-                                 MipsOpRegA1, 0);
+                                 B322OpIndRegSp, 4,
+                                 B322OpRegA1, 0);
         if (v >= 12)
           GenPrintInstr2Operands(B322InstrRead, 0,
-                                 MipsOpIndRegSp, 8,
-                                 MipsOpRegA2, 0);
+                                 B322OpIndRegSp, 8,
+                                 B322OpRegA2, 0);
         if (v >= 16)
           GenPrintInstr2Operands(B322InstrRead, 0,
-                                 MipsOpIndRegSp, 12,
-                                 MipsOpRegA3, 0);
+                                 B322OpIndRegSp, 12,
+                                 B322OpRegA3, 0);
       }
       else
       {
@@ -2092,24 +1996,24 @@ void GenExpr0(void)
       if (stack[i - 1][0] == tokIdent)
       {
         GenPrintInstr1Operand(B322InstrSavpc, 0,
-                              MipsOpRegRa, 0);
+                              B322OpRegRa, 0);
         GenPrintInstr3Operands(B322InstrAdd, 0,
-                             MipsOpRegRa, 0,
-                             MipsOpConst, 3,
-                             MipsOpRegRa, 0);
+                             B322OpRegRa, 0,
+                             B322OpConst, 3,
+                             B322OpRegRa, 0);
         GenPrintInstr1Operand(B322InstrJump, 0,
-                              MipsOpLabel, stack[i - 1][1]);
+                              B322OpLabel, stack[i - 1][1]);
       }
       else
       {
         GenPrintInstr1Operand(B322InstrSavpc, 0,
-                              MipsOpRegRa, 0);
+                              B322OpRegRa, 0);
         GenPrintInstr3Operands(B322InstrAdd, 0,
-                             MipsOpRegRa, 0,
-                             MipsOpConst, 3,
-                             MipsOpRegRa, 0);
+                             B322OpRegRa, 0,
+                             B322OpConst, 3,
+                             B322OpRegRa, 0);
         GenPrintInstr2Operands(B322InstrJumpr, 0,
-                              MipsOpConst, 0,
+                              B322OpConst, 0,
                               GenWreg, 0);
       }
       if (v < 16)
@@ -2140,7 +2044,7 @@ void GenExpr0(void)
       break;
     case tokUnaryMinus:
       GenPrintInstr3Operands(B322InstrSub, 0,
-                             MipsOpRegZero, 0,
+                             B322OpRegZero, 0,
                              GenWreg, 0,
                              GenWreg, 0);
       break;
@@ -2159,7 +2063,7 @@ void GenExpr0(void)
         int instr = GenGetBinaryOperatorInstr(tok);
         GenPrintInstr3Operands(instr, 0,
                                GenWreg, 0,
-                               MipsOpConst, stack[i - 1][1],
+                               B322OpConst, stack[i - 1][1],
                                GenWreg, 0);
       }
       else
@@ -2178,15 +2082,17 @@ void GenExpr0(void)
     case '%':
     case tokUMod:
       {
+        printf("DIVISION/MOD is not supported!\n");
+        /*
         GenPopReg();
         if (tok == '/' || tok == '%')
           GenPrintInstr3Operands(MipsInstrDiv, 0,
-                                 MipsOpRegZero, 0,
+                                 B322OpRegZero, 0,
                                  GenLreg, 0,
                                  GenRreg, 0);
         else
           GenPrintInstr3Operands(MipsInstrDivU, 0,
-                                 MipsOpRegZero, 0,
+                                 B322OpRegZero, 0,
                                  GenLreg, 0,
                                  GenRreg, 0);
         if (tok == '%' || tok == tokUMod)
@@ -2195,6 +2101,7 @@ void GenExpr0(void)
         else
           GenPrintInstr1Operand(MipsInstrMfLo, 0,
                                 GenWreg, 0);
+        */
       }
       break;
 
@@ -2211,7 +2118,7 @@ void GenExpr0(void)
       else
       {
         GenPrintInstr3Operands(B322InstrOr, 0,
-                               MipsOpRegZero, 0,
+                               B322OpRegZero, 0,
                                GenWreg, 0,
                                TEMP_REG_A, 0);
         GenIncDecIndirect(GenWreg, TEMP_REG_A, v, tok);
@@ -2230,7 +2137,7 @@ void GenExpr0(void)
       else
       {
         GenPrintInstr3Operands(B322InstrOr, 0,
-                               MipsOpRegZero, 0,
+                               B322OpRegZero, 0,
                                GenWreg, 0,
                                TEMP_REG_A, 0);
         GenPostIncDecIndirect(GenWreg, TEMP_REG_A, v, tok);
@@ -2245,7 +2152,7 @@ void GenExpr0(void)
         if (GenWreg == GenLreg)
         {
           GenPrintInstr3Operands(B322InstrOr, 0,
-                                 MipsOpRegZero, 0,
+                                 B322OpRegZero, 0,
                                  GenLreg, 0,
                                  TEMP_REG_B, 0);
 
@@ -2260,7 +2167,7 @@ void GenExpr0(void)
         {
           // GenWreg == GenRreg here
           GenPrintInstr3Operands(B322InstrOr, 0,
-                                 MipsOpRegZero, 0,
+                                 B322OpRegZero, 0,
                                  GenRreg, 0,
                                  TEMP_REG_B, 0);
 
@@ -2310,7 +2217,7 @@ void GenExpr0(void)
         if (GenWreg == GenLreg)
         {
           GenPrintInstr3Operands(B322InstrOr, 0,
-                                 MipsOpRegZero, 0,
+                                 B322OpRegZero, 0,
                                  GenLreg, 0,
                                  TEMP_REG_B, 0);
           lsaved = TEMP_REG_B;
@@ -2320,7 +2227,7 @@ void GenExpr0(void)
         {
           // GenWreg == GenRreg here
           GenPrintInstr3Operands(B322InstrOr, 0,
-                                 MipsOpRegZero, 0,
+                                 B322OpRegZero, 0,
                                  GenRreg, 0,
                                  TEMP_REG_B, 0);
           rsaved = TEMP_REG_B;
@@ -2349,21 +2256,37 @@ void GenExpr0(void)
           GenReadIdent(TEMP_REG_B, v, stack[i - 1][1]);
 
         if (tok == tokAssignDiv || tok == tokAssignMod)
+        {
+          printf("DIVISION/MOD is not supported!\n");
+          /*
           GenPrintInstr3Operands(MipsInstrDiv, 0,
-                                 MipsOpRegZero, 0,
+                                 B322OpRegZero, 0,
                                  TEMP_REG_B, 0,
-                                 GenWreg, 0);
+                                 GenWreg, 0);*/
+        }
         else
+        {
+          printf("DIVISION/MOD is not supported!\n");
+          /*
           GenPrintInstr3Operands(MipsInstrDivU, 0,
-                                 MipsOpRegZero, 0,
+                                 B322OpRegZero, 0,
                                  TEMP_REG_B, 0,
-                                 GenWreg, 0);
+                                 GenWreg, 0);*/
+        }
         if (tok == tokAssignMod || tok == tokAssignUMod)
+        {
+          printf("DIVISION/MOD is not supported!\n");
+          /*
           GenPrintInstr1Operand(MipsInstrMfHi, 0,
-                                GenWreg, 0);
+                                GenWreg, 0);*/
+        }
         else
+        {
+          printf("DIVISION/MOD is not supported!\n");
+          /*
           GenPrintInstr1Operand(MipsInstrMfLo, 0,
-                                GenWreg, 0);
+                                GenWreg, 0);*/
+        }
 
         if (stack[i - 1][0] == tokRevLocalOfs)
           GenWriteLocal(GenWreg, v, stack[i - 1][1]);
@@ -2377,7 +2300,7 @@ void GenExpr0(void)
         if (GenWreg == GenLreg)
         {
           GenPrintInstr3Operands(B322InstrOr, 0,
-                                 MipsOpRegZero, 0,
+                                 B322OpRegZero, 0,
                                  GenLreg, 0,
                                  TEMP_REG_B, 0);
           lsaved = TEMP_REG_B;
@@ -2387,7 +2310,7 @@ void GenExpr0(void)
         {
           // GenWreg == GenRreg here
           GenPrintInstr3Operands(B322InstrOr, 0,
-                                 MipsOpRegZero, 0,
+                                 B322OpRegZero, 0,
                                  GenRreg, 0,
                                  TEMP_REG_B, 0);
           rsaved = TEMP_REG_B;
@@ -2396,21 +2319,37 @@ void GenExpr0(void)
 
         GenReadIndirect(GenWreg, GenLreg, v); // destroys either GenLreg or GenRreg because GenWreg coincides with one of them
         if (tok == tokAssignDiv || tok == tokAssignMod)
+        {
+          printf("DIVISION/MOD is not supported!\n");
+          /*
           GenPrintInstr3Operands(MipsInstrDiv, 0,
-                                 MipsOpRegZero, 0,
+                                 B322OpRegZero, 0,
                                  GenWreg, 0,
-                                 rsaved, 0);
+                                 rsaved, 0);*/
+        }
         else
+        {
+          printf("DIVISION/MOD is not supported!\n");
+          /*
           GenPrintInstr3Operands(MipsInstrDivU, 0,
-                                 MipsOpRegZero, 0,
+                                 B322OpRegZero, 0,
                                  GenWreg, 0,
-                                 rsaved, 0);
+                                 rsaved, 0);*/
+        }
         if (tok == tokAssignMod || tok == tokAssignUMod)
+        {
+          printf("DIVISION/MOD is not supported!\n");
+          /*
           GenPrintInstr1Operand(MipsInstrMfHi, 0,
-                                GenWreg, 0);
+                                GenWreg, 0);*/
+        }
         else
+        {
+          printf("DIVISION/MOD is not supported!\n");
+          /*
           GenPrintInstr1Operand(MipsInstrMfLo, 0,
-                                GenWreg, 0);
+                                GenWreg, 0);*/
+        }
         GenWriteIndirect(lsaved, GenWreg, v);
       }
       GenExtendRegIfNeeded(GenWreg, v);
@@ -2431,7 +2370,7 @@ void GenExpr0(void)
         GenWriteIndirect(GenLreg, GenRreg, v);
         if (GenWreg != GenRreg)
           GenPrintInstr3Operands(B322InstrOr, 0,
-                                 MipsOpRegZero, 0,
+                                 B322OpRegZero, 0,
                                  GenRreg, 0,
                                  GenWreg, 0);
       }
@@ -2441,15 +2380,15 @@ void GenExpr0(void)
     case tokAssign0: // assignment of 0, while throwing away the expression result value
       if (stack[i - 1][0] == tokRevLocalOfs)
       {
-        GenWriteLocal(MipsOpRegZero, v, stack[i - 1][1]);
+        GenWriteLocal(B322OpRegZero, v, stack[i - 1][1]);
       }
       else if (stack[i - 1][0] == tokRevIdent)
       {
-        GenWriteIdent(MipsOpRegZero, v, stack[i - 1][1]);
+        GenWriteIdent(B322OpRegZero, v, stack[i - 1][1]);
       }
       else
       {
-        GenWriteIndirect(GenWreg, MipsOpRegZero, v);
+        GenWriteIndirect(GenWreg, B322OpRegZero, v);
       }
       break;
 
@@ -2471,47 +2410,47 @@ void GenExpr0(void)
           wreg = 0
       GenPrintInstr3Operands(MipsInstrSLTU, 0,
                              GenWreg, 0,
-                             MipsOpRegZero, 0,
+                             B322OpRegZero, 0,
                              GenWreg, 0);
       */
       GenPrintInstr3Operands(B322InstrBgt, 0,
                              GenWreg, 0,
-                             MipsOpRegZero, 0,
-                             MipsOpConst, 3);
+                             B322OpRegZero, 0,
+                             B322OpConst, 3);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 0,
+                               B322OpConst, 0,
                                GenWreg, 0);
       GenPrintInstr1Operand(B322InstrJumpo, 0,
-                             MipsOpConst, 2);
+                             B322OpConst, 2);
       GenPrintInstr2Operands(B322InstrLoad, 0,
-                               MipsOpConst, 1,
+                               B322OpConst, 1,
                                GenWreg, 0);
       break;
 
     case tokSChar:
     GenPrintInstr3Operands(B322InstrShiftl, 0,
                              GenWreg, 0,
-                             MipsOpConst, 24,
+                             B322OpConst, 24,
                              GenWreg, 0);
       GenPrintInstr3Operands(B322InstrShiftr, 0, //TODO this should have also replicated the sign bit (SRA)
                              GenWreg, 0,
-                             MipsOpConst, 24,
+                             B322OpConst, 24,
                              GenWreg, 0);
       break;
     case tokUChar:
       GenPrintInstr3Operands(B322InstrAnd, 0,
                              GenWreg, 0,
-                             MipsOpConst, 0xFF,
+                             B322OpConst, 0xFF,
                              GenWreg, 0);
       break;
     case tokShort:
       GenPrintInstr3Operands(B322InstrShiftl, 0,
                              GenWreg, 0,
-                             MipsOpConst, 16,
+                             B322OpConst, 16,
                              GenWreg, 0);
       GenPrintInstr3Operands(B322InstrShiftr, 0, //TODO this should have also replicated the sign bit (SRA)
                              GenWreg, 0,
-                             MipsOpConst, 16,
+                             B322OpConst, 16,
                              GenWreg, 0);
       break;
     case tokUShort:
@@ -2519,14 +2458,14 @@ void GenExpr0(void)
       GenPrintInstr3Operands(MipsInstrAnd, 0,
                              GenWreg, 0,
                              GenWreg, 0,
-                             MipsOpConst, 0xFFFF);*/
+                             B322OpConst, 0xFFFF);*/
       GenPrintInstr3Operands(B322InstrShiftl, 0,
                              GenWreg, 0,
-                             MipsOpConst, 16,
+                             B322OpConst, 16,
                              GenWreg, 0);
       GenPrintInstr3Operands(B322InstrShiftr, 0,
                              GenWreg, 0,
-                             MipsOpConst, 16,
+                             B322OpConst, 16,
                              GenWreg, 0);
       break;
 
@@ -2580,7 +2519,7 @@ void GenExpr0(void)
     }
   }
 
-  if (GenWreg != MipsOpRegV0)
+  if (GenWreg != B322OpRegV0)
     errorInternal(104);
 }
 
@@ -2602,19 +2541,6 @@ void GenDumpChar(int ch)
 
   // Just print as ascii value
   printf2("%d ", ch);
-
-  /*
-  if (ch >= 0x20 && ch <= 0x7E)
-  {
-    if (ch == '"' || ch == '\\')
-      printf2("\\");
-    printf2("%c", ch);
-  }
-  else
-  {
-    printf2("\\%03o", ch);
-  }
-  */
 }
 
 STATIC
@@ -2665,40 +2591,6 @@ void GenFin(void)
 
     puts2(CodeHeaderFooter[1]);
   }
-
-/* should not be defined, so commented out to remove confusion
-#ifndef NO_STRUCT_BY_VAL
-  if (StructPushLabel)
-  {
-    int lbl = LabelCnt++;
-
-    puts2(CodeHeaderFooter[0]);
-
-    GenNumLabel(StructPushLabel);
-
-    puts2(" move r6, r5\n"
-          " addiu r6, r6, 3\n"
-          " li r3, -4\n"
-          " and r6, r6, r3\n"
-          " subu r13, r13, r6\n"
-          " addiu r3, r13, 16\n"
-          " move r2, r3");
-    GenNumLabel(lbl);
-    puts2(" lbu r6, 0 r4\n"
-          " addiu r4, r4, 1\n"
-          " addiu r5, r5, -1\n"
-          " sb r6, 0 r3\n"
-          " addiu r3, r3, 1");
-    printf2(" bne r5, r0, "); GenPrintNumLabel(lbl);
-    puts2("");
-    puts2(" lw r2, 0 r2\n"
-          " addiu r13, r13, 4\n"
-          " j r15");
-
-    puts2(CodeHeaderFooter[1]);
-  }
-#endif
-*/
 
   // Put all ending C specific wrapper code here
   if (compileUserBDOS)

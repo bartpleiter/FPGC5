@@ -7,7 +7,7 @@ CC = gcc
 CFLAGS  = 
 
 # the build target executable:
-SOURCE = smlrc
+SOURCE = bcc
 TARGET = bccALWAYSRECOMPILE
 TARGETNAME = bcc
 
