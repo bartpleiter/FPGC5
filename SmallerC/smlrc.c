@@ -63,12 +63,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef __SMALLER_C__
 
-#include <limits.h>
-#include <stdarg.h>
+//#include <limits.h>
+#define CHAR_BIT        8
+#define UINT_MAX        4294967295U
+#define INT_MIN         -2147483648
+
+//#include <ctype.h>
+// isalpha
+// isalnum
+// isdigit
+
+//#include <string.h>
+// memmove
+// strchr
+// strcat
+// strlen
+// memcpy
+// strncmp
+
+#include <stdarg.h> // only used for printf related stuff and warnings/errors. Should be able to remove by replacing ALL(...) occurrences with a normal print function
 #include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdio.h>
+#include <stdio.h> // I/O functions
 
 //#if UINT_MAX >= 0xFFFFFFFF
 //#define CAN_COMPILE_32BIT
@@ -357,6 +372,227 @@ int fsetpos(FILE*, fpos_t*);
 #define SymGlobalArr 3
 #define SymLocalVar  4
 #define SymLocalArr  5
+
+// Division and Modulo without / and %
+STATIC
+int divmod(int dividend, int divisor, int* rem)
+{
+    int quotient = 1;
+
+    int neg = 1;
+    if ((dividend>0 &&divisor<0)||(dividend<0 && divisor>0))
+        neg = -1;
+
+    // Convert to positive
+    int tempdividend = (dividend < 0) ? -dividend : dividend;
+    int tempdivisor = (divisor < 0) ? -divisor : divisor;
+
+    if (tempdivisor == tempdividend) {
+        *rem = 0;
+        return 1*neg;
+    }
+    else if (tempdividend < tempdivisor) {
+        if (dividend < 0)
+            *rem = tempdividend*neg;
+        else
+            *rem = tempdividend;
+        return 0;
+    }
+    while (tempdivisor<<1 <= tempdividend)
+    {
+        tempdivisor = tempdivisor << 1;
+        quotient = quotient << 1;
+    }
+
+    // Call division recursively
+    if(dividend < 0)
+        quotient = quotient*neg + divmod(-(tempdividend-tempdivisor), divisor, rem);
+    else
+        quotient = quotient*neg + divmod(tempdividend-tempdivisor, divisor, rem);
+     return quotient;
+}
+
+STATIC
+int division(int dividend, int divisor)
+{
+    int rem = 0;
+    return divmod(dividend, divisor, &rem);
+}
+
+STATIC
+int modulo(int dividend, int divisor)
+{
+    int rem = 0;
+    divmod(dividend, divisor, &rem);
+    return rem;
+}
+
+
+// isalpha
+STATIC
+int isalpha(int argument)
+{
+  if (argument >= 'A' && argument <= 'Z')
+    return 2;
+  if (argument >= 'a' && argument <= 'z')
+    return 1;
+  return 0;
+}
+
+// isdigit
+STATIC
+int isdigit(int argument)
+{
+  if (argument >= '0' && argument <= '9')
+    return 1;
+  return 0;
+}
+
+// isalnum
+STATIC
+int isalnum(int argument)
+{
+  if (isdigit(argument) || isalpha(argument))
+    return 1;
+  return 0;
+}
+
+
+
+STATIC
+void* memcpy(void *dest, const void *src, size_t len)
+{
+   // Typecast src and dest addresses to (char *)
+   char *csrc = (char *)src;
+   char *cdest = (char *)dest;
+  
+   // Copy contents of src[] to dest[]
+   int i;
+   for (i=0; i<len; i++)
+       cdest[i] = csrc[i];
+}
+
+STATIC
+void* memmove(void* dest, const void* src, size_t n)
+{
+  unsigned char* from = (unsigned char*) src;
+  unsigned char* to = (unsigned char*) dest;
+
+  if (from == to || n == 0)
+    return dest;
+  if (to > from && to-from < (int)n) {
+    /* to overlaps with from */
+    /*  <from......>         */
+    /*         <to........>  */
+    /* copy in reverse, to avoid overwriting from */
+    int i;
+    for(i=n-1; i>=0; i--)
+      to[i] = from[i];
+    return dest;
+  }
+  if (from > to && from-to < (int)n) {
+    /* to overlaps with from */
+    /*        <from......>   */
+    /*  <to........>         */
+    /* copy forwards, to avoid overwriting from */
+    size_t i;
+    for(i=0; i<n; i++)
+      to[i] = from[i];
+    return dest;
+  }
+  memcpy(dest, src, n);
+  return dest;
+}
+
+// Function to implement `strcpy()` function
+STATIC
+char* strcpy(char* destination, const char* source)
+{
+    // return if no memory is allocated to the destination
+    if (destination == NULL) {
+        return NULL;
+    }
+ 
+    // take a pointer pointing to the beginning of the destination string
+    char *ptr = destination;
+ 
+    // copy the C-string pointed by source into the array
+    // pointed by destination
+    while (*source != '\0')
+    {
+        *destination = *source;
+        destination++;
+        source++;
+    }
+ 
+    // include the terminating null character
+    *destination = '\0';
+ 
+    // the destination is returned by standard `strcpy()`
+    return ptr;
+}
+
+
+STATIC
+size_t strlen(const char *str)
+{
+        const char *s;
+        for (s = str; *s; ++s);
+        return (s - str);
+}
+
+STATIC
+char* strcat (char *dest, const char *src)
+{
+  strcpy (dest + strlen (dest), src);
+  return dest;
+}
+
+STATIC
+char* strchr (const char *s, int c)
+{
+  do {
+    if (*s == c)
+      {
+        return (char*)s;
+      }
+  } while (*s++);
+  return (0);
+}
+
+
+STATIC
+int strcmp(const char* s1, const char* s2)
+{
+  while(*s1 && (*s1 == *s2))
+  {
+    s1++;
+    s2++;
+  }
+  return *(unsigned char*)s1 - *(unsigned char*)s2;
+}
+
+//STATIC
+
+int strncmp(const char * s1, const char * s2, size_t n )
+{
+  while ( n && *s1 && ( *s1 == *s2 ) )
+  {
+    ++s1;
+    ++s2;
+    --n;
+  }
+  if ( n == 0 )
+  {
+    return 0;
+  }
+  else
+  {
+    return ( *(unsigned char *)s1 - *(unsigned char *)s2 );
+  }
+}
+
+
 
 // all public prototypes
 STATIC
@@ -981,7 +1217,7 @@ int GetTokenByWord(char* word)
 {
   unsigned i;
 
-  for (i = 0; i < sizeof rws / sizeof rws[0]; i++)
+  for (i = 0; i < division(sizeof rws, sizeof rws[0]); i++)
     if (!strcmp(rws[i], word))
       return rwtk[i];
 
@@ -1042,12 +1278,12 @@ char* GetTokenName(int token)
 /* +-~* /% &|^! << >> && || < <= > >= == !=  () *[] ++ -- = += -= ~= *= /= %= &= |= ^= <<= >>= {} ,;: -> ... */
 
   // Tokens other than reserved keywords:
-  for (i = 0; i < sizeof tktk / sizeof tktk[0]; i++)
+  for (i = 0; i < division(sizeof tktk , sizeof tktk[0]); i++)
     if (tktk[i] == token)
       return tks[i];
 
   // Reserved keywords:
-  for (i = 0; i < sizeof rws / sizeof rws[0]; i++)
+  for (i = 0; i < division(sizeof rws , sizeof rws[0]); i++)
     if (rwtk[i] == token)
       return rws[i];
 
@@ -1610,8 +1846,8 @@ int GetNumber(void)
       if (ch >= 'a') ch -= 'a' - 10;
       else if (ch >= 'A') ch -= 'A' - 10;
       else ch -= '0';
-      if (PrepDontSkipTokens && (n * 16 / 16 != n || n * 16 + ch < n * 16))
-        error(eTooBig);
+      //if (PrepDontSkipTokens && (n * 16 / 16 != n || n * 16 + ch < n * 16))
+      //  error(eTooBig);
       n = n * 16 + ch;
       ShiftCharN(1);
       cnt++;
@@ -1665,9 +1901,9 @@ int GetNumber(void)
       while (isdigit((ch = *p) & 0xFFu))
       {
         ch -= '0';
-        if (n * 10 / 10 != n ||
+        if (//n * 10 / 10 != n ||
             n * 10 + ch < n * 10 ||
-            n * 10 + ch > UINT_MAX / 2)
+            n * 10 + ch > UINT_MAX >> 1)
         {
           if (PrepDontSkipTokens)
             error(eTooBig);
@@ -1720,8 +1956,8 @@ int GetNumber(void)
         ch = ConstDigits[i];
         if (ch >= base)
           error("Invalid octal constant\n");
-        if (PrepDontSkipTokens && (n * base / base != n || n * base + ch < n * base))
-          error(eTooBig);
+        //if (PrepDontSkipTokens && (n * base / base != n || n * base + ch < n * base))
+        //  error(eTooBig);
         n = n * base + ch;
       }
     }
@@ -1735,7 +1971,7 @@ int GetNumber(void)
     while ((ch = *p) >= '0' && ch < base + '0')
     {
       ch -= '0';
-      if (PrepDontSkipTokens && (n * base / base != n || n * base + ch < n * base))
+      if (PrepDontSkipTokens && (n * base + ch < n * base)) //n * base / base != n || 
         error(eTooBig);
       n = n * base + ch;
       ShiftCharN(1);
@@ -2577,7 +2813,7 @@ int isop(int tok)
     '?'
   };
   unsigned i;
-  for (i = 0; i < sizeof toks / sizeof toks[0]; i++)
+  for (i = 0; i < division(sizeof toks , sizeof toks[0]); i++)
     if (toks[i] == tok)
       return 1;
   return 0;
@@ -2641,8 +2877,8 @@ char* lab2str(char* p, int n)
 {
   do
   {
-    *--p = '0' + n % 10;
-    n /= 10;
+    *--p = '0' + modulo(n , 10);
+    n = division(n, 10);
   } while (n);
 
   return p;
@@ -2773,7 +3009,7 @@ int exprUnary(int tok, int* gotUnary, int commaSeparator, int argOfSizeOf)
       // DONE: can this break incomplete yet declarations???, e.g.: int x[sizeof("az")][5];
       PushSyntax2(tokIdent, id = AddNumericIdent(lbl));
       PushSyntax('[');
-      PushSyntax2(tokNumUint, sz / chsz);
+      PushSyntax2(tokNumUint, division(sz, chsz));
       PushSyntax(']');
 #ifndef NO_WCHAR
       PushSyntax(wide ? WideCharType1 : tokChar);
@@ -3403,7 +3639,7 @@ int divCheckAndCalc(int tok, int* psl, int sr, int Unsigned, int ConstExpr[2])
   {
     return !div0;
   }
-  else if (!Unsigned && ((sl == INT_MIN && sr == -1) || sl / sr != truncInt(sl / sr)))
+  else if (!Unsigned && ((sl == INT_MIN && sr == -1) || division(sl , sr) != truncInt(division(sl , sr))))
   {
     div0 = 1;
   }
@@ -3412,9 +3648,9 @@ int divCheckAndCalc(int tok, int* psl, int sr, int Unsigned, int ConstExpr[2])
     if (Unsigned)
     {
       if (tok == '/')
-        sl = (int)((unsigned)sl / sr);
+        sl = (int)((unsigned)division(sl , sr));
       else
-        sl = (int)((unsigned)sl % sr);
+        sl = (int)((unsigned)modulo(sl , sr));
     }
     else
     {
@@ -3423,9 +3659,9 @@ int divCheckAndCalc(int tok, int* psl, int sr, int Unsigned, int ConstExpr[2])
       // A stricter, C99-conforming implementation, non-dependent on the
       // compiler used to compile Smaller C is needed.
       if (tok == '/')
-        sl /= sr;
+        sl = division(sl, sr);
       else
-        sl %= sr;
+        sl = modulo(sl, sr);
     }
     *psl = sl;
   }
@@ -5151,7 +5387,7 @@ int exprval(int* idx, int* ExprTypeSynPtr, int* ConstExpr)
         c += retStruct;
         // Correct the value by which the stack pointer
         // will be incremented after the call
-        c += structSize / SizeOfWord;
+        c += division(structSize, SizeOfWord);
 #endif
         stack[1 + *idx][1] = stack[i][1] = c * SizeOfWord;
 #ifndef NO_STRUCT_BY_VAL
@@ -6154,7 +6390,7 @@ int TokenStartsDeclaration(int t, int params)
 {
   unsigned i;
 
-  for (i = 0; i < sizeof tsd / sizeof tsd[0]; i++)
+  for (i = 0; i < division(sizeof tsd, sizeof tsd[0]); i++)
     if (tsd[i] == t)
       return 1;
 
@@ -6387,9 +6623,9 @@ int GetDeclSize(int SyntaxPtr, int SizeForDeref)
         return -2; // 2 bytes, needing sign extension when converted to int/unsigned int
       // fallthrough
     case tokUShort:
-      if (size * 2 / 2 != size)
+      //if (size * 2 / 2 != size)
         //error("Variable too big\n");
-        errorVarSize();
+      //  errorVarSize();
       size *= 2;
       if (size != truncUint(size))
         //error("Variable too big\n");
@@ -6403,9 +6639,9 @@ int GetDeclSize(int SyntaxPtr, int SizeForDeref)
 #endif
     case '*':
     case '(': // size of fxn = size of ptr for now
-      if (size * SizeOfWord / SizeOfWord != size)
+      //if (size * SizeOfWord / SizeOfWord != size)
         //error("Variable too big\n");
-        errorVarSize();
+        //errorVarSize();
       size *= SizeOfWord;
       if (size != truncUint(size))
         //error("Variable too big\n");
@@ -6414,10 +6650,10 @@ int GetDeclSize(int SyntaxPtr, int SizeForDeref)
     case '[':
       if (SyntaxStack0[i + 1] != tokNumInt && SyntaxStack0[i + 1] != tokNumUint)
         errorInternal(11);
-      if (SyntaxStack1[i + 1] &&
-          size * SyntaxStack1[i + 1] / SyntaxStack1[i + 1] != size)
+      //if (SyntaxStack1[i + 1] &&
+          //size * SyntaxStack1[i + 1] / SyntaxStack1[i + 1] != size)
         //error("Variable too big\n");
-        errorVarSize();
+        //errorVarSize();
       size *= SyntaxStack1[i + 1];
       if (size != truncUint(size))
         //error("Variable too big\n");
@@ -6434,8 +6670,8 @@ int GetDeclSize(int SyntaxPtr, int SizeForDeref)
       if (i + 2 < SyntaxStackCnt && SyntaxStack0[i + 2] == tokSizeof && !SizeForDeref)
       {
         unsigned s = SyntaxStack1[i + 2];
-        if (s && size * s / s != size)
-          errorVarSize();
+        //if (s && size * s / s != size)
+        //  errorVarSize();
         size *= s;
         if (size != truncUint(size))
           errorVarSize();
@@ -9279,7 +9515,7 @@ int ParseStatement(int tok, int BrkCntTarget[2], int casesIdx)
       int labelBody = LabelCnt++;
       int labelAfter = LabelCnt++;
       int cond = -1;
-      static int expr3Stack[STACK_SIZE / 2][2];
+      static int expr3Stack[STACK_SIZE >> 1][2];
       static int expr3Sp;
 #ifndef NO_FOR_DECL
       int decl = 0;
@@ -9396,7 +9632,7 @@ int ParseStatement(int tok, int BrkCntTarget[2], int casesIdx)
         errorUnexpectedToken(tok);
 
       // Try to reorder expr3 with body to reduce the number of jumps, favor small expr3's
-      if (gotUnary && sp <= 16 && (unsigned)sp <= sizeof expr3Stack / sizeof expr3Stack[0] - expr3Sp)
+      if (gotUnary && sp <= 16 && (unsigned)sp <= division(sizeof expr3Stack , sizeof expr3Stack[0]) - expr3Sp)
       {
         int cnt = sp;
         // Stash the stack containing expr3
@@ -9757,7 +9993,7 @@ int main(int argc, char** argv)
     tokChar
   }; // SyntaxStackCnt must be initialized to the number of elements in SyntaxStackInit[]
   memcpy(SyntaxStack0, SyntaxStackInit, sizeof SyntaxStackInit);
-  SyntaxStackCnt = sizeof SyntaxStackInit / sizeof SyntaxStackInit[0];
+  SyntaxStackCnt = division(sizeof SyntaxStackInit , sizeof SyntaxStackInit[0]);
 
 #ifdef __SMALLER_C__
 #ifdef DETERMINE_VA_LIST
@@ -9774,7 +10010,7 @@ int main(int argc, char** argv)
     if (memcmp(&testFloat, &testUint, sizeof testFloat))
       error("IEEE 754 floating point required on host\n");
   }
-  for (i = 0; (unsigned)i < sizeof FpFxnName / sizeof FpFxnName[0]; i++)
+  for (i = 0; (unsigned)i < division(sizeof FpFxnName , sizeof FpFxnName[0]); i++)
     AddIdent(FpFxnName[i]);
 #endif
 

@@ -1813,9 +1813,12 @@ void GenCmp(int* idx, int op)
                                GenWreg, 0);
       break;
     case 'q':
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 1,
+                               MipsOpRegAt, 0);
       GenPrintInstr3Operands(B322InstrBge, 0,
                              GenWreg, 0,
-                             MipsOpConst, 1,
+                             MipsOpRegAt, 0,
                              MipsOpConst, 3);
       GenPrintInstr2Operands(B322InstrLoad, 0,
                                MipsOpConst, 1,
@@ -1833,15 +1836,21 @@ void GenCmp(int* idx, int op)
                              GenWreg, 0);
       break;
     case 's':
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, 1,
+                               MipsOpRegAt, 0);
       GenPrintInstr3Operands(B322InstrXor, 0,
                              GenWreg, 0,
-                             MipsOpConst, 1,
+                             MipsOpRegAt, 0,
                              GenWreg, 0);
       break;
     case 't':
+      GenPrintInstr2Operands(B322InstrLoad, 0,
+                               MipsOpConst, constval,
+                               MipsOpRegAt, 0);
       GenPrintInstr3Operands(B322InstrXor, 0,
                              GenWreg, 0,
-                             MipsOpConst, constval,
+                             MipsOpRegAt, 0,
                              GenWreg, 0);
       break;
     }
@@ -1991,7 +2000,7 @@ void GenExpr0(void)
       if (maxCallDepth == 1 && paramOfs >= 0 && paramOfs <= 12)
       {
         // Work directly in A0-A3 instead of working in V0 and avoid copying V0 to A0-A3
-        GenWreg = MipsOpRegA0 + paramOfs / 4;
+        GenWreg = MipsOpRegA0 + division(paramOfs, 4);
       }
       break;
 
