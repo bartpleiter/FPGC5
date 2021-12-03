@@ -1,9 +1,9 @@
 /*
-* Contains default ASCII table with black white palette table.
+* Contains default ASCII table with default palette table.
 * Assembly is used as workaround to store them.
 * Because of the default stack code at the start of each code,
-* an offset of 4 is required to access the data,
-* which should be included in the gfx.h library
+* an offset is required to access the data,
+* which should be included in the gfx.c library
 */
 
 
