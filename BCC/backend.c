@@ -470,6 +470,8 @@ void GenPrintInstr3Operands(int instr, int instrval,
   GenPrintNewLine();
 }
 
+
+// Currently we do not want to "extend" any reg
 STATIC
 void GenExtendRegIfNeeded(int reg, int opSz)
 {
@@ -494,10 +496,12 @@ void GenExtendRegIfNeeded(int reg, int opSz)
   }
   else if (opSz == 1)
   {
+    /*
     GenPrintInstr3Operands(B322InstrAnd, 0,
                            reg, 0,
                            B322OpConst, 0xFF,
                            reg, 0);
+    */
   }
   else if (opSz == -2)
   {
@@ -528,6 +532,7 @@ void GenExtendRegIfNeeded(int reg, int opSz)
     */
     // Use shiftl 16 and shiftr 16 as equivalent to AND 0xFFFF
     //  (because constants in ARITH can only be 11 bits)
+    /*
     GenPrintInstr3Operands(B322InstrShiftl, 0,
                            reg, 0,
                            B322OpConst, 16,
@@ -536,6 +541,7 @@ void GenExtendRegIfNeeded(int reg, int opSz)
                            reg, 0,
                            B322OpConst, 16,
                            reg, 0);
+    */
   }
 }
 
@@ -2428,7 +2434,8 @@ void GenExpr0(void)
       break;
 
     case tokSChar:
-    GenPrintInstr3Operands(B322InstrShiftl, 0,
+      /* just use as an int for now
+      GenPrintInstr3Operands(B322InstrShiftl, 0,
                              GenWreg, 0,
                              B322OpConst, 24,
                              GenWreg, 0);
@@ -2436,14 +2443,18 @@ void GenExpr0(void)
                              GenWreg, 0,
                              B322OpConst, 24,
                              GenWreg, 0);
+      */
       break;
     case tokUChar:
+      /* just use as an int for now
       GenPrintInstr3Operands(B322InstrAnd, 0,
                              GenWreg, 0,
                              B322OpConst, 0xFF,
                              GenWreg, 0);
+      */
       break;
     case tokShort:
+      /* just use as an int for now
       GenPrintInstr3Operands(B322InstrShiftl, 0,
                              GenWreg, 0,
                              B322OpConst, 16,
@@ -2452,6 +2463,7 @@ void GenExpr0(void)
                              GenWreg, 0,
                              B322OpConst, 16,
                              GenWreg, 0);
+      */
       break;
     case tokUShort:
       /*
@@ -2459,6 +2471,8 @@ void GenExpr0(void)
                              GenWreg, 0,
                              GenWreg, 0,
                              B322OpConst, 0xFFFF);*/
+
+      /* just use as an int for now
       GenPrintInstr3Operands(B322InstrShiftl, 0,
                              GenWreg, 0,
                              B322OpConst, 16,
@@ -2467,6 +2481,7 @@ void GenExpr0(void)
                              GenWreg, 0,
                              B322OpConst, 16,
                              GenWreg, 0);
+      */
       break;
 
     case tokShortCirc:

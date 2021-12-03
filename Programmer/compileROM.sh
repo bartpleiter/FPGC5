@@ -28,4 +28,7 @@ if [[ $1 != "noPadding" ]]; then
 
 fi
 
+FILESIZE=`du -hs code.bin | cut -f1`
+echo "Size of binary: $FILESIZE"
+
 printf "Done compiling binary files\n"
