@@ -1,22 +1,52 @@
-char f(char a, char b, char c, char d)
-{
-    char retval = 0; //4,5,6,7, ret2
-    char lmao = 1;
-    asm(
-        "load32 0 r2\n"
-        "add r4 r2 r2\n"
-        "add r5 r2 r2\n"
-        "add r6 r2 r2\n"
-        "add r7 r2 r2\n"
-        "write -4 r14 r2 ;write to stack to return");
+#define word char
 
-    return retval;
+// Unsigned Division and Modulo without / and %
+word MATH_divmodU(word dividend, word divisor, word mod)
+{
+    word quotient = 0;
+    word remainder = 0;
+
+    if(divisor == 0) 
+        return 0;
+
+    word i;
+    for(i = 31 ; i >= 0 ; i--)
+    {
+        quotient = quotient << 1;
+        remainder = remainder << 1;
+        remainder = remainder | ((dividend & (1 << i)) >> i);
+
+        if((unsigned int) remainder >= (unsigned int) divisor) // force unsigned comparison
+        {
+            remainder = remainder - divisor;
+            quotient = quotient | 1;
+        }
+
+        if (i == 0)
+            if (mod == 1)
+                return remainder;
+            else
+                return quotient;
+    }
+
+    return 0;
+}
+
+// Unsigned positive integer division
+word MATH_divU(word dividend, word divisor) 
+{
+    return MATH_divmodU(dividend, divisor, 0);
+}
+
+// Unsigned positive integer modulo
+word MATH_modU(word dividend, word divisor) 
+{
+    return MATH_divmodU(dividend, divisor, 1);
 }
 
 int main() 
 {
-    char x = f(4,5,6,7);
-    return x;
+    return 1;
 }
 
 void int1()

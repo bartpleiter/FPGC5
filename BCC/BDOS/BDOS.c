@@ -20,10 +20,10 @@ void BDOS_Restore();
 // Note that these directories are relative to the directory from this file
 #include "lib/math.c"
 #include "lib/gfx.c"
+#include "lib/stdlib.c"
 
 
 /* TODO: convert to BCC
-#include "lib/stdlib.h"
 #include "data/ASCII_BW.h"
 #include "lib/fs.h"
 #include "lib/hidfifo.h"
@@ -124,7 +124,10 @@ int main()
     GFX_PrintConsole("BDOS\n");
 
     GFX_printWindowColored("Hello", 5, 81, 1);
-    GFX_printBGColored("LMAO123", 7, 130, 2);
+    GFX_printBGColored("TEST123", 7, 130, 2);
+
+
+    hexdump(0, 128);
 
     /*
 
@@ -232,9 +235,10 @@ void syscall()
 // timer1 interrupt handler
 void int1()
 {
-    /*
+    
     timer1Value = 1; // notify ending of timer1 (in BDOS)
 
+    /*
     // Check if a user program is running
     if (UserprogramRunning)
     {

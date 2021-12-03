@@ -24,3 +24,5 @@ Notes that came up while working on BCC:
 
         return retval;
     }
+
+- comparison is signed by default. For unsigned comparison, cast both expressions to (unsigned int) -> forces bge/bgt instead of bges/bgts

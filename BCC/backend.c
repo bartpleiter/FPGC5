@@ -280,6 +280,8 @@ void GenRecordFxnSize(char* startLabelName, int endLabelNo)
 #define B322InstrNop        0x4B
 #define B322InstrAddr2reg   0x4C
 #define B322InstrReadintid  0x4D
+#define B322InstrBgtU        0x4E
+#define B322InstrBgeU        0x4F
 
 
 STATIC
@@ -305,8 +307,10 @@ void GenPrintInstr(int instr, int val)
   case B322InstrLoadhi     : p = "loadhi"; break;
   case B322InstrBeq        : p = "beq"; break;
   case B322InstrBne        : p = "bne"; break;
-  case B322InstrBgt        : p = "bgts"; break; // HACK: always use signed comparison, because 32 bit should be large enough for most things
-  case B322InstrBge        : p = "bges"; break; // HACK: always use signed comparison, because 32 bit should be large enough for most things
+  case B322InstrBgt        : p = "bgts"; break; // HACK: Default signed comparison, because 32 bit should be large enough for most things
+  case B322InstrBge        : p = "bges"; break; // HACK: Default signed comparison, because 32 bit should be large enough for most things
+  case B322InstrBgtU       : p = "bgt"; break; // Special case for unsigned
+  case B322InstrBgeU       : p = "bge"; break; // Special case for unsigned
   case B322InstrSavpc      : p = "savpc"; break;
   case B322InstrReti       : p = "reti"; break;
   case B322InstrOr         : p = "or"; break;
@@ -1554,7 +1558,9 @@ void GenCmp(int* idx, int op)
   // condbranch: 0 = no conditional branch, 1 = branch if true, 2 = branch if false
   int condbranch = (*idx + 1 < sp) ? (stack[*idx + 1][0] == tokIf) + (stack[*idx + 1][0] == tokIfNot) * 2 : 0;
   int unsign = op >> 4;
-  //int slt = B322InstrBge; //unsign ? MipsInstrSLTU : MipsInstrSLT; // Currently no difference between signed and unsigned, as signed is not supported
+  int instrBGEdependingOnSign = unsign ? B322InstrBgeU : B322InstrBge;
+  int instrBGTdependingOnSign = unsign ? B322InstrBgtU : B322InstrBgt;
+
   int label = condbranch ? stack[*idx + 1][1] : 0;
   char* p;
   int i;
@@ -1653,7 +1659,7 @@ void GenCmp(int* idx, int op)
                              B322OpNumLabel, label);
       break;
     case 'i':
-      GenPrintInstr3Operands(B322InstrBge, 0,
+      GenPrintInstr3Operands(instrBGEdependingOnSign, 0,
                              GenLreg, 0,
                              GenRreg, 0,
                              B322OpConst, 3);
@@ -1667,7 +1673,7 @@ void GenCmp(int* idx, int op)
                                GenWreg, 0);
       break;
     case 'j':
-      GenPrintInstr3Operands(B322InstrBge, 0,
+      GenPrintInstr3Operands(instrBGEdependingOnSign, 0,
                              GenRreg, 0,
                              GenLreg, 0,
                              B322OpConst, 3);
@@ -1681,7 +1687,7 @@ void GenCmp(int* idx, int op)
                                GenWreg, 0);
       break;
     case 'k':
-      GenPrintInstr3Operands(B322InstrBge, 0,
+      GenPrintInstr3Operands(instrBGEdependingOnSign, 0,
                              GenWreg, 0,
                              B322OpRegZero, 0,
                              B322OpConst, 3);
@@ -1698,7 +1704,7 @@ void GenCmp(int* idx, int op)
       GenPrintInstr2Operands(B322InstrLoad, 0,
                                B322OpConst, 1,
                                TEMP_REG_A, 0);
-      GenPrintInstr3Operands(B322InstrBge, 0,
+      GenPrintInstr3Operands(instrBGEdependingOnSign, 0,
                              GenWreg, 0,
                              TEMP_REG_A, 0,
                              B322OpConst, 3);
@@ -1718,7 +1724,7 @@ void GenCmp(int* idx, int op)
       GenPrintInstr2Operands(B322InstrLoad, 0,
                                B322OpConst, constval,
                                TEMP_REG_A, 0);
-      GenPrintInstr3Operands(B322InstrBge, 0,
+      GenPrintInstr3Operands(instrBGEdependingOnSign, 0,
                              GenWreg, 0,
                              TEMP_REG_A, 0,
                              B322OpConst, 3);
@@ -1732,7 +1738,7 @@ void GenCmp(int* idx, int op)
                                GenWreg, 0);
       break;
     case 'o':
-      GenPrintInstr3Operands(B322InstrBge, 0,
+      GenPrintInstr3Operands(instrBGEdependingOnSign, 0,
                              B322OpRegZero, 0,
                              GenWreg, 0,
                              B322OpConst, 3);
@@ -1746,7 +1752,7 @@ void GenCmp(int* idx, int op)
                                GenWreg, 0);
       break;
     case 'p':
-      GenPrintInstr3Operands(B322InstrBge, 0,
+      GenPrintInstr3Operands(B322InstrBgeU, 0,
                              B322OpRegZero, 0,
                              GenWreg, 0,
                              B322OpConst, 3);
@@ -1763,7 +1769,7 @@ void GenCmp(int* idx, int op)
       GenPrintInstr2Operands(B322InstrLoad, 0,
                                B322OpConst, 1,
                                B322OpRegAt, 0);
-      GenPrintInstr3Operands(B322InstrBge, 0,
+      GenPrintInstr3Operands(B322InstrBgeU, 0,
                              GenWreg, 0,
                              B322OpRegAt, 0,
                              B322OpConst, 3);
@@ -2419,7 +2425,7 @@ void GenExpr0(void)
                              B322OpRegZero, 0,
                              GenWreg, 0);
       */
-      GenPrintInstr3Operands(B322InstrBgt, 0,
+      GenPrintInstr3Operands(B322InstrBgtU, 0,
                              GenWreg, 0,
                              B322OpRegZero, 0,
                              B322OpConst, 3);
