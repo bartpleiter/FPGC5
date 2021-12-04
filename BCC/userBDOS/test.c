@@ -1,3 +1,5 @@
+#define word char
+
 #include "lib/sys.c"
 #include "lib/math.c" 
 #include "lib/stdlib.c"
@@ -11,7 +13,7 @@ int main()
     {
         if (HID_FifoAvailable())
         {
-            int c = HID_FifoRead();
+            word c = HID_FifoRead();
             if (c == 27) // escape
             {
                 return 'q';
@@ -30,7 +32,7 @@ int main()
 // timer1 interrupt handler
 void int1()
 {
-   //timer1Value = 1; // notify ending of timer1
+   timer1Value = 1; // notify ending of timer1
 }
 
 void int2()

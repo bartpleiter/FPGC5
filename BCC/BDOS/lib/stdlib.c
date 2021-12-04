@@ -243,6 +243,10 @@ word strToInt(char* str)
 
     while (i > 0)
     {
+        // Return 0 if not a digit
+        if (str[i] < '0' || str[i] > '9')
+            return 0;
+        
         word currentDigit = str[i] - '0';
         word toAdd = multiplier * currentDigit;
         retval += toAdd;

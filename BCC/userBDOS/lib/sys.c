@@ -16,9 +16,9 @@ Contains System Call functions
 // ID is written to the same location as the output of the system call
 //  at address SYSCALL_RETVAL_ADDR
 // This address is also returned
-int* syscall(int ID)
+word* syscall(word ID)
 {
-    int* p = (int*) SYSCALL_RETVAL_ADDR;
+    word* p = (word*) SYSCALL_RETVAL_ADDR;
     *p = ID;
 
     asm("push r1\n"
@@ -59,14 +59,14 @@ int* syscall(int ID)
 }
 
 
-int HID_FifoAvailable()
+word HID_FifoAvailable()
 {
     char* p = syscall(1);
     return p[0];
 }
 
 
-int HID_FifoRead()
+word HID_FifoRead()
 {
     char* p = syscall(2);
     return p[0];
@@ -94,19 +94,19 @@ void BDOS_PrintConsole(char* str)
     }
 }
 
-void BDOS_PrintDecConsole(int i)
+void BDOS_PrintDecConsole(word i)
 {
     char buffer[11];
-    itoa(i, &buffer[0]);
-    BDOS_PrintConsole(&buffer[0]);
+    itoa(i, buffer);
+    BDOS_PrintConsole(buffer);
 }
 
 
-void BDOS_PrintHexConsole(int i)
+void BDOS_PrintHexConsole(word i)
 {
     char buffer[11];
-    itoah(i, &buffer[0]);
-    BDOS_PrintConsole(&buffer[0]);
+    itoah(i, buffer);
+    BDOS_PrintConsole(buffer);
 }
 
 
@@ -120,13 +120,13 @@ char* BDOS_GetArgs()
 
 // Writes command line argument n into buf
 // Arg 0 is the command itself
-void BDOS_GetArgN(int n, char* buf)
+void BDOS_GetArgN(word n, char* buf)
 {
     char* args = BDOS_GetArgs();
 
-    int i = 0;
-    int bufi = 0;
-    int currentArg = 0;
+    word i = 0;
+    word bufi = 0;
+    word currentArg = 0;
     char prevChar = 0;
     buf[0] = 0;
     while (args[i] != 0)
@@ -157,6 +157,6 @@ void BDOS_GetArgN(int n, char* buf)
 // Returns BDOS current path
 char* BDOS_GetPath()
 {
-    int* p = syscall(5);
+    word* p = syscall(5);
     return (char*) p[0];
 }
