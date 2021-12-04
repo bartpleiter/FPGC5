@@ -144,7 +144,7 @@ word itoar(word n, char *s)
     word i = 0;
 
     n = MATH_divU(n,10);
-    if (n > 0)
+    if ((unsigned int) n > 0)
         i += itoar(n, s);
 
     s[i++] = digit + '0';
@@ -183,7 +183,7 @@ word itoahr(word n, char *s)
     word i = 0;
 
     n = MATH_divU(n,16);
-    if (n > 0)
+    if ((unsigned int) n > 0)
         i += itoahr(n, s);
 
     char c;

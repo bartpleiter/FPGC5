@@ -17,26 +17,29 @@ word UserprogramRunning = 0;
 void BDOS_Backup();
 void BDOS_Restore();
 
+// Data includes
+#include "data/ASCII_BW.c"
+#include "data/PS2SCANCODES.c"
+#include "data/USBSCANCODES.c"
+
 // Note that these directories are relative to the directory from this file
 #include "lib/math.c"
 #include "lib/gfx.c"
 #include "lib/stdlib.c"
+#include "lib/hidfifo.c"
+#include "lib/ps2.c"
+#include "lib/usbkeyboard.c"
 
 
 /* TODO: convert to BCC
-#include "data/ASCII_BW.h"
 #include "lib/fs.h"
-#include "lib/hidfifo.h"
-#include "lib/ps2.h"
-#include "lib/usbkeyboard.h"
 #include "lib/wiz5500.h"
 #include "lib/netloader.h"
 #include "lib/shell.h"
 */
 
 
-// Data includes
-#include "data/ASCII_BW.c"
+
 
 
 // Address of loaded user program
@@ -123,12 +126,6 @@ int main()
     // Print welcome message
     GFX_PrintConsole("BDOS\n");
 
-    GFX_printWindowColored("Hello", 5, 81, 1);
-    GFX_printBGColored("TEST123", 7, 130, 2);
-
-
-    hexdump(0, 128);
-
     /*
 
     NETLOADER_init(NETLOADER_SOCKET);
@@ -137,8 +134,21 @@ int main()
     if (!BDOS_Init_FS())
         return 0;
 
+    */
+
     // Init USB keyboard driver
     USBkeyboard_init();
+
+    while(1)
+    {
+        if (HID_FifoAvailable())
+        {
+            word c = HID_FifoRead();
+            GFX_PrintcConsole(c);
+        }
+    }
+
+    /*
 
     // Init shell
     SHELL_init();
@@ -291,7 +301,7 @@ void int1()
 // extended interrupt handler
 void int2()
 {
-    /*
+    
     int i = getIntID();
     if (i == INTID_PS2)
     {
@@ -304,6 +314,7 @@ void int2()
         USBkeyboard_HandleInterrupt();
     }
 
+    /*
 
     // Check if a user program is running
     if (UserprogramRunning)

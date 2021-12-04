@@ -50,17 +50,17 @@ void GFX_printWindowColored(word addr, word len, word pos, word palette)
     );
 
     asm(
-    "\n"
+
     "; vram address\n"
     "load32 0xC01420 r9             ; r9 = vram addr 1056+4096 0xC01420\n"
-    "\n"
+
     "; loop variables\n"
     "load 0 r1                      ; r1 = loopvar\n"
     "or r9 r0 r3                    ; r3 = vram addr with offset\n"
     "or r4 r0 r2                    ; r2 = data addr with offset\n"
-    "\n"
+
     "add r6 r3 r3                   ; apply offset from r6\n"
-    "\n"
+
     "; copy loop\n"
     "GFX_printWindowColoredLoop:\n"
     "    read 0 r2 r8            ; read 32 bits\n"
@@ -71,7 +71,7 @@ void GFX_printWindowColored(word addr, word len, word pos, word palette)
     "    add r1 1 r1             ; incr counter\n"
     "    bge r1 r5 2             ; keep looping until all data is copied\n"
     "    jump GFX_printWindowColoredLoop\n"
-    "\n"
+
     );
 
     asm(
@@ -111,17 +111,17 @@ void GFX_printBGColored(word addr, word len, word pos, word palette)
     );
 
     asm(
-    "\n"
+
     "; vram address\n"
     "load32 0xC00420 r9             ; r9 = vram addr 1056 0xC00420\n"
-    "\n"
+
     "; loop variables\n"
     "load 0 r1                      ; r1 = loopvar\n"
     "or r9 r0 r3                    ; r3 = vram addr with offset\n"
     "or r4 r0 r2                    ; r2 = data addr with offset\n"
-    "\n"
+
     "add r6 r3 r3                   ; apply offset from r6\n"
-    "\n"
+
     "; copy loop\n"
     "GFX_printBGColoredLoop:\n"
     "    read 0 r2 r8            ; read 32 bits\n"
@@ -132,7 +132,7 @@ void GFX_printBGColored(word addr, word len, word pos, word palette)
     "    add r1 1 r1             ; incr counter\n"
     "    bge r1 r5 2             ; keep looping until all data is copied\n"
     "    jump GFX_printBGColoredLoop\n"
-    "\n"
+
     );
 
     asm(
@@ -163,16 +163,16 @@ void GFX_copyPatternTable(word addr)
     "push r4\n"
     "push r5\n"
     "push r6\n"
-    "\n"
+
     "; vram address\n"
     "load32 0xC00000 r2              ; r2 = vram addr 0 0xC00000\n"
-    "\n"
+
     "; loop variables\n"
     "load 0 r3                       ; r3 = loopvar\n"
     "load GFX_PATTERN_TABLE_SIZE r5  ; r5 = loopmax\n"
     "or r2 r0 r1                     ; r1 = vram addr with offset\n"
     "add r4 DATAOFFSET_TO_VOID r6    ; r6 = ascii addr with offset\n"
-    "\n"
+
     "; copy loop\n"
     "GFX_initPatternTableLoop:\n"
     "    copy 0 r6 r1            ; copy ascii to vram\n"
@@ -181,7 +181,7 @@ void GFX_copyPatternTable(word addr)
     "    add r3 1 r3             ; incr counter\n"
     "    beq r3 r5 2             ; keep looping until all data is copied\n"
     "    jump GFX_initPatternTableLoop\n"
-    "\n"
+
     "; restore registers\n"
     "pop r6\n"
     "pop r5\n"
@@ -207,16 +207,16 @@ void GFX_copyPaletteTable(word addr)
     "push r4\n"
     "push r5\n"
     "push r6\n"
-    "\n"
+
     "; vram address\n"
     "load32 0xC00400 r2              ; r2 = vram addr 1024 0xC00400\n"
-    "\n"
+
     "; loop variables\n"
     "load 0 r3                       ; r3 = loopvar\n"
     "load GFX_PALETTE_TABLE_SIZE r5  ; r5 = loopmax\n"
     "or r2 r0 r1                     ; r1 = vram addr with offset\n"
     "add r4 DATAOFFSET_TO_VOID r6    ; r6 = palette addr with offset\n"
-    "\n"
+
     "; copy loop\n"
     "GFX_initPaletteTableLoop:\n"
     "    copy 0 r6 r1            ; copy palette to vram\n"
@@ -225,7 +225,7 @@ void GFX_copyPaletteTable(word addr)
     "    add r3 1 r3             ; incr counter\n"
     "    beq r3 r5 2             ; keep looping until all data is copied\n"
     "    jump GFX_initPaletteTableLoop\n"
-    "\n"
+
     "; restore registers\n"
     "pop r6\n"
     "pop r5\n"
@@ -247,15 +247,15 @@ void GFX_clearBGtileTable()
     "push r3\n"
     "push r4\n"
     "push r5\n"
-    "\n"
+
     "; vram address\n"
     "load32 0xC00420 r1          ; r1 = vram addr 1056 0xC00420\n"
-    "\n"
+
     "; loop variables\n"
     "load 0 r3                   ; r3 = loopvar\n"
     "load GFX_BG_TILES r4        ; r4 = loopmax\n"
     "or r1 r0 r5                 ; r5 = vram addr with offset\n"
-    "\n"
+
     "; copy loop\n"
     "GFX_clearBGtileTableLoop:\n"
     "    write 0 r5 r0           ; clear tile\n"
@@ -263,7 +263,7 @@ void GFX_clearBGtileTable()
     "    add r3 1 r3             ; incr counter\n"
     "    beq r3 r4 2             ; keep looping until all tiles are cleared\n"
     "    jump GFX_clearBGtileTableLoop\n"
-    "\n"
+
     "; restore registers\n"
     "pop r5\n"
     "pop r4\n"
@@ -284,15 +284,15 @@ void GFX_clearBGpaletteTable()
     "push r3\n"
     "push r4\n"
     "push r5\n"
-    "\n"
+
     "; vram address\n"
     "load32 0xC00C20 r1          ; r1 = vram addr 1056+2048 0xC00C20\n"
-    "\n"
+
     "; loop variables\n"
     "load 0 r3                   ; r3 = loopvar\n"
     "load GFX_BG_TILES r4        ; r4 = loopmax\n"
     "or r1 r0 r5                 ; r5 = vram addr with offset\n"
-    "\n"
+
     "; copy loop\n"
     "GFX_clearBGpaletteTableLoop:\n"
     "    write 0 r5 r0           ; clear tile\n"
@@ -300,7 +300,7 @@ void GFX_clearBGpaletteTable()
     "    add r3 1 r3             ; incr counter\n"
     "    beq r3 r4 2             ; keep looping until all tiles are cleared\n"
     "    jump GFX_clearBGpaletteTableLoop\n"
-    "\n"
+
     "; restore registers\n"
     "pop r5\n"
     "pop r4\n"
@@ -321,15 +321,15 @@ void GFX_clearWindowtileTable()
     "push r3\n"
     "push r4\n"
     "push r5\n"
-    "\n"
+
     "; vram address\n"
     "load32 0xC01420 r1          ; r1 = vram addr 1056+2048 0xC01420\n"
-    "\n"
+
     "; loop variables\n"
     "load 0 r3                   ; r3 = loopvar\n"
     "load GFX_WINDOW_TILES r4    ; r4 = loopmax\n"
     "or r1 r0 r5                 ; r5 = vram addr with offset\n"
-    "\n"
+
     "; copy loop\n"
     "GFX_clearWindowtileTableLoop:\n"
     "    write 0 r5 r0           ; clear tile\n"
@@ -337,7 +337,7 @@ void GFX_clearWindowtileTable()
     "    add r3 1 r3             ; incr counter\n"
     "    beq r3 r4 2             ; keep looping until all tiles are cleared\n"
     "    jump GFX_clearWindowtileTableLoop\n"
-    "\n"
+
     "; restore registers\n"
     "pop r5\n"
     "pop r4\n"
@@ -358,15 +358,15 @@ void GFX_clearWindowpaletteTable()
     "push r3\n"
     "push r4\n"
     "push r5\n"
-    "\n"
+
     "; vram address\n"
     "load32 0xC01C20 r1          ; r1 = vram addr 1056+2048 0xC01C20\n"
-    "\n"
+
     "; loop variables\n"
     "load 0 r3                   ; r3 = loopvar\n"
     "load GFX_WINDOW_TILES r4    ; r4 = loopmax\n"
     "or r1 r0 r5                 ; r5 = vram addr with offset\n"
-    "\n"
+
     "; copy loop\n"
     "GFX_clearWindowpaletteTableLoop:\n"
     "    write 0 r5 r0           ; clear tile\n"
@@ -374,7 +374,7 @@ void GFX_clearWindowpaletteTable()
     "    add r3 1 r3             ; incr counter\n"
     "    beq r3 r4 2             ; keep looping until all tiles are cleared\n"
     "    jump GFX_clearWindowpaletteTableLoop\n"
-    "\n"
+
     "; restore registers\n"
     "pop r5\n"
     "pop r4\n"
@@ -395,15 +395,15 @@ void GFX_clearSprites()
     "push r3\n"
     "push r4\n"
     "push r5\n"
-    "\n"
+
     "; vram address\n"
     "load32 0xC02422 r1          ; r1 = vram addr 0xC02422\n"
-    "\n"
+
     "; loop variables\n"
     "load 0 r3                   ; r3 = loopvar\n"
     "load GFX_SPRITES r4         ; r4 = loopmax\n"
     "or r1 r0 r5                 ; r5 = vram addr with offset\n"
-    "\n"
+
     "; copy loop\n"
     "GFX_clearSpritesLoop:\n"
     "    write 0 r5 r0           ; clear x\n"
@@ -414,7 +414,7 @@ void GFX_clearSprites()
     "    add r3 1 r3             ; incr counter\n"
     "    beq r3 r4 2             ; keep looping until all tiles are cleared\n"
     "    jump GFX_clearSpritesLoop\n"
-    "\n"
+
     "; restore registers\n"
     "pop r5\n"
     "pop r4\n"
@@ -431,13 +431,13 @@ void GFX_clearParameters()
     asm(
     "; backup registers\n"
     "push r1\n"
-    "\n"
+
     "; vram address\n"
     "load32 0xC02420 r1      ; r1 = vram addr 0xC02420\n"
-    "\n"
+
     "write 0 r1 r0           ; clear tile scroll\n"
     "write 1 r1 r0           ; clear fine scroll\n"
-    "\n"
+
     "; restore registers\n"
     "pop r1\n"
     );
@@ -529,7 +529,7 @@ void GFX_PrintcConsole(char c)
         //if (MATH_mod(GFX_cursor, 40) != 0)
 
         // if we are not at the first character
-        if (GFX_cursor > 0)
+        if ((unsigned int) GFX_cursor > 0)
         {
             // set current and previous character to 0
             word *v = (word *) GFX_WINDOW_PATTERN_ADDR;
@@ -558,7 +558,7 @@ void GFX_PrintcConsole(char c)
 
 
     // if we went offscreen, scroll screen up and set cursor to last line
-    if (GFX_cursor >= 1000)
+    if ((unsigned int) GFX_cursor >= 1000)
     {
         GFX_ScrollUp();
         // set cursor to 960
