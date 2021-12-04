@@ -53,8 +53,8 @@ void BDOS_Restore();
 #include "lib/ps2.c"
 #include "lib/usbkeyboard.c"
 #include "lib/fs.c"
-//#include "lib/wiz5500.c"
-//#include "lib/netloader.c"
+#include "lib/wiz5500.c"
+#include "lib/netloader.c"
 #include "lib/shell.c"
 
 
@@ -106,7 +106,7 @@ void BDOS_Restore()
     GFX_clearSprites();
 
     // Restore netloader
-    //NETLOADER_init(NETLOADER_SOCKET);
+    NETLOADER_init(NETLOADER_SOCKET);
 }
 
 
@@ -123,7 +123,7 @@ int main()
     // Print welcome message
     GFX_PrintConsole("BDOS\n");
 
-    //NETLOADER_init(NETLOADER_SOCKET);
+    NETLOADER_init(NETLOADER_SOCKET);
 
     // Init file system
     if (!BDOS_Init_FS())
@@ -139,7 +139,6 @@ int main()
     while (1)
     {
         // Block when downloading file
-        /*
         if (NETLOADER_transferState == NETLOADER_STATE_USB_DATA)
         {
             GFX_PrintConsole("Downloading file");
@@ -159,18 +158,16 @@ int main()
             SHELL_print_prompt();
 
         }
-        */
+
         SHELL_loop();
-        //NETLOADER_loop(NETLOADER_SOCKET);
+        NETLOADER_loop(NETLOADER_SOCKET);
 
         // If we received a program, run it and print shell prompt afterwards
-        /*
         if (NETLOADER_checkDone())
         {
             BDOS_Restore();
             SHELL_print_prompt();
         }
-        */
     }
 
     return 'f';

@@ -258,7 +258,7 @@ word FS_setUSBmode(word mode)
 word FS_init()
 {
     FS_spiEndTransfer(); // start with cs high
-    delay(60);
+    delay(10);
 
     // Reset
     FS_spiBeginTransfer();

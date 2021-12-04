@@ -177,7 +177,7 @@ void USBkeyboard_setUSBspeed(word speed)
 void USBkeyboard_init()
 {
     USBkeyboard_spiEndTransfer(); // start with cs high
-    delay(60);
+    delay(10);
     
     USBkeyboard_spiBeginTransfer();
     USBkeyboard_spiTransfer(USBKEYBOARD_CMD_RESET_ALL);
