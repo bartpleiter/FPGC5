@@ -8,14 +8,14 @@
 // uses hidfifo.c
 // uses USBSCANCODES.c
 
-#define CMD_SET_USB_SPEED        0x04
-#define CMD_RESET_ALL            0x05
-#define CMD_GET_STATUS           0x22
-#define CMD_SET_USB_MODE         0x15
-#define MODE_HOST_0              0x05
-#define MODE_HOST_1              0x07
-#define MODE_HOST_2              0x06
-#define ANSW_USB_INT_CONNECT     0x15
+#define USBKEYBOARD_CMD_SET_USB_SPEED        0x04
+#define USBKEYBOARD_CMD_RESET_ALL            0x05
+#define USBKEYBOARD_CMD_GET_STATUS           0x22
+#define USBKEYBOARD_CMD_SET_USB_MODE         0x15
+#define USBKEYBOARD_MODE_HOST_0              0x05
+#define USBKEYBOARD_MODE_HOST_1              0x07
+#define USBKEYBOARD_MODE_HOST_2              0x06
+#define USBKEYBOARD_ANSW_USB_INT_CONNECT     0x15
 
 #define USBKEYBOARD_POLLING_RATE 30
 #define USBKEYBOARD_HOLD_COUNTS 20
@@ -24,7 +24,7 @@
 // #define TIMER2_VAL 0xC0273B
 // #define TIMER2_CTRL 0xC0273C
 
-#define SPI2_INTERRUPT 0xC02730
+#define USBKEYBOARD_SPI2_INTERRUPT 0xC02730
 
 #define USBKEYBOARD_DATA_OFFSET 3
 
@@ -114,11 +114,11 @@ word USBkeyboard_WaitGetStatus() {
     word intValue = 1;
     while(intValue)
     {
-        word *i = (word *) SPI2_INTERRUPT;
+        word *i = (word *) USBKEYBOARD_SPI2_INTERRUPT;
         intValue = *i;
     }
     USBkeyboard_spiBeginTransfer();
-    USBkeyboard_spiTransfer(CMD_GET_STATUS);
+    USBkeyboard_spiTransfer(USBKEYBOARD_CMD_GET_STATUS);
     USBkeyboard_spiEndTransfer(); 
     //delay(1);
 
@@ -132,7 +132,7 @@ word USBkeyboard_WaitGetStatus() {
 // Get status without using interrupts
 word USBkeyboard_noWaitGetStatus() {
     USBkeyboard_spiBeginTransfer();
-    USBkeyboard_spiTransfer(CMD_GET_STATUS);
+    USBkeyboard_spiTransfer(USBKEYBOARD_CMD_GET_STATUS);
     word retval = USBkeyboard_spiTransfer(0x00);
     USBkeyboard_spiEndTransfer(); 
 
@@ -145,7 +145,7 @@ word USBkeyboard_noWaitGetStatus() {
 word USBkeyboard_setUSBmode(word mode)
 {
     USBkeyboard_spiBeginTransfer();
-    USBkeyboard_spiTransfer(CMD_SET_USB_MODE);
+    USBkeyboard_spiTransfer(USBKEYBOARD_CMD_SET_USB_MODE);
     USBkeyboard_spiEndTransfer();
 
     USBkeyboard_spiBeginTransfer();
@@ -167,7 +167,7 @@ word USBkeyboard_setUSBmode(word mode)
 void USBkeyboard_setUSBspeed(word speed)
 {
     USBkeyboard_spiBeginTransfer();   
-    USBkeyboard_spiTransfer( CMD_SET_USB_SPEED );     
+    USBkeyboard_spiTransfer( USBKEYBOARD_CMD_SET_USB_SPEED );     
     USBkeyboard_spiTransfer( speed ); 
     USBkeyboard_spiEndTransfer(); 
 }
@@ -180,11 +180,11 @@ void USBkeyboard_init()
     delay(60);
     
     USBkeyboard_spiBeginTransfer();
-    USBkeyboard_spiTransfer(CMD_RESET_ALL);
+    USBkeyboard_spiTransfer(USBKEYBOARD_CMD_RESET_ALL);
     USBkeyboard_spiEndTransfer();
     delay(100); // wait after reset
 
-    USBkeyboard_setUSBmode(MODE_HOST_0);
+    USBkeyboard_setUSBmode(USBKEYBOARD_MODE_HOST_0);
 
     // set polling interrupt
     // set timer
@@ -201,10 +201,10 @@ void USBkeyboard_init()
 // Checks again if the device connected in new USB mode
 void USBkeyboard_connectDevice()
 {
-    USBkeyboard_setUSBmode(MODE_HOST_1);
-    USBkeyboard_setUSBmode(MODE_HOST_2);
+    USBkeyboard_setUSBmode(USBKEYBOARD_MODE_HOST_1);
+    USBkeyboard_setUSBmode(USBKEYBOARD_MODE_HOST_2);
 
-    while (USBkeyboard_WaitGetStatus() != ANSW_USB_INT_CONNECT); // Wait for reconnection of device
+    while (USBkeyboard_WaitGetStatus() != USBKEYBOARD_ANSW_USB_INT_CONNECT); // Wait for reconnection of device
 }
 
 
@@ -338,7 +338,7 @@ void USBkeyboard_poll()
 
     }
     // If reconnection TODO: move this to main loop, since we do not want to keep the interrupt occupied for so long
-    else if (status == ANSW_USB_INT_CONNECT)
+    else if (status == USBKEYBOARD_ANSW_USB_INT_CONNECT)
     {
         word x;
         for (x = 0; x < 100000; x++); // delay without interrupt, to make sure connection is stable

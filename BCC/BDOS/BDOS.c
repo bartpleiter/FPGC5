@@ -9,38 +9,8 @@
 // However, this is confusing, so we typedef it to word, since that is what it basically is
 #define word char
 
-// Flag that indicates whether a user program is running
-// Defined above the defines, so netloader and shell can also access it
-word UserprogramRunning = 0;
 
-// These functions are used by some of the other libraries
-void BDOS_Backup();
-void BDOS_Restore();
-
-// Data includes
-#include "data/ASCII_BW.c"
-#include "data/PS2SCANCODES.c"
-#include "data/USBSCANCODES.c"
-
-// Note that these directories are relative to the directory from this file
-#include "lib/math.c"
-#include "lib/gfx.c"
-#include "lib/stdlib.c"
-#include "lib/hidfifo.c"
-#include "lib/ps2.c"
-#include "lib/usbkeyboard.c"
-
-
-/* TODO: convert to BCC
-#include "lib/fs.h"
-#include "lib/wiz5500.h"
-#include "lib/netloader.h"
-#include "lib/shell.h"
-*/
-
-
-
-
+// Defines (also might be used by included libraries below)
 
 // Address of loaded user program
 #define RUN_ADDR 0x400000
@@ -60,12 +30,42 @@ void BDOS_Restore();
 #define INTID_UART2 0x4
 
 
+// Flag that indicates whether a user program is running
+// Defined above the defines, so netloader and shell can also access it
+word UserprogramRunning = 0;
+
+// These functions are used by some of the other libraries
+void BDOS_Backup();
+void BDOS_Restore();
+
+
+// Data includes
+#include "data/ASCII_BW.c"
+#include "data/PS2SCANCODES.c"
+#include "data/USBSCANCODES.c"
+
+// Code includes
+// Note that these directories are relative to the directory from this file
+#include "lib/stdlib.c"
+#include "lib/math.c"
+#include "lib/gfx.c"
+#include "lib/hidfifo.c"
+#include "lib/ps2.c"
+#include "lib/usbkeyboard.c"
+#include "lib/fs.c"
+//#include "lib/wiz5500.c"
+//#include "lib/netloader.c"
+#include "lib/shell.c"
+
+
+
+
+
 // Initializes CH376 and mounts drive
 // returns 1 on success
 word BDOS_Init_FS()
 {
-    /*
-    if (FS_init() != ANSW_RET_SUCCESS)
+    if (FS_init() != FS_ANSW_RET_SUCCESS)
     {
         GFX_PrintConsole("Error initializing CH376 for FS");
         return 0;
@@ -73,13 +73,12 @@ word BDOS_Init_FS()
 
     delay(10);
 
-    if (FS_connectDrive() != ANSW_USB_INT_SUCCESS)
+    if (FS_connectDrive() != FS_ANSW_USB_INT_SUCCESS)
     {
         GFX_PrintConsole("Could not mount drive");
         return 0;
     }
     return 1;
-    */
 }
 
 void BDOS_Reinit_VRAM()
@@ -98,18 +97,16 @@ void BDOS_Backup()
 
 void BDOS_Restore()
 {
-    /*
     // Restore graphics (trying to keep text in window plane)
-    GFX_copyPaletteTable((int)DATA_PALETTE_DEFAULT);
-    GFX_copyPatternTable((int)DATA_ASCII_DEFAULT);
+    GFX_copyPaletteTable((word)DATA_PALETTE_DEFAULT);
+    GFX_copyPatternTable((word)DATA_ASCII_DEFAULT);
     GFX_clearBGtileTable();
     GFX_clearBGpaletteTable();
     GFX_clearWindowpaletteTable();
     GFX_clearSprites();
 
     // Restore netloader
-    NETLOADER_init(NETLOADER_SOCKET);
-    */
+    //NETLOADER_init(NETLOADER_SOCKET);
 }
 
 
@@ -126,29 +123,14 @@ int main()
     // Print welcome message
     GFX_PrintConsole("BDOS\n");
 
-    /*
-
-    NETLOADER_init(NETLOADER_SOCKET);
+    //NETLOADER_init(NETLOADER_SOCKET);
 
     // Init file system
     if (!BDOS_Init_FS())
         return 0;
 
-    */
-
     // Init USB keyboard driver
     USBkeyboard_init();
-
-    while(1)
-    {
-        if (HID_FifoAvailable())
-        {
-            word c = HID_FifoRead();
-            GFX_PrintcConsole(c);
-        }
-    }
-
-    /*
 
     // Init shell
     SHELL_init();
@@ -157,6 +139,7 @@ int main()
     while (1)
     {
         // Block when downloading file
+        /*
         if (NETLOADER_transferState == NETLOADER_STATE_USB_DATA)
         {
             GFX_PrintConsole("Downloading file");
@@ -176,19 +159,21 @@ int main()
             SHELL_print_prompt();
 
         }
+        */
         SHELL_loop();
-        NETLOADER_loop(NETLOADER_SOCKET);
+        //NETLOADER_loop(NETLOADER_SOCKET);
 
         // If we received a program, run it and print shell prompt afterwards
+        /*
         if (NETLOADER_checkDone())
         {
             BDOS_Restore();
             SHELL_print_prompt();
         }
+        */
     }
 
-    */
-    return 0;
+    return 'f';
 }
 
 
@@ -204,8 +189,6 @@ void syscall()
 {
     word* p = (word*) SYSCALL_RETVAL_ADDR;
     word ID = p[0];
-
-    /*
 
     // HID_FifoAvailable()
     if (ID == 1)
@@ -239,7 +222,6 @@ void syscall()
     {
         p[0] = 0;
     }
-    */
 }
 
 // timer1 interrupt handler
@@ -248,54 +230,56 @@ void int1()
     
     timer1Value = 1; // notify ending of timer1 (in BDOS)
 
-    /*
     // Check if a user program is running
     if (UserprogramRunning)
     {
         // Call int1() of user program
-        ASM("\
-        push r1 ;\
-        push r2 ;\
-        push r3 ;\
-        push r4 ;\
-        push r5 ;\
-        push r6 ;\
-        push r7 ;\
-        push r8 ;\
-        push r9 ;\
-        push r10 ;\
-        push r11 ;\
-        push r12 ;\
-        push r13 ;\
-        push rbp ;\
-        push rsp ;\
-        load32 0x400001 r2 ;\
-        savpc r1 ;\
-        push r1 ;\
-        jumpr 0 r2 ;\
-        pop rsp ;\
-        pop rbp ;\
-        pop r13 ;\
-        pop r12 ;\
-        pop r11 ;\
-        pop r10 ;\
-        pop r9 ;\
-        pop r8 ;\
-        pop r7 ;\
-        pop r6 ;\
-        pop r5 ;\
-        pop r4 ;\
-        pop r3 ;\
-        pop r2 ;\
-        pop r1 ;\
-        ");
+        asm(
+            "; backup registers\n"
+            "push r1\n"
+            "push r2\n"
+            "push r3\n"
+            "push r4\n"
+            "push r5\n"
+            "push r6\n"
+            "push r7\n"
+            "push r8\n"
+            "push r9\n"
+            "push r10\n"
+            "push r11\n"
+            "push r12\n"
+            "push r13\n"
+            "push r14\n"
+            "push r15\n"
+
+            "savpc r1\n"
+            "push r1\n"
+            "jump 0x400001\n"
+
+            "; restore registers\n"
+            "pop r15\n"
+            "pop r14\n"
+            "pop r13\n"
+            "pop r12\n"
+            "pop r11\n"
+            "pop r10\n"
+            "pop r9\n"
+            "pop r8\n"
+            "pop r7\n"
+            "pop r6\n"
+            "pop r5\n"
+            "pop r4\n"
+            "pop r3\n"
+            "pop r2\n"
+            "pop r1\n"
+            );
         return;
     }
     else
     {
         
     }
-    */
+    
 }
 
 // extended interrupt handler
@@ -314,55 +298,55 @@ void int2()
         USBkeyboard_HandleInterrupt();
     }
 
-    /*
-
     // Check if a user program is running
     if (UserprogramRunning)
     {
         // Call int2() of user program
-        ASM("\
-        push r1 ;\
-        push r2 ;\
-        push r3 ;\
-        push r4 ;\
-        push r5 ;\
-        push r6 ;\
-        push r7 ;\
-        push r8 ;\
-        push r9 ;\
-        push r10 ;\
-        push r11 ;\
-        push r12 ;\
-        push r13 ;\
-        push rbp ;\
-        push rsp ;\
-        load32 0x400002 r2 ;\
-        savpc r1 ;\
-        push r1 ;\
-        jumpr 0 r2 ;\
-        pop rsp ;\
-        pop rbp ;\
-        pop r13 ;\
-        pop r12 ;\
-        pop r11 ;\
-        pop r10 ;\
-        pop r9 ;\
-        pop r8 ;\
-        pop r7 ;\
-        pop r6 ;\
-        pop r5 ;\
-        pop r4 ;\
-        pop r3 ;\
-        pop r2 ;\
-        pop r1 ;\
-        ");
+        asm(
+            "; backup registers\n"
+            "push r1\n"
+            "push r2\n"
+            "push r3\n"
+            "push r4\n"
+            "push r5\n"
+            "push r6\n"
+            "push r7\n"
+            "push r8\n"
+            "push r9\n"
+            "push r10\n"
+            "push r11\n"
+            "push r12\n"
+            "push r13\n"
+            "push r14\n"
+            "push r15\n"
+
+            "savpc r1\n"
+            "push r1\n"
+            "jump 0x400002\n"
+
+            "; restore registers\n"
+            "pop r15\n"
+            "pop r14\n"
+            "pop r13\n"
+            "pop r12\n"
+            "pop r11\n"
+            "pop r10\n"
+            "pop r9\n"
+            "pop r8\n"
+            "pop r7\n"
+            "pop r6\n"
+            "pop r5\n"
+            "pop r4\n"
+            "pop r3\n"
+            "pop r2\n"
+            "pop r1\n"
+            );
         return;
     }
     else
     {
         
     }
-    */
 
     
 }
@@ -370,105 +354,111 @@ void int2()
 // UART0 interrupt handler
 void int3()
 {
-    /*
+
     // Check if a user program is running
     if (UserprogramRunning)
     {
         // Call int3() of user program
-        ASM("\
-        push r1 ;\
-        push r2 ;\
-        push r3 ;\
-        push r4 ;\
-        push r5 ;\
-        push r6 ;\
-        push r7 ;\
-        push r8 ;\
-        push r9 ;\
-        push r10 ;\
-        push r11 ;\
-        push r12 ;\
-        push r13 ;\
-        push rbp ;\
-        push rsp ;\
-        load32 0x400003 r2 ;\
-        savpc r1 ;\
-        push r1 ;\
-        jumpr 0 r2 ;\
-        pop rsp ;\
-        pop rbp ;\
-        pop r13 ;\
-        pop r12 ;\
-        pop r11 ;\
-        pop r10 ;\
-        pop r9 ;\
-        pop r8 ;\
-        pop r7 ;\
-        pop r6 ;\
-        pop r5 ;\
-        pop r4 ;\
-        pop r3 ;\
-        pop r2 ;\
-        pop r1 ;\
-        ");
+        asm(
+            "; backup registers\n"
+            "push r1\n"
+            "push r2\n"
+            "push r3\n"
+            "push r4\n"
+            "push r5\n"
+            "push r6\n"
+            "push r7\n"
+            "push r8\n"
+            "push r9\n"
+            "push r10\n"
+            "push r11\n"
+            "push r12\n"
+            "push r13\n"
+            "push r14\n"
+            "push r15\n"
+
+            "savpc r1\n"
+            "push r1\n"
+            "jump 0x400003\n"
+
+            "; restore registers\n"
+            "pop r15\n"
+            "pop r14\n"
+            "pop r13\n"
+            "pop r12\n"
+            "pop r11\n"
+            "pop r10\n"
+            "pop r9\n"
+            "pop r8\n"
+            "pop r7\n"
+            "pop r6\n"
+            "pop r5\n"
+            "pop r4\n"
+            "pop r3\n"
+            "pop r2\n"
+            "pop r1\n"
+            );
         return;
     }
     else
     {
         
     }
-    */
+
 }
 
 // GFX framedrawn interrupt handler
 void int4()
 {
-    /*
+
     // Check if a user program is running
     if (UserprogramRunning)
     {
         // Call int4() of user program
-        ASM("\
-        push r1 ;\
-        push r2 ;\
-        push r3 ;\
-        push r4 ;\
-        push r5 ;\
-        push r6 ;\
-        push r7 ;\
-        push r8 ;\
-        push r9 ;\
-        push r10 ;\
-        push r11 ;\
-        push r12 ;\
-        push r13 ;\
-        push rbp ;\
-        push rsp ;\
-        load32 0x400004 r2 ;\
-        savpc r1 ;\
-        push r1 ;\
-        jumpr 0 r2 ;\
-        pop rsp ;\
-        pop rbp ;\
-        pop r13 ;\
-        pop r12 ;\
-        pop r11 ;\
-        pop r10 ;\
-        pop r9 ;\
-        pop r8 ;\
-        pop r7 ;\
-        pop r6 ;\
-        pop r5 ;\
-        pop r4 ;\
-        pop r3 ;\
-        pop r2 ;\
-        pop r1 ;\
-        ");
+        asm(
+            "; backup registers\n"
+            "push r1\n"
+            "push r2\n"
+            "push r3\n"
+            "push r4\n"
+            "push r5\n"
+            "push r6\n"
+            "push r7\n"
+            "push r8\n"
+            "push r9\n"
+            "push r10\n"
+            "push r11\n"
+            "push r12\n"
+            "push r13\n"
+            "push r14\n"
+            "push r15\n"
+
+            "savpc r1\n"
+            "push r1\n"
+            "jump 0x400004\n"
+
+            "; restore registers\n"
+            "pop r15\n"
+            "pop r14\n"
+            "pop r13\n"
+            "pop r12\n"
+            "pop r11\n"
+            "pop r10\n"
+            "pop r9\n"
+            "pop r8\n"
+            "pop r7\n"
+            "pop r6\n"
+            "pop r5\n"
+            "pop r4\n"
+            "pop r3\n"
+            "pop r2\n"
+            "pop r1\n"
+            );
         return;
     }
     else
     {
         
     }
-    */
+
 }

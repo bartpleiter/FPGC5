@@ -26,3 +26,6 @@ Notes that came up while working on BCC:
     }
 
 - comparison is signed by default. For unsigned comparison, cast both expressions to (unsigned int) -> forces bge/bgt instead of bges/bgts
+
+- could optimize for speed by converting more basic functions to ASM
+    - also, the ch376 asm functions could use a COPY instruction instead of a read followed by write
