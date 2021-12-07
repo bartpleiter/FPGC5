@@ -1,4 +1,5 @@
 /*
+Copyright (c) 2021, b4rt-dev
 Copyright (c) 2012-2020, Alexey Frunze
 All rights reserved.
 
@@ -4880,28 +4881,13 @@ int printf2(char* format, ...)
 
   if (!OutFile)
     return 0;
-#ifndef __SMALLER_C__
-  res = vfprintf(OutFile, format, vl);
-#else
+
   // TBD!!! This is not good. Really need the va_something macros.
-#ifdef DETERMINE_VA_LIST
-  if (VaListType == 2)
-  {
-    // va_list is a one-element array containing a pointer
-    res = vfprintf(OutFile, format, &vl);
-  }
-  else // if (VaListType == 1)
-  // fallthrough
-#endif // DETERMINE_VA_LIST
   {
     // va_list is a pointer
     res = vfprintf(OutFile, format, vl);
   }
-#endif // __SMALLER_C__
 
-#ifndef __SMALLER_C__
-  va_end(vl);
-#endif
 
   return res;
 }
@@ -4910,12 +4896,7 @@ STATIC
 void error(char* format, ...)
 {
   int i, fidx = FileCnt - 1 + !FileCnt;
-#ifndef __SMALLER_C__
-  va_list vl;
-  va_start(vl, format);
-#else
   void* vl = &format + 1;
-#endif
 
   for (i = 0; i < FileCnt; i++)
     if (Files[i])
@@ -4942,28 +4923,14 @@ void error(char* format, ...)
 
   printf("Error in \"%s\" (%d:%d)\n", FileNames[fidx], LineNo, LinePos);
 
-#ifndef __SMALLER_C__
-  vprintf(format, vl);
-#else
+
   // TBD!!! This is not good. Really need the va_something macros.
-#ifdef DETERMINE_VA_LIST
-  if (VaListType == 2)
-  {
-    // va_list is a one-element array containing a pointer
-    vprintf(format, &vl);
-  }
-  else // if (VaListType == 1)
-  // fallthrough
-#endif // DETERMINE_VA_LIST
   {
     // va_list is a pointer
     vprintf(format, vl);
   }
-#endif // __SMALLER_C__
 
-#ifndef __SMALLER_C__
   va_end(vl);
-#endif
 
   exit(EXIT_FAILURE);
 }
@@ -4972,12 +4939,7 @@ STATIC
 void warning(char* format, ...)
 {
   int fidx = FileCnt - 1 + !FileCnt;
-#ifndef __SMALLER_C__
-  va_list vl;
-  va_start(vl, format);
-#else
   void* vl = &format + 1;
-#endif
 
   warnCnt++;
 
@@ -4986,28 +4948,12 @@ void warning(char* format, ...)
 
   printf("Warning in \"%s\" (%d:%d)\n", FileNames[fidx], LineNo, LinePos);
 
-#ifndef __SMALLER_C__
-  vprintf(format, vl);
-#else
   // TBD!!! This is not good. Really need the va_something macros.
-#ifdef DETERMINE_VA_LIST
-  if (VaListType == 2)
-  {
-    // va_list is a one-element array containing a pointer
-    vprintf(format, &vl);
-  }
-  else // if (VaListType == 1)
-  // fallthrough
-#endif // DETERMINE_VA_LIST
   {
     // va_list is a pointer
     vprintf(format, vl);
   }
-#endif // __SMALLER_C__
 
-#ifndef __SMALLER_C__
-  va_end(vl);
-#endif
 }
 
 STATIC
@@ -8060,12 +8006,6 @@ int main(int argc, char** argv)
   }; // SyntaxStackCnt must be initialized to the number of elements in SyntaxStackInit[]
   memcpy(SyntaxStack0, SyntaxStackInit, sizeof SyntaxStackInit);
   SyntaxStackCnt = division(sizeof SyntaxStackInit , sizeof SyntaxStackInit[0]);
-
-#ifdef __SMALLER_C__
-#ifdef DETERMINE_VA_LIST
-  DetermineVaListType();
-#endif
-#endif
 
   SyntaxStack1[SymFuncPtr] = DummyIdent = AddIdent("");
 

@@ -1,4 +1,5 @@
 /*
+Copyright (c) 2021, b4rt-dev
 Copyright (c) 2012-2015, Alexey Frunze
 All rights reserved.
 
@@ -582,9 +583,7 @@ void GenJumpIfEqual(int val, int label)
 STATIC
 void GenJumpIfZero(int label)
 {
-#ifndef NO_ANNOTATIONS
   printf2(" ; JumpIfZero\n");
-#endif
   /* if Wreg == 0, jump to label
   GenPrintInstr3Operands(MipsInstrBEQ, 0,
                          GenWreg, 0,
@@ -602,9 +601,7 @@ void GenJumpIfZero(int label)
 STATIC
 void GenJumpIfNotZero(int label)
 {
-#ifndef NO_ANNOTATIONS
   printf2(" ; JumpIfNotZero\n");
-#endif
   /* if Wreg != 0, jump to label
   GenPrintInstr3Operands(MipsInstrBNE, 0,
                          GenWreg, 0,
@@ -1865,7 +1862,6 @@ void GenExpr0(void)
     int tok = stack[i][0];
     int v = stack[i][1];
 
-#ifndef NO_ANNOTATIONS
     switch (tok)
     {
     case tokNumInt: printf2(" ; %d\n", truncInt(v)); break;
@@ -1884,7 +1880,6 @@ void GenExpr0(void)
     case tokAssign0:  printf2(" ; =\n"); break;
     default: printf2(" ; %s\n", GetTokenName(tok)); break;
     }
-#endif
 
     switch (tok)
     {
@@ -2491,12 +2486,10 @@ void GenExpr0(void)
       break;
 
     case tokShortCirc:
-#ifndef NO_ANNOTATIONS
       if (v >= 0)
         printf2("&&\n");
       else
         printf2("||\n");
-#endif
       if (v >= 0)
         GenJumpIfZero(v); // &&
       else
@@ -2504,9 +2497,7 @@ void GenExpr0(void)
       gotUnary = 0;
       break;
     case tokGoto:
-#ifndef NO_ANNOTATIONS
       printf2("goto\n");
-#endif
       GenJumpUncond(v);
       gotUnary = 0;
       break;
