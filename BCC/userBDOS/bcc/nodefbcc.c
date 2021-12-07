@@ -95,20 +95,22 @@ int isalnum(int);
 #define EOF (-1)
 FILE* fopen(char*, char*);
 int fclose(FILE*);
-int putchar(int);
+//int putchar(int);
 int fputc(int, FILE*);
 int fgetc(FILE*);
-int puts(char*);
+//int puts(char*);
 int fputs(char*, FILE*);
-int sprintf(char*, char*, ...);
+//int sprintf(char*, char*, ...);
 //int vsprintf(char*, char*, va_list);
-int vsprintf(char*, char*, void*);
+//int vsprintf(char*, char*, void*);
 int printf(char*, ...);
-int fprintf(FILE*, char*, ...);
+//int fprintf(FILE*, char*, ...);
 //int vprintf(char*, va_list);
-int vprintf(char*, void*);
+//int vprintf(char*, void*);
 //int vfprintf(FILE*, char*, va_list);
 int vfprintf(FILE*, char*, void*);
+
+/*
 struct fpos_t_
 {
   union
@@ -120,6 +122,7 @@ struct fpos_t_
 #define fpos_t struct fpos_t_
 int fgetpos(FILE*, fpos_t*);
 int fsetpos(FILE*, fpos_t*);
+*/
 
 
 ////////////////////////////////////////////////////////////////////////////////
