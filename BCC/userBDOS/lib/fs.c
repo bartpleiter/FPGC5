@@ -361,7 +361,9 @@ word FS_readFile(char* buf, word s, word bytesToWord)
     FS_spiEndTransfer();
 
     word retval = FS_WaitGetStatus();
-    // Return on error
+    // Return on error or EOF
+    if (retval == FS_ANSW_USB_INT_SUCCESS) // eof
+        return 0;
     if (retval != FS_ANSW_USB_INT_DISK_READ)
         return retval;
 

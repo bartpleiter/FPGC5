@@ -113,7 +113,7 @@ word strcat(char* dest, char* src)
 Compares two strings a and b
 Returns 1 if similar, 0 otherwise
 */
-word strcmp(char* a, char* b, word n)
+word strcmp(char* a, char* b)
 {
     if (strlen(a) != strlen(b))
         return 0;
