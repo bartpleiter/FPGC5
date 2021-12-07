@@ -29,6 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*                           BCC (B322 C Compiler)                           */
 /*                                                                           */
 /*                           C compiler for B322                             */
+/*                 Modified version intended to run on FPGC                  */
 /*                                                                           */
 /*                            Based on SmallerC:                             */
 /*                 A simple and small single-pass C compiler                 */
@@ -37,17 +38,56 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*                                                                           */
 /*****************************************************************************/
 
-// NOTE: still has a lot of extras in it that are not needed
-//  only the "MIPS" part is needed with no extras
+/* PLAN:
+- move through program from execution start to finish
+- implement missing (mostly FS) functions on the go (skip unimportant ones first, and do them later)
+- try to implement vararg printf, since it will save hours of printf replacements
+- FS functions (test/create library in a seperate test program):
+  - fopen: just return a pointer to (global var!) the full path of the file, init cursor (private)
+  - fput/get: open the file if not already opened, use cursor to read/write
+*/
+
+
+/* TODO: implement:
+[] void exit(int);
+[] int atoi(char*);
+
+[x] size_t strlen(char*);
+[x] char* strcpy(char*, char*);
+[x] char* strchr(char*, int);
+[x] int strcmp(char*, char*);
+[x] int strncmp(char*, char*, size_t);
+[x] void* memmove(void*, void*, size_t);
+[x] void* memcpy(void*, void*, size_t);
+[] void* memset(void*, int, size_t);
+[x] int memcmp(void*, void*, size_t);
+
+[] int isspace(int);
+[x] int isdigit(int);
+[x] int isalpha(int);
+[x] int isalnum(int);
+
+[] FILE* fopen(char*, char*);
+[] int fclose(FILE*);
+[] int putchar(int);
+[] int fputc(int, FILE*);
+[] int fgetc(FILE*);
+[] int puts(char*);
+[] int fputs(char*, FILE*);
+[] int sprintf(char*, char*, ...);
+[] int vsprintf(char*, char*, void*);
+[] int printf(char*, ...);
+[] int fprintf(FILE*, char*, ...);
+[] int vprintf(char*, void*);
+[] int vfprintf(FILE*, char*, void*);
+[] int fgetpos(FILE*, fpos_t*);
+[] int fsetpos(FILE*, fpos_t*);
+*/
+
 
 // Making most functions static helps with code optimization,
 // use that to further reduce compiler's code size on RetroBSD.
-#ifndef STATIC
 #define STATIC
-#else
-#undef STATIC
-#define STATIC static
-#endif
 
 #define word char
 
@@ -66,68 +106,74 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define NULL 0
 
-#define size_t unsigned int
+#define size_t word //unsigned int
 
 #define CHAR_BIT (8)
 #define CHAR_MIN (-128)
 #define CHAR_MAX (127)
 
 #define INT_MAX (2147483647)
-#define INT_MIN (-2147483647-1)
+#define INT_MIN (-2147483648)
 
 #define UINT_MAX (4294967295u)
 #define UINT_MIN (0u)
 
 #define EXIT_FAILURE 1
 
-void exit(int);
-int atoi(char*);
+// functions needed to be implemented for the FPGC specifically:
+
+void exit(word);
+word atoi(char*);
 
 size_t strlen(char*);
 char* strcpy(char*, char*);
-char* strchr(char*, int);
-int strcmp(char*, char*);
-int strncmp(char*, char*, size_t);
+char* strchr(char*, word);
+word strcmp(char*, char*);
+word strncmp(char*, char*, size_t);
 void* memmove(void*, void*, size_t);
 void* memcpy(void*, void*, size_t);
-void* memset(void*, int, size_t);
-int memcmp(void*, void*, size_t);
+void* memset(void*, word, size_t);
+word memcmp(void*, void*, size_t);
 
-int isspace(int);
-int isdigit(int);
-int isalpha(int);
-int isalnum(int);
+word isspace(word);
+word isdigit(word);
+word isalpha(word);
+word isalnum(word);
 
 #define FILE void
 #define EOF (-1)
 FILE* fopen(char*, char*);
-int fclose(FILE*);
-int putchar(int);
-int fputc(int, FILE*);
-int fgetc(FILE*);
-int puts(char*);
-int fputs(char*, FILE*);
-int sprintf(char*, char*, ...);
-//int vsprintf(char*, char*, va_list);
-int vsprintf(char*, char*, void*);
-int printf(char*, ...);
-int fprintf(FILE*, char*, ...);
-//int vprintf(char*, va_list);
-int vprintf(char*, void*);
-//int vfprintf(FILE*, char*, va_list);
-int vfprintf(FILE*, char*, void*);
+word fclose(FILE*);
+word putchar(word);
+word fputc(word, FILE*);
+word fgetc(FILE*);
+word puts(char*);
+word fputs(char*, FILE*);
+word sprintf(char*, char*, ...);
+//word vsprintf(char*, char*, va_list);
+word vsprintf(char*, char*, void*);
+word printf(char*, ...);
+word fprintf(FILE*, char*, ...);
+//word vprintf(char*, va_list);
+word vprintf(char*, void*);
+//word vfprintf(FILE*, char*, va_list);
+word vfprintf(FILE*, char*, void*);
+/*
 struct fpos_t_
 {
   union
   {
     unsigned short halves[2]; // for 16-bit memory models without 32-bit longs
-    int align; // for alignment on machine word boundary
+    word align; // for alignment on machine word boundary
   } u;
 }; // keep in sync with stdio.h !!!
 #define fpos_t struct fpos_t_
-int fgetpos(FILE*, fpos_t*);
-int fsetpos(FILE*, fpos_t*);
+word fgetpos(FILE*, fpos_t*);
+word fsetpos(FILE*, fpos_t*);*/
 
+
+#include "lib/math.c"
+#include "lib/stdlib.c"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -287,9 +333,335 @@ int fsetpos(FILE*, fpos_t*);
 #define SymLocalArr  5
 
 
+// all public prototypes
+STATIC
+unsigned truncUint(unsigned);
+STATIC
+word truncInt(word);
+
+STATIC
+word GetToken(void);
+STATIC
+char* GetTokenName(word token);
+
+
+STATIC
+void DumpMacroTable(void);
+
+
+STATIC
+word AddIdent(char* name);
+STATIC
+word FindIdent(char* name);
+
+STATIC
+void DumpIdentTable(void);
+
+STATIC
+char* lab2str(char* p, word n);
+
+STATIC
+void GenInit(void);
+STATIC
+void GenFin(void);
+STATIC
+word GenInitParams(word argc, char** argv, word* idx);
+STATIC
+void GenInitFinalize(void);
+STATIC
+void GenStartCommentLine(void);
+STATIC
+void GenWordAlignment(word bss);
+STATIC
+void GenLabel(char* Label, word Static);
+STATIC
+void GenNumLabel(word Label);
+STATIC
+void GenZeroData(unsigned Size, word bss);
+STATIC
+void GenIntData(word Size, word Val);
+STATIC
+void GenStartAsciiString(void);
+STATIC
+void GenAddrData(word Size, char* Label, word ofs);
+
+STATIC
+void GenJumpUncond(word Label);
+STATIC
+void GenJumpIfZero(word Label);
+STATIC
+void GenJumpIfNotZero(word Label);
+STATIC
+void GenJumpIfEqual(word val, word Label);
+
+STATIC
+void GenFxnProlog(void);
+STATIC
+void GenFxnEpilog(void);
+void GenIsrProlog(void);
+void GenIsrEpilog(void);
+
+STATIC
+word GenMaxLocalsSize(void);
+
+STATIC
+void GenDumpChar(word ch);
+STATIC
+void GenExpr(void);
+
+STATIC
+void PushSyntax(word t);
+STATIC
+void PushSyntax2(word t, word v);
+
+
+STATIC
+void DumpSynDecls(void);
+
+
+STATIC
+void push2(word v, word v2);
+STATIC
+void ins2(word pos, word v, word v2);
+STATIC
+void ins(word pos, word v);
+STATIC
+void del(word pos, word cnt);
+
+STATIC
+word TokenStartsDeclaration(word t, word params);
+STATIC
+word ParseDecl(word tok, unsigned structInfo[4], word cast, word label);
+
+STATIC
+void ShiftChar(void);
+STATIC
+word puts2(char*);
+STATIC
+word printf2(char*, ...);
+
+STATIC
+void error(char* format, ...);
+STATIC
+void warning(char* format, ...);
+STATIC
+void errorFile(char* n);
+STATIC
+void errorFileName(void);
+STATIC
+void errorInternal(word n);
+STATIC
+void errorChrStr(void);
+STATIC
+void errorStrLen(void);
+STATIC
+void errorUnexpectedToken(word tok);
+STATIC
+void errorDirective(void);
+STATIC
+void errorCtrlOutOfScope(void);
+STATIC
+void errorDecl(void);
+STATIC
+void errorVarSize(void);
+STATIC
+void errorInit(void);
+STATIC
+void errorUnexpectedVoid(void);
+STATIC
+void errorOpType(void);
+STATIC
+void errorNotLvalue(void);
+STATIC
+void errorNotConst(void);
+STATIC
+void errorLongExpr(void);
+
+STATIC
+word FindSymbol(char* s);
+STATIC
+word SymType(word SynPtr);
+STATIC
+word FindTaggedDecl(char* s, word start, word* CurScope);
+STATIC
+word GetDeclSize(word SyntaxPtr, word SizeForDeref);
+
+STATIC
+word ParseExpr(word tok, word* GotUnary, word* ExprTypeSynPtr, word* ConstExpr, word* ConstVal, word option, word option2);
+STATIC
+word GetFxnInfo(word ExprTypeSynPtr, word* MinParams, word* MaxParams, word* ReturnExprTypeSynPtr, word* FirstParamSynPtr);
+
+// all data
+
+word verbose = 0;
+word warnings = 0;
+word warnCnt = 0;
+
+// custom compiler flags
+word compileUserBDOS = 0;
+word compileOS = 0;
+
+// prep.c data
+
+// TBD!!! get rid of TokenIdentName[] and TokenValueString[]
+// and work with CharQueue[] directly
+word TokenValueInt = 0;
+char TokenIdentName[MAX_IDENT_LEN + 1];
+word TokenIdentNameLen = 0;
+char TokenValueString[MAX_STRING_LEN + 1];
+unsigned TokenStringLen = 0;
+unsigned TokenStringSize = 0; // TokenStringLen * sizeof(char/wchar_t)
+word LineNo = 1;
+word LinePos = 1;
+char CharQueue[MAX_CHAR_QUEUE_LEN];
+word CharQueueLen = 0;
+
+/*
+  Macro table entry format:
+    idlen char:     identifier length (<= 127)
+    id char[idlen]: identifier (ASCIIZ)
+    exlen char:     length of what the identifier expands into (<= 127)
+    ex char[exlen]: what the identifier expands into (ASCII)
+*/
+char MacroTable[MAX_MACRO_TABLE_LEN];
+word MacroTableLen = 0;
+
+/*
+  Identifier table entry format:
+    id char[idlen]: string (ASCIIZ)
+    idlen char:     string length (<= 127)
+*/
+char IdentTable[MAX_IDENT_TABLE_LEN];
+word IdentTableLen = 0;
+word DummyIdent; // corresponds to empty string
+
+#define MAX_GOTO_LABELS 16
+
+word gotoLabels[MAX_GOTO_LABELS][2];
+// gotoLabStat[]: bit 1 = used (by "goto label;"), bit 0 = defined (with "label:")
+char gotoLabStat[MAX_GOTO_LABELS];
+word gotoLabCnt = 0;
+
+#define MAX_CASES 128
+
+word Cases[MAX_CASES][2]; // [0] is case constant, [1] is case label number
+word CasesCnt = 0;
+
+// Data structures to support #include
+word FileCnt = 0;
+char FileNames[MAX_INCLUDES][MAX_FILE_NAME_LEN + 1];
+FILE* Files[MAX_INCLUDES];
+FILE* OutFile;
+char CharQueues[MAX_INCLUDES][3];
+word LineNos[MAX_INCLUDES];
+word LinePoss[MAX_INCLUDES];
+char SysSearchPaths[MAX_SEARCH_PATH];
+word SysSearchPathsLen = 0;
+char SearchPaths[MAX_SEARCH_PATH];
+word SearchPathsLen = 0;
+
+// Data structures to support #ifdef/#ifndef,#else,#endif
+word PrepDontSkipTokens = 1;
+word PrepStack[PREP_STACK_SIZE][2];
+word PrepSp = 0;
+
+
+// expr.c data
+
+word ExprLevel = 0;
+
+// TBD??? merge expression and operator stacks into one
+word stack[STACK_SIZE][2];
+word sp = 0;
+
+#define OPERATOR_STACK_SIZE STACK_SIZE
+word opstack[OPERATOR_STACK_SIZE][2];
+word opsp = 0;
+
+// smc.c data
+
+word OutputFormat = FormatSegmented;
+word GenExterns = 1;
+word UseBss = 1;
+
+// Names of C functions and variables are usually prefixed with an underscore.
+// One notable exception is the ELF format used by gcc in Linux.
+// Global C identifiers in the ELF format should not be predixed with an underscore.
+word UseLeadingUnderscores = 1;
+
+char* FileHeader = "";
+char* CodeHeaderFooter[2] = { "", "" };
+char* DataHeaderFooter[2] = { "", "" };
+char* RoDataHeaderFooter[2] = { "", "" };
+char* BssHeaderFooter[2] = { "", "" };
+char** CurHeaderFooter;
+
+word CharIsSigned = 1;
+word SizeOfWord = 2; // in chars (char can be a multiple of octets); ints and pointers are of word size
+word SizeOfWideChar = 2; // in chars/bytes, 2 or 4
+word WideCharIsSigned = 0; // 0 or 1
+word WideCharType1;
+word WideCharType2; // (un)signed counterpart of WideCharType1
+
+// TBD??? implement a function to allocate N labels with overflow checks
+word LabelCnt = 1; // label counter for jumps
+word StructCpyLabel = 0; // label of the function to copy structures/unions
+word StructPushLabel = 0; // label of the function to push structures/unions onto the stack
+
+// call stack (from higher to lower addresses):
+//   arg n
+//   ...
+//   arg 1
+//   return address
+//   saved xbp register
+//   local var 1
+//   ...
+//   local var n
+word CurFxnSyntaxPtr = 0;
+word CurFxnParamCntMin = 0;
+word CurFxnParamCntMax = 0;
+word CurFxnLocalOfs = 0; // negative
+word CurFxnMinLocalOfs = 0; // negative
+
+word CurFxnReturnExprTypeSynPtr = 0;
+word CurFxnEpilogLabel = 0;
+
+char* CurFxnName = NULL;
+word IsMain; // if inside main()
+
+word ParseLevel = 0; // Parse level/scope (file:0, fxn:1+)
+word ParamLevel = 0; // 1+ if parsing params, 0 otherwise
+
+unsigned char SyntaxStack0[SYNTAX_STACK_MAX];
+word SyntaxStack1[SYNTAX_STACK_MAX];
+word SyntaxStackCnt;
+
+
 int main() 
 {
-    return 1;
+  int i;
+
+    // Run-time initializer for SyntaxStack0[] to reduce
+    // executable file size (SyntaxStack0[] will be in .bss)
+    static unsigned char SyntaxStackInit[] =
+    {
+      tokVoid,     // SymVoidSynPtr
+      tokInt,      // SymIntSynPtr
+      tokUnsigned, // SymUintSynPtr
+      tokVoid,     // SymWideCharSynPtr
+      tokFloat,    // SymFloatSynPtr
+      tokIdent,    // SymFuncPtr
+      '[',
+      tokNumUint,
+      ']',
+      tokChar
+    }; // SyntaxStackCnt must be initialized to the number of elements in SyntaxStackInit[]
+    memcpy(SyntaxStack0, SyntaxStackInit, sizeof SyntaxStackInit);
+    SyntaxStackCnt = 10;
+
+
+
+  return 'q';
 }
 
 void int1()

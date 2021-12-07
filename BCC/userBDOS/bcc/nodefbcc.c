@@ -42,12 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Making most functions static helps with code optimization,
 // use that to further reduce compiler's code size on RetroBSD.
-#ifndef STATIC
 #define STATIC
-#else
-#undef STATIC
-#define STATIC static
-#endif
 
 #define NO_EXTRAS
 #define CAN_COMPILE_32BIT

@@ -29,6 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 /*                           BCC (B322 C Compiler)                           */
 /*                                                                           */
 /*                           C compiler for B322                             */
+/*                 Modified version intended to run on FPGC                  */
 /*                                                                           */
 /*                            Based on SmallerC:                             */
 /*                 A simple and small single-pass C compiler                 */
