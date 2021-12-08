@@ -120,60 +120,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define EXIT_FAILURE 1
 
-// functions needed to be implemented for the FPGC specifically:
-
-void exit(word);
-word atoi(char*);
-
-size_t strlen(char*);
-char* strcpy(char*, char*);
-char* strchr(char*, word);
-word strcmp(char*, char*);
-word strncmp(char*, char*, size_t);
-void* memmove(void*, void*, size_t);
-void* memcpy(void*, void*, size_t);
-void* memset(void*, word, size_t);
-word memcmp(void*, void*, size_t);
-
-word isspace(word);
-word isdigit(word);
-word isalpha(word);
-word isalnum(word);
-
-#define FILE void
-#define EOF (-1)
-FILE* fopen(char*, char*);
-word fclose(FILE*);
-word putchar(word);
-word fputc(word, FILE*);
-word fgetc(FILE*);
-word puts(char*);
-word fputs(char*, FILE*);
-word sprintf(char*, char*, ...);
-//word vsprintf(char*, char*, va_list);
-word vsprintf(char*, char*, void*);
-word printf(char*, ...);
-word fprintf(FILE*, char*, ...);
-//word vprintf(char*, va_list);
-word vprintf(char*, void*);
-//word vfprintf(FILE*, char*, va_list);
-word vfprintf(FILE*, char*, void*);
-/*
-struct fpos_t_
-{
-  union
-  {
-    unsigned short halves[2]; // for 16-bit memory models without 32-bit longs
-    word align; // for alignment on machine word boundary
-  } u;
-}; // keep in sync with stdio.h !!!
-#define fpos_t struct fpos_t_
-word fgetpos(FILE*, fpos_t*);
-word fsetpos(FILE*, fpos_t*);*/
 
 
 #include "lib/math.c"
+#include "lib/sys.c"
+#include "lib/gfx.c"
 #include "lib/stdlib.c"
+#include "lib/fs.c"
+#include "lib/stdio.c"
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -550,8 +504,8 @@ word CasesCnt = 0;
 // Data structures to support #include
 word FileCnt = 0;
 char FileNames[MAX_INCLUDES][MAX_FILE_NAME_LEN + 1];
-FILE* Files[MAX_INCLUDES];
-FILE* OutFile;
+word Files[MAX_INCLUDES]; // FILE
+word OutFile; // FILE
 char CharQueues[MAX_INCLUDES][3];
 word LineNos[MAX_INCLUDES];
 word LinePoss[MAX_INCLUDES];
@@ -637,9 +591,1453 @@ word SyntaxStack1[SYNTAX_STACK_MAX];
 word SyntaxStackCnt;
 
 
+
+
+
+
+// all code
+
+STATIC
+unsigned truncUint(unsigned n)
+{
+  // Truncate n to SizeOfWord * 8 bits
+  if (SizeOfWord == 2)
+    n &= ~(~0u << 8 << 8);
+  else if (SizeOfWord == 4)
+    n &= ~(~0u << 8 << 12 << 12);
+  return n;
+}
+
+STATIC
+word truncInt(word n)
+{
+  // Truncate n to SizeOfWord * 8 bits and then sign-extend it
+  unsigned un = n;
+  if (SizeOfWord == 2)
+  {
+    un &= ~(~0u << 8 << 8);
+    un |= (((un >> 8 >> 7) & 1) * ~0u) << 8 << 8;
+  }
+  else if (SizeOfWord == 4)
+  {
+    un &= ~(~0u << 8 << 12 << 12);
+    un |= (((un >> 8 >> 12 >> 11) & 1) * ~0u) << 8 << 12 << 12;
+  }
+  return (word)un;
+}
+
+// prep.c code
+
+STATIC
+word FindMacro(char* name)
+{
+  word i;
+
+  for (i = 0; i < MacroTableLen; )
+  {
+    if (!strcmp(MacroTable + i + 1, name))
+      return i + 1 + MacroTable[i];
+
+    i = i + 1 + MacroTable[i]; // skip id
+    i = i + 1 + MacroTable[i]; // skip ex
+  }
+
+  return -1;
+}
+
+STATIC
+word UndefineMacro(char* name)
+{
+  word i;
+
+  for (i = 0; i < MacroTableLen; )
+  {
+    if (!strcmp(MacroTable + i + 1, name))
+    {
+      word len = 1 + MacroTable[i]; // id part len
+      len = len + 1 + MacroTable[i + len]; // + ex part len
+
+      memmove(MacroTable + i,
+              MacroTable + i + len,
+              MacroTableLen - i - len);
+      MacroTableLen -= len;
+
+      return 1;
+    }
+
+    i = i + 1 + MacroTable[i]; // skip id
+    i = i + 1 + MacroTable[i]; // skip ex
+  }
+
+  return 0;
+}
+
+STATIC
+void AddMacroIdent(char* name)
+{
+  word l = strlen(name);
+
+  if (l >= 127)
+  {
+    error("Macro identifier too long ");
+    error(name);
+    error("\n");
+  }
+
+  if (MAX_MACRO_TABLE_LEN - MacroTableLen < l + 3)
+    error("Macro table exhausted\n");
+
+  MacroTable[MacroTableLen++] = l + 1; // idlen
+  strcpy(MacroTable + MacroTableLen, name);
+  MacroTableLen += l + 1;
+
+  MacroTable[MacroTableLen] = 0; // exlen
+}
+
+STATIC
+void AddMacroExpansionChar(char e)
+{
+  if (e == '\0')
+  {
+    // finalize macro definition entry
+    // remove trailing space first
+    while (MacroTable[MacroTableLen] &&
+           strchr(" \t", MacroTable[MacroTableLen + MacroTable[MacroTableLen]]))
+      MacroTable[MacroTableLen]--;
+    MacroTableLen += 1 + MacroTable[MacroTableLen];
+    return;
+  }
+
+  if (MacroTableLen + 1 + MacroTable[MacroTableLen] >= MAX_MACRO_TABLE_LEN)
+    error("Macro table exhausted\n");
+
+  if (MacroTable[MacroTableLen] >= 127)
+    error("Macro definition too long\n");
+
+  MacroTable[MacroTableLen + 1 + MacroTable[MacroTableLen]] = e;
+  MacroTable[MacroTableLen]++;
+}
+
+STATIC
+void DefineMacro(char* name, char* expansion)
+{
+  AddMacroIdent(name);
+  do
+  {
+    AddMacroExpansionChar(*expansion);
+  } while (*expansion++ != '\0');
+}
+
+STATIC
+void DumpMacroTable(void)
+{
+  word i, j;
+
+  puts2("");
+  GenStartCommentLine(); printf2("Macro table:\n");
+  for (i = 0; i < MacroTableLen; )
+  {
+    GenStartCommentLine(); 
+    printf2("Macro ");
+    printf2(MacroTable + i + 1);
+    printf2(" = ");
+
+    i = i + 1 + MacroTable[i]; // skip id
+    printf2("`");
+    j = MacroTable[i++];
+    while (j--)
+    {
+      char* c = " ";
+      c[0] = MacroTable[i++];
+      printf2(c);
+    }
+    printf2("`\n");
+  }
+  GenStartCommentLine(); //TODO: printf2("Bytes used: %d/%d\n\n", MacroTableLen, MAX_MACRO_TABLE_LEN);
+}
+
+STATIC
+word FindIdent(char* name)
+{
+  word i;
+  for (i = IdentTableLen; i > 0; )
+  {
+    i -= 1 + IdentTable[i - 1];
+    if (!strcmp(IdentTable + i, name))
+      return i;
+  }
+  return -1;
+}
+
+STATIC
+word AddIdent(char* name)
+{
+  word i, len;
+
+  if ((i = FindIdent(name)) >= 0)
+    return i;
+
+  i = IdentTableLen;
+  len = strlen(name);
+
+  if (len >= 127)
+    error("Identifier too long\n");
+
+  if (MAX_IDENT_TABLE_LEN - IdentTableLen < len + 2)
+    error("Identifier table exhausted\n");
+
+  strcpy(IdentTable + IdentTableLen, name);
+  IdentTableLen += len + 1;
+  IdentTable[IdentTableLen++] = len + 1;
+
+  return i;
+}
+
+STATIC
+word AddNumericIdent(word n)
+{
+  char s[1 + (2 + CHAR_BIT * sizeof n) / 3];
+  char *p = s + sizeof s;
+  *--p = '\0';
+  p = lab2str(p, n);
+  return AddIdent(p);
+}
+
+STATIC
+word AddGotoLabel(char* name, word label)
+{
+  word i;
+  for (i = 0; i < gotoLabCnt; i++)
+  {
+    if (!strcmp(IdentTable + gotoLabels[i][0], name))
+    {
+      if (gotoLabStat[i] & label)
+      {
+        error("Redefinition of label ");
+        error(name);
+        error("\n");
+      }
+      gotoLabStat[i] |= 2*!label + label;
+      return gotoLabels[i][1];
+    }
+  }
+  if (gotoLabCnt >= MAX_GOTO_LABELS)
+    error("Goto table exhausted\n");
+  gotoLabels[gotoLabCnt][0] = AddIdent(name);
+  gotoLabels[gotoLabCnt][1] = LabelCnt++;
+  gotoLabStat[gotoLabCnt] = 2*!label + label;
+  return gotoLabels[gotoLabCnt++][1];
+}
+
+STATIC
+void UndoNonLabelIdents(word len)
+{
+  word i;
+  IdentTableLen = len;
+  for (i = 0; i < gotoLabCnt; i++)
+    if (gotoLabels[i][0] >= len)
+    {
+      char* pfrom = IdentTable + gotoLabels[i][0];
+      char* pto = IdentTable + IdentTableLen;
+      word l = strlen(pfrom) + 2;
+      memmove(pto, pfrom, l);
+      IdentTableLen += l;
+      gotoLabels[i][0] = pto - IdentTable;
+    }
+}
+
+STATIC
+void AddCase(word val, word label)
+{
+  if (CasesCnt >= MAX_CASES)
+    error("Case table exhausted\n");
+
+  Cases[CasesCnt][0] = val;
+  Cases[CasesCnt++][1] = label;
+}
+
+STATIC
+void DumpIdentTable(void)
+{
+  word i;
+  puts2("");
+  GenStartCommentLine(); printf2("Identifier table:\n");
+  for (i = 0; i < IdentTableLen; )
+  {
+    GenStartCommentLine(); 
+    printf2("Ident ");
+    printf2(IdentTable + i);
+    printf2("\n");
+    i += strlen(IdentTable + i) + 2;
+  }
+  GenStartCommentLine(); //TODO: printf2("Bytes used: %d/%d\n\n", IdentTableLen, MAX_IDENT_TABLE_LEN);
+}
+
+char* rws[] =
+{
+  "break", "case", "char", "continue", "default", "do", "else",
+  "extern", "for", "if", "int", "return", "signed", "sizeof",
+  "static", "switch", "unsigned", "void", "while", "asm", "auto",
+  "const", "double", "enum", "float", "goto", "inline", "long",
+  "register", "restrict", "short", "struct", "typedef", "union",
+  "volatile", "_Bool", "_Complex", "_Imaginary",
+  "__interrupt"
+};
+
+unsigned char rwtk[] =
+{
+  tokBreak, tokCase, tokChar, tokCont, tokDefault, tokDo, tokElse,
+  tokExtern, tokFor, tokIf, tokInt, tokReturn, tokSigned, tokSizeof,
+  tokStatic, tokSwitch, tokUnsigned, tokVoid, tokWhile, tok_Asm, tokAuto,
+  tokConst, tokDouble, tokEnum, tokFloat, tokGoto, tokInline, tokLong,
+  tokRegister, tokRestrict, tokShort, tokStruct, tokTypedef, tokUnion,
+  tokVolatile, tok_Bool, tok_Complex, tok_Imagin,
+  tokIntr
+};
+
+STATIC
+word GetTokenByWord(char* wrd)
+{
+  unsigned i;
+
+  for (i = 0; i < division(sizeof rws, sizeof rws[0]); i++)
+    if (!strcmp(rws[i], wrd))
+      return rwtk[i];
+
+  return tokIdent;
+}
+
+unsigned char tktk[] =
+{
+  tokEof,
+  // Single-character operators and punctuators:
+  '+', '-', '~', '*', '/', '%', '&', '|', '^', '!',
+  '<', '>', '(', ')', '[', ']',
+  '{', '}', '=', ',', ';', ':', '.', '?',
+  // Multi-character operators and punctuators:
+  tokLShift, tokLogAnd, tokEQ, tokLEQ, tokInc, tokArrow, tokAssignMul,
+  tokAssignMod, tokAssignSub, tokAssignRSh, tokAssignXor,
+  tokRShift, tokLogOr, tokNEQ, tokGEQ, tokDec, tokEllipsis,
+  tokAssignDiv, tokAssignAdd, tokAssignLSh, tokAssignAnd, tokAssignOr,
+  // Some of the above tokens get converted into these in the process:
+  tokUnaryAnd, tokUnaryPlus, tokPostInc, tokPostAdd,
+  tokULess, tokULEQ, tokURShift, tokUDiv, tokUMod, tokComma,
+  tokUnaryStar, tokUnaryMinus, tokPostDec, tokPostSub,
+  tokUGreater, tokUGEQ, tokAssignURSh, tokAssignUDiv, tokAssignUMod,
+  // Helper (pseudo-)tokens:
+  tokNumInt, tokLitStr, tokLocalOfs, tokNumUint, tokIdent, tokShortCirc,
+  tokSChar, tokShort, tokLong, tokUChar, tokUShort, tokULong, tokNumFloat,
+  tokNumCharWide, tokLitStrWide
+};
+
+char* tks[] =
+{
+  "<EOF>",
+  // Single-character operators and punctuators:
+  "+", "-", "~", "*", "/", "%", "&", "|", "^", "!",
+  "<", ">", "(", ")", "[", "]",
+  "{", "}", "=", ",", ";", ":", ".", "?",
+  // Multi-character operators and punctuators:
+  "<<", "&&", "==", "<=", "++", "->", "*=",
+  "%=", "-=", ">>=", "^=",
+  ">>", "||", "!=", ">=", "--", "...",
+  "/=", "+=", "<<=", "&=", "|=",
+  // Some of the above tokens get converted into these in the process:
+  "&u", "+u", "++p", "+=p",
+  "<u", "<=u", ">>u", "/u", "%u", ",b",
+  "*u", "-u", "--p", "-=p",
+  ">u", ">=u", ">>=u", "/=u", "%=u",
+  // Helper (pseudo-)tokens:
+  "<NumInt>",  "<LitStr>", "<LocalOfs>", "<NumUint>", "<Ident>", "<ShortCirc>",
+  "signed char", "short", "long", "unsigned char", "unsigned short", "unsigned long", "float",
+  "<NumCharWide>", "<LitStrWide>"
+};
+
+STATIC
+char* GetTokenName(word token)
+{
+  unsigned i;
+
+/* +-~* /% &|^! << >> && || < <= > >= == !=  () *[] ++ -- = += -= ~= *= /= %= &= |= ^= <<= >>= {} ,;: -> ... */
+
+  // Tokens other than reserved keywords:
+  for (i = 0; i < division(sizeof tktk , sizeof tktk[0]); i++)
+    if (tktk[i] == token)
+      return tks[i];
+
+  // Reserved keywords:
+  for (i = 0; i < division(sizeof rws , sizeof rws[0]); i++)
+    if (rwtk[i] == token)
+      return rws[i];
+
+  //error("Internal Error: GetTokenName(): Invalid token %d\n", token);
+  errorInternal(1);
+  return "";
+}
+
+STATIC
+word GetNextChar(void)
+{
+  word ch = EOF;
+
+  if (FileCnt && Files[FileCnt - 1])
+  {
+    if ((ch = fgetc(Files[FileCnt - 1])) == EOF)
+    {
+      fclose(Files[FileCnt - 1]);
+      Files[FileCnt - 1] = NULL;
+
+      // store the last line/pos, they may still be needed later
+      LineNos[FileCnt - 1] = LineNo;
+      LinePoss[FileCnt - 1] = LinePos;
+
+      // don't drop the file record just yet
+    }
+  }
+
+  return ch;
+}
+
+STATIC
+void ShiftChar(void)
+{
+  if (CharQueueLen)
+    memmove(CharQueue, CharQueue + 1, --CharQueueLen);
+
+  // make sure there always are at least 3 chars in the queue
+  while (CharQueueLen < 3)
+  {
+    word ch = GetNextChar();
+    if (ch == EOF)
+      ch = '\0';
+    CharQueue[CharQueueLen++] = ch;
+  }
+}
+
+STATIC
+void ShiftCharN(word n)
+{
+  while (n-- > 0)
+  {
+    ShiftChar();
+    LinePos++;
+  }
+}
+
+STATIC
+void IncludeFile(word quot)
+{
+  word nlen = strlen(TokenValueString);
+
+  if (CharQueueLen != 3)
+    //error("#include parsing error\n");
+    errorInternal(2);
+
+  if (FileCnt >= MAX_INCLUDES)
+    error("Too many include files\n");
+
+  // store the including file's position and buffered chars
+  LineNos[FileCnt - 1] = LineNo;
+  LinePoss[FileCnt - 1] = LinePos;
+  memcpy(CharQueues[FileCnt - 1], CharQueue, CharQueueLen);
+
+  // open the included file
+
+  if (nlen > MAX_FILE_NAME_LEN)
+    //error("File name too long\n");
+    errorFileName();
+
+  // DONE: differentiate between quot == '"' and quot == '<'
+
+  // First, try opening "file" in the current directory
+  // (Open Watcom C/C++ 1.9, Turbo C++ 1.01 use the current directory,
+  // unlike gcc, which uses the same directory as the current file)
+  if (quot == '"')
+  {
+    // Get path from c file to compile, so it can be appended to the include paths
+    char cFileDir[255] = "";
+    strcpy(cFileDir, FileNames[0]);
+
+    word len = strlen(cFileDir);  
+    while (len > 0) 
+    {
+       len--;
+       if (cFileDir[len] == '/') 
+       {
+          cFileDir[len+1] = '\0'; // keep the slash
+          break;
+       }
+    }
+    if (len == 0) // remove directory if there is none
+    {
+      cFileDir[0] = '\0';
+    }
+    strcpy(FileNames[FileCnt], TokenValueString);
+    strcat(cFileDir, FileNames[FileCnt]);
+    Files[FileCnt] = fopen(cFileDir, "r");
+  }
+
+  // Next, iterate the search paths trying to open "file" or <file>.
+  // "file" is first searched using the list provided by the -I option.
+  // "file" is then searched using the list provided by the -SI option.
+  // <file> is searched using the list provided by the -SI option.
+  if (Files[FileCnt] == NULL)
+  {
+    word i;
+    char *paths = SearchPaths;
+    word pl = SearchPathsLen;
+    for (;;)
+    {
+      if (quot == '<')
+      {
+        paths = SysSearchPaths;
+        pl = SysSearchPathsLen;
+      }
+      for (i = 0; i < pl; )
+      {
+        word plen = strlen(paths + i);
+        if (plen + 1 + nlen < MAX_FILE_NAME_LEN)
+        {
+          strcpy(FileNames[FileCnt], paths + i);
+          strcpy(FileNames[FileCnt] + plen + 1, TokenValueString);
+          // Use '/' as a separator, typical for Linux/Unix,
+          // but also supported by file APIs in DOS/Windows just as '\\'
+          FileNames[FileCnt][plen] = '/';
+          if ((Files[FileCnt] = fopen(FileNames[FileCnt], "r")) != NULL)
+            break;
+        }
+        i += plen + 1;
+      }
+      if (Files[FileCnt] || quot == '<')
+        break;
+      quot = '<';
+    }
+  }
+
+  if (Files[FileCnt] == NULL)
+  {
+    //error("Cannot open file \"%s\"\n", TokenValueString);
+    errorFile(TokenValueString);
+  }
+
+  // reset line/pos and empty the char queue
+  CharQueueLen = 0;
+  LineNo = LinePos = 1;
+  FileCnt++;
+
+  // fill the char queue with file data
+  ShiftChar();
+}
+
+STATIC
+word EndOfFiles(void)
+{
+  // if there are no including files, we're done
+  if (!--FileCnt)
+    return 1;
+
+  // restore the including file's position and buffered chars
+  LineNo = LineNos[FileCnt - 1];
+  LinePos = LinePoss[FileCnt - 1];
+  CharQueueLen = 3;
+  memcpy(CharQueue, CharQueues[FileCnt - 1], CharQueueLen);
+
+  return 0;
+}
+
+STATIC
+void SkipSpace(word SkipNewLines)
+{
+  char* p = CharQueue;
+
+  while (*p != '\0')
+  {
+    if (strchr(" \t\f\v", *p))
+    {
+      ShiftCharN(1);
+      continue;
+    }
+
+    if (strchr("\r\n", *p))
+    {
+      if (!SkipNewLines)
+        return;
+
+      if (*p == '\r' && p[1] == '\n')
+        ShiftChar();
+
+      ShiftChar();
+      LineNo++;
+      LinePos = 1;
+      continue;
+    }
+
+    if (*p == '/')
+    {
+      if (p[1] == '/')
+      {
+        // // comment
+        ShiftCharN(2);
+        while (!strchr("\r\n", *p))
+          ShiftCharN(1);
+        continue;
+      }
+      else if (p[1] == '*')
+      {
+        // /**/ comment
+        ShiftCharN(2);
+        while (*p != '\0' && !(*p == '*' && p[1] == '/'))
+        {
+          if (strchr("\r\n", *p))
+          {
+            if (!SkipNewLines)
+              error("Invalid comment\n");
+
+            if (*p == '\r' && p[1] == '\n')
+              ShiftChar();
+
+            ShiftChar();
+            LineNo++;
+            LinePos = 1;
+          }
+          else
+          {
+            ShiftCharN(1);
+          }
+        }
+        if (*p == '\0')
+          error("Invalid comment\n");
+        ShiftCharN(2);
+        continue;
+      }
+    } // endof if (*p == '/')
+
+    break;
+  } // endof while (*p != '\0')
+}
+
+STATIC
+void SkipLine(void)
+{
+  char* p = CharQueue;
+
+  while (*p != '\0')
+  {
+    if (strchr("\r\n", *p))
+    {
+      if (*p == '\r' && p[1] == '\n')
+        ShiftChar();
+
+      ShiftChar();
+      LineNo++;
+      LinePos = 1;
+      break;
+    }
+    else
+    {
+      ShiftCharN(1);
+    }
+  }
+}
+
+STATIC
+void GetIdent(void)
+{
+  char* p = CharQueue;
+
+  if (*p != '_' && !isalpha(*p & 0xFFu))
+    error("Identifier expected\n");
+
+  TokenIdentNameLen = 0;
+  TokenIdentName[TokenIdentNameLen++] = *p;
+  TokenIdentName[TokenIdentNameLen] = '\0';
+  ShiftCharN(1);
+
+  while (*p == '_' || isalnum(*p & 0xFFu))
+  {
+    if (TokenIdentNameLen == MAX_IDENT_LEN)
+    {
+      error("Identifier too long ");
+      error(TokenIdentName);
+      error("\n");
+    }
+    TokenIdentName[TokenIdentNameLen++] = *p;
+    TokenIdentName[TokenIdentNameLen] = '\0';
+    ShiftCharN(1);
+  }
+}
+
+STATIC
+unsigned GetCharValue(word wide)
+{
+  char* p = CharQueue;
+  unsigned ch = 0;
+  word cnt = 0;
+  if (*p == '\\')
+  {
+    ShiftCharN(1);
+    if (strchr("\n\r", *p))
+      goto lerr;
+    if (*p == 'x')
+    {
+      // hexadecimal character codes \xN+
+      // hexadecimal escape sequence is not limited in length per se
+      // (may have many leading zeroes)
+      static char digs[] = "0123456789ABCDEFabcdef";
+      static char vals[] =
+      {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+        10, 11, 12, 13, 14, 15,
+        10, 11, 12, 13, 14, 15
+      };
+      char* pp;
+      word zeroes = 0;
+      ShiftCharN(1);
+      if (strchr("\n\r", *p))
+        goto lerr;
+      if (*p == '0')
+      {
+        do
+        {
+          ShiftCharN(1);
+        } while (*p == '0');
+        zeroes = 1;
+      }
+      while (*p && (pp = strchr(digs, *p)) != NULL)
+      {
+        ch <<= 4;
+        ch |= vals[pp - digs];
+        ShiftCharN(1);
+        if (++cnt > 2)
+        {
+          if (PrepDontSkipTokens)
+            goto lerr;
+        }
+      }
+      if (zeroes + cnt == 0)
+        goto lerr;
+    }
+    else if (*p >= '0' && *p <= '7')
+    {
+      // octal character codes \N+
+      // octal escape sequence is terminated after three octal digits
+      do
+      {
+        ch <<= 3;
+        ch |= *p - '0';
+        ShiftCharN(1);
+        ++cnt;
+      } while (*p >= '0' && *p <= '7' && cnt < 3);
+      if (ch >> 8)
+        goto lerr;
+    }
+    else
+    {
+      switch (*p)
+      {
+      case 'a': ch = '\a'; ShiftCharN(1); break;
+      case 'b': ch = '\b'; ShiftCharN(1); break;
+      case 'f': ch = '\f'; ShiftCharN(1); break;
+      case 'n': ch = '\n'; ShiftCharN(1); break;
+      case 'r': ch = '\r'; ShiftCharN(1); break;
+      case 't': ch = '\t'; ShiftCharN(1); break;
+      case 'v': ch = '\v'; ShiftCharN(1); break;
+      default:
+        goto lself;
+      }
+    }
+  }
+  else
+  {
+lself:
+    if (strchr("\n\r", *p))
+    {
+lerr:
+      //error("Unsupported or invalid character/string constant\n");
+      errorChrStr();
+    }
+    ch = *p & 0xFFu;
+    ShiftCharN(1);
+  }
+  return ch;
+}
+
+STATIC
+void GetString(char terminator, word wide, word option)
+{
+  char* p = CharQueue;
+  unsigned ch = '\0';
+  unsigned chsz = 1;
+  word i;
+  char* ctmp = " ";
+
+  TokenStringLen = 0;
+  TokenStringSize = 0;
+  TokenValueString[TokenStringLen] = '\0';
+
+  ShiftCharN(1);
+  while (!(*p == terminator || strchr("\n\r", *p)))
+  {
+    ch = GetCharValue(wide);
+    switch (option)
+    {
+    case '#': // string literal (with file name) for #line and #include
+      if (TokenStringLen == MAX_STRING_LEN)
+        errorStrLen();
+      TokenValueString[TokenStringLen++] = ch;
+      TokenValueString[TokenStringLen] = '\0';
+      TokenStringSize += chsz;
+      break;
+    case 'a': // string literal for asm()
+      ctmp[0] = ch;
+      printf2(ctmp);
+      break;
+    case 'd': // string literal / array of char in expression or initializer
+      // Dump the char data to the appropriate data section
+      for (i = 0; i < chsz; i++)
+      {
+        GenDumpChar(ch & 0xFFu);
+        ch >>= 8;
+        TokenStringLen++; // GenDumpChar() expects it to grow, doesn't know about wchar_t
+      }
+      TokenStringLen -= chsz;
+      // fallthrough
+    default: // skipped string literal (we may still need the size)
+      if (TokenStringSize > UINT_MAX - chsz)
+        errorStrLen();
+      TokenStringSize += chsz;
+      TokenStringLen++;
+      break;
+    } // endof switch (option)
+  } // endof while (!(*p == '\0' || *p == terminator || strchr("\n\r", *p)))
+
+  if (*p != terminator)
+    //error("Unsupported or invalid character/string constant\n");
+    errorChrStr();
+
+  if (option == 'd')
+    GenDumpChar(-1);
+
+  ShiftCharN(1);
+
+  SkipSpace(option != '#');
+}
+
+STATIC
+void pushPrep(word NoSkip)
+{
+  if (PrepSp >= PREP_STACK_SIZE)
+    error("Too many #if(n)def's\n");
+  PrepStack[PrepSp][0] = PrepDontSkipTokens;
+  PrepStack[PrepSp++][1] = NoSkip;
+  PrepDontSkipTokens &= NoSkip;
+}
+
+STATIC
+word popPrep(void)
+{
+  if (PrepSp <= 0)
+    error("#else or #endif without #if(n)def\n");
+  PrepDontSkipTokens = PrepStack[--PrepSp][0];
+  return PrepStack[PrepSp][1];
+}
+
+
+STATIC
+word GetNumber(void)
+{
+  char* p = CharQueue;
+  word ch = *p;
+  word leadingZero = (ch == '0');
+  unsigned n = 0;
+  word type = 0;
+  word uSuffix = 0;
+  word lSuffix = 0;
+  char* eTooBig = "Constant too big\n";
+
+  // First, detect and handle hex constants. Octals can't be detected immediately
+  // because floating-point constants also may begin with the digit 0.
+
+  if (leadingZero && (p[1] == 'x' || p[1] == 'X'))
+  {
+    // this is a hex constant
+    word cnt = 0;
+    type = 'h';
+    ShiftCharN(1);
+    ShiftCharN(1);
+    while ((ch = *p) != '\0' && (isdigit(ch & 0xFFu) || strchr("abcdefABCDEF", ch)))
+    {
+      if (ch >= 'a') ch -= 'a' - 10;
+      else if (ch >= 'A') ch -= 'A' - 10;
+      else ch -= '0';
+      //if (PrepDontSkipTokens && (n * 16 / 16 != n || n * 16 + ch < n * 16))
+      //  error(eTooBig);
+      n = n * 16 + ch;
+      ShiftCharN(1);
+      cnt++;
+    }
+    if (!cnt)
+      error("Invalid hexadecimal constant\n");
+  }
+  else
+  {
+    // handle decimal and octal integers
+    word base = leadingZero ? 8 : 10;
+    type = leadingZero ? 'o' : 'd';
+    while ((ch = *p) >= '0' && ch < base + '0')
+    {
+      ch -= '0';
+      if (PrepDontSkipTokens && (n * base + ch < n * base)) //n * base / base != n || 
+        error(eTooBig);
+      n = n * base + ch;
+      ShiftCharN(1);
+    }
+  }
+
+  // possible combinations of integer suffixes:
+  //   none
+  //   U
+  //   UL
+  //   L
+  //   LU
+  {
+    if ((ch = *p) == 'u' || ch == 'U')
+    {
+      uSuffix = 1;
+      ShiftCharN(1);
+    }
+    if ((ch = *p) == 'l' || ch == 'L')
+    {
+      lSuffix = 1;
+      ShiftCharN(1);
+      if (!uSuffix && ((ch = *p) == 'u' || ch == 'U'))
+      {
+        uSuffix = 1;
+        ShiftCharN(1);
+      }
+    }
+  }
+
+  if (!PrepDontSkipTokens)
+  {
+    // Don't fail on big constants when skipping tokens under #if
+    TokenValueInt = 0;
+    return tokNumInt;
+  }
+
+
+  // Ensure the constant fits into 16(32) bits
+  if (
+      (SizeOfWord == 2 && n >> 8 >> 8) // equiv. to SizeOfWord == 2 && n > 0xFFFF
+      || (SizeOfWord == 2 && lSuffix) // long (which must have at least 32 bits) isn't supported in 16-bit models
+      || (SizeOfWord == 4 && n >> 8 >> 12 >> 12) // equiv. to SizeOfWord == 4 && n > 0xFFFFFFFF
+     )
+    error("Constant too big for %d-bit type\n", SizeOfWord * 8);
+
+  TokenValueInt = (word)n;
+
+  // Unsuffixed (with 'u') integer constants (octal, decimal, hex)
+  // fitting into 15(31) out of 16(32) bits are signed ints
+  if (!uSuffix &&
+      (
+       (SizeOfWord == 2 && !(n >> 15)) // equiv. to SizeOfWord == 2 && n <= 0x7FFF
+       || (SizeOfWord == 4 && !(n >> 8 >> 12 >> 11)) // equiv. to SizeOfWord == 4 && n <= 0x7FFFFFFF
+      )
+     )
+    return tokNumInt;
+
+  // Unlike octal and hex constants, decimal constants are always
+  // a signed type. Error out when a decimal constant doesn't fit
+  // into an int since currently there's no next bigger signed type
+  // (e.g. long) to use instead of int.
+  if (!uSuffix && type == 'd')
+    error("Constant too big for 32-bit signed type\n");
+
+  return tokNumUint;
+}
+
+STATIC
+word GetTokenInner(void)
+{
+  char* p = CharQueue;
+  word ch = *p;
+  word wide = 0;
+
+  // these single-character tokens/operators need no further processing
+  if (strchr(",;:()[]{}~?", ch))
+  {
+    ShiftCharN(1);
+    return ch;
+  }
+
+  // parse multi-character tokens/operators
+
+  // DONE: other assignment operators
+  switch (ch)
+  {
+  case '+':
+    if (p[1] == '+') { ShiftCharN(2); return tokInc; }
+    if (p[1] == '=') { ShiftCharN(2); return tokAssignAdd; }
+    ShiftCharN(1); return ch;
+  case '-':
+    if (p[1] == '-') { ShiftCharN(2); return tokDec; }
+    if (p[1] == '=') { ShiftCharN(2); return tokAssignSub; }
+    if (p[1] == '>') { ShiftCharN(2); return tokArrow; }
+    ShiftCharN(1); return ch;
+  case '!':
+    if (p[1] == '=') { ShiftCharN(2); return tokNEQ; }
+    ShiftCharN(1); return ch;
+  case '=':
+    if (p[1] == '=') { ShiftCharN(2); return tokEQ; }
+    ShiftCharN(1); return ch;
+  case '<':
+    if (p[1] == '=') { ShiftCharN(2); return tokLEQ; }
+    if (p[1] == '<') { ShiftCharN(2); if (p[0] != '=') return tokLShift; ShiftCharN(1); return tokAssignLSh; }
+    ShiftCharN(1); return ch;
+  case '>':
+    if (p[1] == '=') { ShiftCharN(2); return tokGEQ; }
+    if (p[1] == '>') { ShiftCharN(2); if (p[0] != '=') return tokRShift; ShiftCharN(1); return tokAssignRSh; }
+    ShiftCharN(1); return ch;
+  case '&':
+    if (p[1] == '&') { ShiftCharN(2); return tokLogAnd; }
+    if (p[1] == '=') { ShiftCharN(2); return tokAssignAnd; }
+    ShiftCharN(1); return ch;
+  case '|':
+    if (p[1] == '|') { ShiftCharN(2); return tokLogOr; }
+    if (p[1] == '=') { ShiftCharN(2); return tokAssignOr; }
+    ShiftCharN(1); return ch;
+  case '^':
+    if (p[1] == '=') { ShiftCharN(2); return tokAssignXor; }
+    ShiftCharN(1); return ch;
+  case '.':
+    if (p[1] == '.' && p[2] == '.') { ShiftCharN(3); return tokEllipsis; }
+    ShiftCharN(1); return ch;
+  case '*':
+    if (p[1] == '=') { ShiftCharN(2); return tokAssignMul; }
+    ShiftCharN(1); return ch;
+  case '%':
+    if (p[1] == '=') { ShiftCharN(2); return tokAssignMod; }
+    ShiftCharN(1); return ch;
+  case '/':
+    if (p[1] == '=') { ShiftCharN(2); return tokAssignDiv; }
+    ShiftCharN(1); return ch;
+  }
+
+  // DONE: hex and octal constants
+  if (isdigit(ch & 0xFFu))
+    return GetNumber();
+
+  // parse character and string constants
+  if (ch == '\'')
+  {
+    unsigned v = 0;
+    word cnt = 0;
+    word max_cnt = SizeOfWord;
+    ShiftCharN(1);
+    if (strchr("'\n\r", *p))
+      //error("Character constant too short\n");
+      errorChrStr();
+    do
+    {
+      v <<= 8;
+      v |= GetCharValue(wide);
+      if (++cnt > max_cnt)
+        //error("Character constant too long\n");
+        errorChrStr();
+    } while (!strchr("'\n\r", *p));
+    if (*p != '\'')
+      //error("Unsupported or invalid character/string constant\n");
+      errorChrStr();
+    ShiftCharN(1);
+    {
+      if (cnt == 1)
+      {
+        TokenValueInt = v;
+        TokenValueInt -= (CharIsSigned && TokenValueInt >= 0x80) * 0x100;
+      }
+      else
+      {
+        TokenValueInt = v;
+        TokenValueInt -= (SizeOfWord == 2 && TokenValueInt >= 0x8000) * 0x10000;
+      }
+      return tokNumInt;
+    }
+  }
+  else if (ch == '"')
+  {
+    // The caller of GetTokenInner()/GetToken() will call GetString('"', wide, 'd')
+    // to complete string literal parsing and storing as appropriate
+
+    return tokLitStr;
+
+  }
+
+  return tokEof;
+}
+
+
+STATIC
+void Reserve4Expansion(char* name, word len)
+{
+  if (MAX_CHAR_QUEUE_LEN - CharQueueLen < len + 1)
+  {
+    error("Too long expansion of macro ");
+    error(name);
+    error("\n");
+  }
+
+  memmove(CharQueue + len + 1, CharQueue, CharQueueLen);
+
+  CharQueue[len] = ' '; // space to avoid concatenation
+
+  CharQueueLen += len + 1;
+}
+
+
+// TBD??? implement file I/O for input source code and output code (use fxn ptrs/wrappers to make librarization possible)
+// DONE: support string literals
+STATIC
+word GetToken(void)
+{
+  char* p = CharQueue;
+  word ch;
+  word tok;
+
+  for (;;)
+  {
+/* +-~* /% &|^! << >> && || < <= > >= == !=  () *[] ++ -- = += -= ~= *= /= %= &= |= ^= <<= >>= {} ,;: -> ... */
+
+    // skip white space and comments
+    SkipSpace(1);
+
+    if ((ch = *p) == '\0')
+    {
+      // done with the current file, drop its record,
+      // pick up the including files (if any) or terminate
+      if (EndOfFiles())
+        break;
+      continue;
+    }
+
+    if ((tok = GetTokenInner()) != tokEof)
+    {
+      if (PrepDontSkipTokens)
+        return tok;
+      if (tok == tokLitStr)
+        GetString('"', 0, 0);
+
+      continue;
+    }
+
+    // parse identifiers and reserved keywords
+    if (ch == '_' || isalpha(ch & 0xFFu))
+    {
+
+      word midx;
+
+
+      GetIdent();
+
+      if (!PrepDontSkipTokens)
+        continue;
+
+      tok = GetTokenByWord(TokenIdentName);
+
+
+      // TBD!!! think of expanding macros in the context of concatenating string literals,
+      // maybe factor out this piece of code
+      if (!strcmp(TokenIdentName, "__FILE__"))
+      {
+        char* p = FileNames[FileCnt - 1];
+        word len = strlen(p);
+        Reserve4Expansion(TokenIdentName, len + 2);
+        *CharQueue = '"';
+        memcpy(CharQueue + 1, p, len);
+        CharQueue[len + 1] = '"';
+        continue;
+      }
+      else if (!strcmp(TokenIdentName, "__LINE__"))
+      {
+        char s[(2 + CHAR_BIT * sizeof LineNo) / 3];
+        char *p = lab2str(s + sizeof s, LineNo);
+        word len = s + sizeof s - p;
+        Reserve4Expansion(TokenIdentName, len);
+        memcpy(CharQueue, p, len);
+        continue;
+      }
+      else if ((midx = FindMacro(TokenIdentName)) >= 0)
+      {
+        // this is a macro identifier, need to expand it
+        word len = MacroTable[midx];
+        Reserve4Expansion(TokenIdentName, len);
+        memcpy(CharQueue, MacroTable + midx + 1, len);
+        continue;
+      }
+
+
+      // treat keywords auto, const, register, restrict and volatile as white space for now
+      if ((tok == tokConst) | (tok == tokVolatile) |
+          (tok == tokAuto) | (tok == tokRegister) |
+          (tok == tokRestrict))
+        continue;
+
+      return tok;
+    } // endof if (ch == '_' || isalpha(ch))
+
+    // parse preprocessor directives
+    if (ch == '#')
+    {
+      word line = 0;
+
+      ShiftCharN(1);
+
+      // Skip space
+      SkipSpace(0);
+
+      // Allow # not followed by a directive
+      if (strchr("\r\n", *p))
+        continue;
+
+      // Get preprocessor directive
+      if (isdigit(*p & 0xFFu))
+      {
+        // gcc-style #line directive without "line"
+        line = 1;
+      }
+      else
+      {
+        GetIdent();
+        if (!strcmp(TokenIdentName, "line"))
+        {
+          // C89-style #line directive
+          SkipSpace(0);
+          if (!isdigit(*p & 0xFFu))
+            errorDirective();
+          line = 1;
+        }
+      }
+
+      if (line)
+      {
+        // Support for external, gcc-like, preprocessor output:
+        //   # linenum filename flags
+        //
+        // no flags, flag = 1 -- start of a file
+        //           flag = 2 -- return to a file after #include
+        //        other flags -- uninteresting
+
+        // DONE: should also support the following C89 form:
+        // # line linenum filename-opt
+
+        if (GetNumber() != tokNumInt)
+          //error("Invalid line number in preprocessor output\n");
+          errorDirective();
+        line = TokenValueInt;
+
+        SkipSpace(0);
+
+        if (*p == '"' || *p == '<')
+        {
+          if (*p == '"')
+            GetString('"', 0, '#');
+          else
+            GetString('>', 0, '#');
+
+          if (strlen(TokenValueString) > MAX_FILE_NAME_LEN)
+            //error("File name too long in preprocessor output\n");
+            errorFileName();
+          strcpy(FileNames[FileCnt - 1], TokenValueString);
+        }
+
+        // Ignore gcc-style #line's flags, if any
+        while (!strchr("\r\n", *p))
+          ShiftCharN(1);
+
+        LineNo = line - 1; // "line" is the number of the next line
+        LinePos = 1;
+
+        continue;
+      } // endof if (line)
+
+
+
+      if (!strcmp(TokenIdentName, "define"))
+      {
+        // Skip space and get macro name
+        SkipSpace(0);
+        GetIdent();
+
+        if (!PrepDontSkipTokens)
+        {
+          SkipSpace(0);
+          while (!strchr("\r\n", *p))
+            ShiftCharN(1);
+          continue;
+        }
+
+        if (FindMacro(TokenIdentName) >= 0)
+        {
+          error("Redefinition of macro ");
+          error(TokenIdentName);
+          error("\n");
+        }
+        if (*p == '(')
+          //error("Unsupported type of macro '%s'\n", TokenIdentName);
+          errorDirective();
+
+        AddMacroIdent(TokenIdentName);
+
+        SkipSpace(0);
+
+        // accumulate the macro expansion text
+        while (!strchr("\r\n", *p))
+        {
+          AddMacroExpansionChar(*p);
+          ShiftCharN(1);
+          if (*p != '\0' && (strchr(" \t", *p) || (*p == '/' && (p[1] == '/' || p[1] == '*'))))
+          {
+            SkipSpace(0);
+            AddMacroExpansionChar(' ');
+          }
+        }
+        AddMacroExpansionChar('\0');
+
+        continue;
+      }
+      else if (!strcmp(TokenIdentName, "undef"))
+      {
+        // Skip space and get macro name
+        SkipSpace(0);
+        GetIdent();
+
+        if (PrepDontSkipTokens)
+          UndefineMacro(TokenIdentName);
+
+        SkipSpace(0);
+        if (!strchr("\r\n", *p))
+          //error("Invalid preprocessor directive\n");
+          errorDirective();
+        continue;
+      }
+      else if (!strcmp(TokenIdentName, "include"))
+      {
+        word quot;
+
+        // Skip space and get file name
+        SkipSpace(0);
+
+        quot = *p;
+        if (*p == '"')
+          GetString('"', 0, '#');
+        else if (*p == '<')
+          GetString('>', 0, '#');
+        else
+          //error("Invalid file name\n");
+          errorFileName();
+
+        SkipSpace(0);
+        if (!strchr("\r\n", *p))
+          //error("Unsupported or invalid preprocessor directive\n");
+          errorDirective();
+
+        if (PrepDontSkipTokens)
+          IncludeFile(quot);
+
+        continue;
+      }
+      else if (!strcmp(TokenIdentName, "ifdef"))
+      {
+        word def;
+        // Skip space and get macro name
+        SkipSpace(0);
+        GetIdent();
+        def = FindMacro(TokenIdentName) >= 0;
+        SkipSpace(0);
+        if (!strchr("\r\n", *p))
+          //error("Invalid preprocessor directive\n");
+          errorDirective();
+        pushPrep(def);
+        continue;
+      }
+      else if (!strcmp(TokenIdentName, "ifndef"))
+      {
+        word def;
+        // Skip space and get macro name
+        SkipSpace(0);
+        GetIdent();
+        def = FindMacro(TokenIdentName) >= 0;
+        SkipSpace(0);
+        if (!strchr("\r\n", *p))
+          //error("Invalid preprocessor directive\n");
+          errorDirective();
+        pushPrep(!def);
+        continue;
+      }
+      else if (!strcmp(TokenIdentName, "else"))
+      {
+        word def;
+        SkipSpace(0);
+        if (!strchr("\r\n", *p))
+          //error("Invalid preprocessor directive\n");
+          errorDirective();
+        def = popPrep();
+        if (def >= 2)
+          error("#else or #endif without #if(n)def\n");
+        pushPrep(2 + !def); // #else works in opposite way to its preceding #if(n)def
+        continue;
+      }
+      else if (!strcmp(TokenIdentName, "endif"))
+      {
+        SkipSpace(0);
+        if (!strchr("\r\n", *p))
+          //error("Invalid preprocessor directive\n");
+          errorDirective();
+        popPrep();
+        continue;
+      }
+
+      if (!PrepDontSkipTokens)
+      {
+        // If skipping code and directives under #ifdef/#ifndef/#else,
+        // ignore unsupported directives #if, #elif, #error (no error checking)
+        if (!strcmp(TokenIdentName, "if"))
+          pushPrep(0);
+        else if (!strcmp(TokenIdentName, "elif"))
+          popPrep(), pushPrep(0);
+        SkipLine();
+        continue;
+      }
+
+      //error("Unsupported or invalid preprocessor directive\n");
+      errorDirective();
+    } // endof if (ch == '#')
+
+    error("Invalid or unsupported character");
+    //error("Invalid or unsupported character with code 0x%02X\n", *p & 0xFFu);
+  } // endof for (;;)
+
+  return tokEof;
+}
+
+STATIC
+void errorRedecl(char* s)
+{
+  error("Invalid or unsupported redeclaration of ");
+  error(s);
+  error("\n");
+}
+
+
+#include "backend.c"
+
+
+
+
+
+
 int main() 
 {
-  int i;
+  word i;
 
     // Run-time initializer for SyntaxStack0[] to reduce
     // executable file size (SyntaxStack0[] will be in .bss)
@@ -658,6 +2056,8 @@ int main()
     }; // SyntaxStackCnt must be initialized to the number of elements in SyntaxStackInit[]
     memcpy(SyntaxStack0, SyntaxStackInit, sizeof SyntaxStackInit);
     SyntaxStackCnt = 10;
+
+    SyntaxStack1[SymFuncPtr] = DummyIdent = AddIdent("");
 
 
 

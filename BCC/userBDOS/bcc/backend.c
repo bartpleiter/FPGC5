@@ -67,7 +67,7 @@ void GenInit(void)
 }
 
 STATIC
-int GenInitParams(int argc, char** argv, int* idx)
+word GenInitParams(word argc, char** argv, word* idx)
 {
   return 0;
 }
@@ -140,19 +140,24 @@ void GenStartCommentLine(void)
 
 // No alignment needed on B322
 STATIC
-void GenWordAlignment(int bss)
+void GenWordAlignment(word bss)
 {
   (void)bss;
   printf2("; .align 2\n");
 }
 
 STATIC
-void GenLabel(char* Label, int Static)
+void GenLabel(char* Label, word Static)
 {
   {
     if (!Static && GenExterns)
-      printf2("; .globl %s\n", Label);
-    printf2("%s:\n", Label);
+    {
+      printf2("; .globl ");
+      printf2(Label);
+      printf2("\n");
+    }
+    printf2(Label);
+    printf2(":\n");
   }
 }
 
@@ -161,29 +166,39 @@ void GenPrintLabel(char* Label)
 {
   {
     if (isdigit(*Label))
-      printf2("Label_%s", Label);
+    {
+      printf2("Label_");
+      printf2(Label);
+    }
     else
-      printf2("%s", Label);
+    {
+      printf2(Label);
+    }
   }
 }
 
 STATIC
 void GenNumLabel(int Label)
 {
-  printf2("Label_%d:\n", Label);
+  printf2("Label_");
+  printd2(Label);
+  printf2(":\n");
 }
 
 STATIC
 void GenPrintNumLabel(int label)
 {
-  printf2("Label_%d", label);
+  printf2("Label_");
+  printd2(Label);
 }
 
 STATIC
 void GenZeroData(unsigned Size, int bss)
 {
   (void)bss;
-  printf2("; .space %u\n", truncUint(Size));
+  printf2("; .space ");
+  printd2(truncUint(Size));
+  printf2("\n");
 
   // B322 implementation of .space:
   if (Size > 0)
@@ -206,11 +221,31 @@ void GenIntData(int Size, int Val)
 
   // Print multiple times, since the compiler does not know yet B322 is word addressable
   if (Size == 1)
-    printf2(" .dw %d\n", Val);
+  {
+    printf2(" .dw ");
+    printd2(Val);
+    printf2("\n");
+  }
   else if (Size == 2)
-    printf2(" .dw %d %d\n", Val, Val);
+  {
+    printf2(" .dw ");
+    printd2(Val);
+    printf2(" ");
+    printd2(Val);
+    printf2("\n");
+  }
   else if (Size == 4)
-    printf2(" .dw %d %d %d %d\n", Val, Val, Val, Val);
+  {
+    printf2(" .dw ");
+    printd2(Val);
+    printf2(" ");
+    printd2(Val);
+    printf2(" ");
+    printd2(Val);
+    printf2(" ");
+    printd2(Val);
+    printf2("\n");
+  }
   
 }
 
@@ -234,7 +269,10 @@ void GenAddrData(int Size, char* Label, int ofs)
 
     // Still not sure if this ever gets called (and probably will not work until an Assembler update)
     if (ofs)
-      printf2(" %+d", ofs);
+    {
+      printf2(" +");
+      printd2(ofs);
+    }
     puts2("");
   }
 }
@@ -329,7 +367,9 @@ void GenPrintInstr(int instr, int val)
   case B322InstrReadintid  : p = "readintid"; break;
   }
 
-  printf2(" %s ", p);
+  printf2(" ");
+  printf2(p);
+  printf2(" ");
 }
 
 #define B322OpRegZero                    0x00 //0  0
@@ -378,21 +418,28 @@ void GenPrintOperand(int op, int val)
 {
   if (op >= B322OpRegZero && op <= B322OpRegRa)
   {
-    printf2("r%d", op);
+    printf2("r");
+    printd2(op);
   }
   else if (op >= B322OpIndRegZero && op <= B322OpIndRegRa)
   {
-    printf2("%d r%d", truncInt(val), op - B322OpIndRegZero);
+    printd2(truncInt(val));
+    printf2(" r");
+    printd2(op - B322OpIndRegZero);
   }
   else
   {
     switch (op)
     {
-    case B322OpConst: printf2("%d", truncInt(val)); break;
+    case B322OpConst: printd2(truncInt(val)); break;
     case B322OpLabelLo:
+      // should not be called anymore
+      printf2("LABELLO WHOOPS!\n");
+      /*
       printf2("%%lo(");
       GenPrintLabel(IdentTable + val);
       printf2(")(r1)");
+      */
       break;
     case B322OpLabel: GenPrintLabel(IdentTable + val); break;
     case B322OpNumLabel: GenPrintNumLabel(val); break;
@@ -625,16 +672,30 @@ void GenWriteFrameSize(void) //WORDSIZE
 {
   unsigned size = 8/*RA + FP*/ - CurFxnMinLocalOfs;
   //printf2(" subu r13, r13, %10u\n", size); // 10 chars are enough for 32-bit unsigned ints
-  printf2(" sub r13 %10u r13\n", size); // r13 = r13 - size
+  printf2(" sub r13 "); // r13 = r13 - size
+  printd2(size); // r13 = r13 - size
+  printf2(" r13\n"); // r13 = r13 - size
 
   //printf2(" sw r14, %10u r13\n", size - 8);
-  printf2(" write %10u r13 r14\n", size - 8); // write r14 to memory[r13+(size-8)]
+  printf2(" write "); // write r14 to memory[r13+(size-8)]
+  printd2(size - 8); // write r14 to memory[r13+(size-8)]
+  printf2(" r13 r14\n"); // write r14 to memory[r13+(size-8)]
   
   //printf2(" addu r14, r13, %10u\n", size - 8);
-  printf2(" add r13 %10u r14\n", size - 8); // r14 = r13 + (size-8)
+  printf2(" add r13 "); // r14 = r13 + (size-8)
+  printd2(size - 8); // r14 = r13 + (size-8)
+  printf2(" r14\n"); // r14 = r13 + (size-8)
 
   //printf2(" %csw r15, 4 r14\n", GenLeaf ? ';' : ' ');
-  printf2(" %c write 4 r14 r15\n", GenLeaf ? ';' : ' '); // write r15 to memory[r14+4]
+  if (GenLeaf)
+  {
+    printf2(" ;")
+  }
+  else
+  {
+    printf2("  ");
+  }
+  printf2(" write 4 r14 r15\n"); // write r15 to memory[r14+4]
 }
 
 STATIC
@@ -1865,9 +1926,9 @@ void GenExpr0(void)
 
     switch (tok)
     {
-    case tokNumInt: printf2(" ; %d\n", truncInt(v)); break;
+    case tokNumInt: printf2(" ; "); printd2(truncInt(v)); printf2("\n"); break;
     //case tokNumUint: printf2(" ; %uu\n", truncUint(v)); break;
-    case tokIdent: case tokRevIdent: printf2(" ; %s\n", IdentTable + v); break;
+    case tokIdent: case tokRevIdent: printf2(" ; "); printf2(IdentTable + v); printf2("\n"); break;
     case tokLocalOfs: case tokRevLocalOfs: printf2(" ; local ofs\n"); break;
     case ')': printf2(" ; ) fxn call\n"); break;
     case tokUnaryStar: printf2(" ; * (read dereference)\n"); break;
@@ -1879,7 +1940,7 @@ void GenExpr0(void)
     case tokIf: case tokIfNot: case tokReturn: break;
     case tokNum0: printf2(" ; 0\n"); break;
     case tokAssign0:  printf2(" ; =\n"); break;
-    default: printf2(" ; %s\n", GetTokenName(tok)); break;
+    default: printf2(" ; "); printf2(GetTokenName(tok)); printf2("\n"); break;
     }
 
     switch (tok)
@@ -2553,7 +2614,8 @@ void GenDumpChar(int ch)
   }
 
   // Just print as ascii value
-  printf2("%d ", ch);
+  printd2(ch);
+  printf2(" ");
 }
 
 STATIC

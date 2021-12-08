@@ -1,4 +1,25 @@
+/*
+* Standard library
+* Contains basic functions, including timer and memory functions
+* Modified version for BCC
+*/
+
+// uses math.c 
+
 #define UART_TX_ADDR 0xC02723
+
+// Timer I/O Addresses
+#define TIMER1_VAL 0xC02739
+#define TIMER1_CTRL 0xC0273A
+#define TIMER2_VAL 0xC0273B
+#define TIMER2_CTRL 0xC0273C
+#define TIMER3_VAL 0xC0273D
+#define TIMER3_CTRL 0xC0273E
+
+word timer1Value = 0;
+word timer2Value = 0;
+word timer3Value = 0;
+
 
 // isalpha
 STATIC
@@ -379,4 +400,87 @@ void uprintlnHex(word i)
     itoah(i, buffer);
     uprint(buffer);
     uprintc('\n');
+}
+
+// sleeps ms using timer1.
+// blocking.
+// requires int1() to set timer1Value to 1:
+/*
+    timer1Value = 1; // notify ending of timer1
+*/
+void delay(word ms)
+{
+
+    // clear result
+    timer1Value = 0;
+
+    // set timer
+    word *p = (word *) TIMER1_VAL;
+    *p = ms;
+    // start timer
+    word *q = (word *) TIMER1_CTRL;
+    *q = 1;
+
+    // wait until timer done
+    while (timer1Value == 0);
+}
+
+
+// Returns interrupt ID by using the readintid asm instruction
+word getIntID()
+{
+    word retval = 0;
+
+    asm(
+        "readintid r2    ;reads interrupt id to r2\n"
+        "write -4 r14 r2 ;write to stack to return\n"
+        );
+
+    return retval;
+}
+
+
+
+// Converts char c to uppercase if possible
+char toUpper(char c)
+{
+    if (c>96 && c<123) 
+        c = c ^ 0x20;
+
+    return c;
+}
+
+
+// Converts string str to uppercase if possible
+void strToUpper(char* str) 
+{
+    char chr = *str;            // first character of str
+
+    while (chr != 0)            // continue until null value
+    {
+        *str = toUpper(chr);    // uppercase char
+        str++;                  // go to next character address
+        chr = *str;             // get character from address
+    }
+}
+
+
+/*
+For debugging
+Prints a hex dump of size 'len' for each word starting from 'addr'
+Values are printed over UART
+*/
+void hexdump(char* addr, word len)
+{
+    char buf[16];
+    word i;
+    for (i = 0; i < len; i++)
+    {
+        // newline every 8 words
+        if (i != 0 && MATH_modU(i, 8) == 0)
+            uprintc('\n');
+        itoah(addr[i], buf);
+        uprint(buf);
+        uprintc(' ');
+    }
 }
