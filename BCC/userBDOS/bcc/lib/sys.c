@@ -5,11 +5,13 @@ Contains System Call functions
 #define SYSCALL_RETVAL_ADDR 0x200000
 
 // Interrupt IDs for extended interrupt handler
+/*
 #define INTID_TIMER2 0x0
 #define INTID_TIMER3 0x1
 #define INTID_PS2 0x2
 #define INTID_UART1 0x3
 #define INTID_UART2 0x4
+*/
 
 
 // executes system call to BDOS

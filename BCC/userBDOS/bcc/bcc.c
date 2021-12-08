@@ -131,6 +131,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
+struct fpos_t_
+{
+  union
+  {
+    unsigned short halves[2]; // for 16-bit memory models without 32-bit longs
+    int align; // for alignment on machine word boundary
+  } u;
+}; // keep in sync with stdio.h !!!
+#define fpos_t struct fpos_t_
+int fgetpos(word, fpos_t*);
+int fsetpos(word, fpos_t*);
+
+
+
 // all public macros
 
 #define MAX_IDENT_LEN         63

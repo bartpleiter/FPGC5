@@ -11,10 +11,10 @@
 // Timer I/O Addresses
 #define TIMER1_VAL 0xC02739
 #define TIMER1_CTRL 0xC0273A
-#define TIMER2_VAL 0xC0273B
-#define TIMER2_CTRL 0xC0273C
-#define TIMER3_VAL 0xC0273D
-#define TIMER3_CTRL 0xC0273E
+//#define TIMER2_VAL 0xC0273B
+//#define TIMER2_CTRL 0xC0273C
+//#define TIMER3_VAL 0xC0273D
+//#define TIMER3_CTRL 0xC0273E
 
 word timer1Value = 0;
 word timer2Value = 0;

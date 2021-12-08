@@ -178,7 +178,7 @@ void GenPrintLabel(char* Label)
 }
 
 STATIC
-void GenNumLabel(int Label)
+void GenNumLabel(word Label)
 {
   printf2("Label_");
   printd2(Label);
@@ -186,14 +186,14 @@ void GenNumLabel(int Label)
 }
 
 STATIC
-void GenPrintNumLabel(int label)
+void GenPrintNumLabel(word label)
 {
   printf2("Label_");
-  printd2(Label);
+  printd2(label);
 }
 
 STATIC
-void GenZeroData(unsigned Size, int bss)
+void GenZeroData(unsigned Size, word bss)
 {
   (void)bss;
   printf2("; .space ");
@@ -204,7 +204,7 @@ void GenZeroData(unsigned Size, int bss)
   if (Size > 0)
   {
     printf2(".dw");
-    int i;
+    word i;
     for (i = 0; i < Size; i++)
     {
       printf2(" 0");
@@ -215,7 +215,7 @@ void GenZeroData(unsigned Size, int bss)
 }
 
 STATIC
-void GenIntData(int Size, int Val)
+void GenIntData(word Size, word Val)
 {
   Val = truncInt(Val);
 
@@ -256,11 +256,11 @@ void GenStartAsciiString(void)
 }
 
 STATIC
-void GenAddrData(int Size, char* Label, int ofs)
+void GenAddrData(word Size, char* Label, word ofs)
 {
   ofs = truncInt(ofs);
 
-  int i;
+  word i;
   for (i = 0; i < 4; i++) // label is 4 "bytes", hotfix since the compiler does not know yet B322 is word addressable
   {
     printf2(".dl ");
@@ -278,13 +278,13 @@ void GenAddrData(int Size, char* Label, int ofs)
 }
 
 STATIC
-int GenFxnSizeNeeded(void)
+word GenFxnSizeNeeded(void)
 {
   return 0;
 }
 
 STATIC
-void GenRecordFxnSize(char* startLabelName, int endLabelNo)
+void GenRecordFxnSize(char* startLabelName, word endLabelNo)
 {
   (void)startLabelName;
   (void)endLabelNo;
@@ -325,7 +325,7 @@ void GenRecordFxnSize(char* startLabelName, int endLabelNo)
 
 
 STATIC
-void GenPrintInstr(int instr, int val)
+void GenPrintInstr(word instr, word val)
 {
   char* p = "";
 
@@ -414,7 +414,7 @@ void GenPrintInstr(int instr, int val)
 #define TEMP_REG_B B322OpRegT9
 
 STATIC
-void GenPrintOperand(int op, int val)
+void GenPrintOperand(word op, word val)
 {
   if (op >= B322OpRegZero && op <= B322OpRegRa)
   {
@@ -465,7 +465,7 @@ void GenPrintNewLine(void)
 }
 
 STATIC
-void GenPrintInstr1Operand(int instr, int instrval, int operand, int operandval)
+void GenPrintInstr1Operand(word instr, word instrval, word operand, word operandval)
 {
   GenPrintInstr(instr, instrval);
   GenPrintOperand(operand, operandval);
@@ -473,7 +473,7 @@ void GenPrintInstr1Operand(int instr, int instrval, int operand, int operandval)
 }
 
 STATIC
-void GenPrintInstr2Operands(int instr, int instrval, int operand1, int operand1val, int operand2, int operand2val)
+void GenPrintInstr2Operands(word instr, word instrval, word operand1, word operand1val, word operand2, word operand2val)
 {
   // TODO: figure out if this ever happens because ADD and SUB need 3 args
   if (operand2 == B322OpConst && operand2val == 0 &&
@@ -488,10 +488,10 @@ void GenPrintInstr2Operands(int instr, int instrval, int operand1, int operand1v
 }
 
 STATIC
-void GenPrintInstr3Operands(int instr, int instrval,
-                            int operand1, int operand1val,
-                            int operand2, int operand2val,
-                            int operand3, int operand3val)
+void GenPrintInstr3Operands(word instr, word instrval,
+                            word operand1, word operand1val,
+                            word operand2, word operand2val,
+                            word operand3, word operand3val)
 {
   if (operand3 == B322OpConst && operand3val == 0 &&
       (instr == B322InstrAdd || instr == B322InstrSub) &&
@@ -526,7 +526,7 @@ void GenPrintInstr3Operands(int instr, int instrval,
 
 // Currently we do not want to "extend" any reg
 STATIC
-void GenExtendRegIfNeeded(int reg, int opSz)
+void GenExtendRegIfNeeded(word reg, word opSz)
 {
   if (opSz == -1)
   {
@@ -599,16 +599,16 @@ void GenExtendRegIfNeeded(int reg, int opSz)
 }
 
 STATIC
-void GenJumpUncond(int label)
+void GenJumpUncond(word label)
 {
   GenPrintInstr1Operand(B322InstrJump, 0,
                         B322OpNumLabel, label);
 }
 
-extern int GenWreg; // GenWreg is defined below
+extern word GenWreg; // GenWreg is defined below
 
 STATIC
-void GenJumpIfEqual(int val, int label)
+void GenJumpIfEqual(word val, word label)
 {
 
   GenPrintInstr2Operands(B322InstrLoad, 0,
@@ -629,7 +629,7 @@ void GenJumpIfEqual(int val, int label)
 }
 
 STATIC
-void GenJumpIfZero(int label)
+void GenJumpIfZero(word label)
 {
   printf2(" ; JumpIfZero\n");
   /* if Wreg == 0, jump to label
@@ -647,7 +647,7 @@ void GenJumpIfZero(int label)
 }
 
 STATIC
-void GenJumpIfNotZero(int label)
+void GenJumpIfNotZero(word label)
 {
   printf2(" ; JumpIfNotZero\n");
   /* if Wreg != 0, jump to label
@@ -665,7 +665,7 @@ void GenJumpIfNotZero(int label)
 }
 
 fpos_t GenPrologPos;
-int GenLeaf;
+word GenLeaf;
 
 STATIC
 void GenWriteFrameSize(void) //WORDSIZE
@@ -689,7 +689,7 @@ void GenWriteFrameSize(void) //WORDSIZE
   //printf2(" %csw r15, 4 r14\n", GenLeaf ? ';' : ' ');
   if (GenLeaf)
   {
-    printf2(" ;")
+    printf2(" ;");
   }
   else
   {
@@ -713,7 +713,7 @@ void GenFxnProlog(void)
 {
   if (CurFxnParamCntMin && CurFxnParamCntMax)
   {
-    int i, cnt = CurFxnParamCntMax;
+    word i, cnt = CurFxnParamCntMax;
     if (cnt > 4)
       cnt = 4; //WORDSIZE?
     // TBD!!! for structure passing use the cumulative parameter size
@@ -734,7 +734,7 @@ void GenFxnProlog(void)
 }
 
 STATIC
-void GenGrowStack(int size) //WORDSIZE
+void GenGrowStack(word size) //WORDSIZE
 {
   if (!size)
     return;
@@ -780,13 +780,13 @@ void GenFxnEpilog(void)
 }
 
 STATIC
-int GenMaxLocalsSize(void)
+word GenMaxLocalsSize(void)
 {
   return 0x7FFFFFFF;
 }
 
 STATIC
-int GenGetBinaryOperatorInstr(int tok)
+word GenGetBinaryOperatorInstr(word tok)
 {
   switch (tok)
   {
@@ -853,7 +853,7 @@ int GenGetBinaryOperatorInstr(int tok)
 // Should not be needed, AT register is not used by B322 assembler
 // Although the lui instruction probably should stay?
 STATIC
-void GenPreIdentAccess(int label)
+void GenPreIdentAccess(word label)
 {
   printf2("; .set noat\n lui r1, %%hi(");
   GenPrintLabel(IdentTable + label);
@@ -868,7 +868,7 @@ void GenPostIdentAccess(void)
 }
 
 STATIC
-void GenReadIdent(int regDst, int opSz, int label)
+void GenReadIdent(word regDst, word opSz, word label)
 {
   GenPrintInstr2Operands(B322InstrAddr2reg, 0,
                          B322OpLabel, label,
@@ -906,9 +906,9 @@ void GenReadIdent(int regDst, int opSz, int label)
 }
 
 STATIC
-void GenReadLocal(int regDst, int opSz, int ofs)
+void GenReadLocal(word regDst, word opSz, word ofs)
 {
-  int instr = B322InstrRead;
+  word instr = B322InstrRead;
   /* Always LW, because no byte addressable memory, and no distinction between neg and pos
   if (opSz == -1)
   {
@@ -933,9 +933,9 @@ void GenReadLocal(int regDst, int opSz, int ofs)
 }
 
 STATIC
-void GenReadIndirect(int regDst, int regSrc, int opSz)
+void GenReadIndirect(word regDst, word regSrc, word opSz)
 {
-  int instr = B322InstrRead;
+  word instr = B322InstrRead;
   /* Always LW, because no byte addressable memory, and no distinction between neg and pos
   if (opSz == -1)
   {
@@ -960,7 +960,7 @@ void GenReadIndirect(int regDst, int regSrc, int opSz)
 }
 
 STATIC
-void GenWriteIdent(int regSrc, int opSz, int label)
+void GenWriteIdent(word regSrc, word opSz, word label)
 {
   GenPrintInstr2Operands(B322InstrAddr2reg, 0,
                          B322OpLabel, label,
@@ -970,7 +970,7 @@ void GenWriteIdent(int regSrc, int opSz, int label)
                          B322OpConst, 0,
                          B322OpRegAt, 0,
                          regSrc, 0);
-  //int instr = B322InstrWrite;
+  //word instr = B322InstrWrite;
   //GenPreIdentAccess(label);
 
   /* Always SW, because no byte addressable memory
@@ -988,9 +988,9 @@ void GenWriteIdent(int regSrc, int opSz, int label)
 }
 
 STATIC
-void GenWriteLocal(int regSrc, int opSz, int ofs)
+void GenWriteLocal(word regSrc, word opSz, word ofs)
 {
-  int instr = B322InstrWrite;
+  word instr = B322InstrWrite;
 
   /* Always SW, because no byte addressable memory
   if (opSz == -1 || opSz == 1)
@@ -1008,9 +1008,9 @@ void GenWriteLocal(int regSrc, int opSz, int ofs)
 }
 
 STATIC
-void GenWriteIndirect(int regDst, int regSrc, int opSz)
+void GenWriteIndirect(word regDst, word regSrc, word opSz)
 {
-  int instr = B322InstrWrite;
+  word instr = B322InstrWrite;
 
   /* Always SW, because no byte addressable memory
   if (opSz == -1 || opSz == 1)
@@ -1028,9 +1028,9 @@ void GenWriteIndirect(int regDst, int regSrc, int opSz)
 }
 
 STATIC
-void GenIncDecIdent(int regDst, int opSz, int label, int tok)
+void GenIncDecIdent(word regDst, word opSz, word label, word tok)
 {
-  int instr = B322InstrAdd;
+  word instr = B322InstrAdd;
 
   if (tok != tokInc)
     instr = B322InstrSub;
@@ -1045,9 +1045,9 @@ void GenIncDecIdent(int regDst, int opSz, int label, int tok)
 }
 
 STATIC
-void GenIncDecLocal(int regDst, int opSz, int ofs, int tok)
+void GenIncDecLocal(word regDst, word opSz, word ofs, word tok)
 {
-  int instr = B322InstrAdd;
+  word instr = B322InstrAdd;
 
   if (tok != tokInc)
     instr = B322InstrSub;
@@ -1062,9 +1062,9 @@ void GenIncDecLocal(int regDst, int opSz, int ofs, int tok)
 }
 
 STATIC
-void GenIncDecIndirect(int regDst, int regSrc, int opSz, int tok)
+void GenIncDecIndirect(word regDst, word regSrc, word opSz, word tok)
 {
-  int instr = B322InstrAdd;
+  word instr = B322InstrAdd;
 
   if (tok != tokInc)
     instr = B322InstrSub;
@@ -1079,9 +1079,9 @@ void GenIncDecIndirect(int regDst, int regSrc, int opSz, int tok)
 }
 
 STATIC
-void GenPostIncDecIdent(int regDst, int opSz, int label, int tok)
+void GenPostIncDecIdent(word regDst, word opSz, word label, word tok)
 {
-  int instr = B322InstrAdd;
+  word instr = B322InstrAdd;
 
   if (tok != tokPostInc)
     instr = B322InstrSub;
@@ -1101,9 +1101,9 @@ void GenPostIncDecIdent(int regDst, int opSz, int label, int tok)
 }
 
 STATIC
-void GenPostIncDecLocal(int regDst, int opSz, int ofs, int tok)
+void GenPostIncDecLocal(word regDst, word opSz, word ofs, word tok)
 {
-  int instr = B322InstrAdd;
+  word instr = B322InstrAdd;
 
   if (tok != tokPostInc)
     instr = B322InstrSub;
@@ -1123,9 +1123,9 @@ void GenPostIncDecLocal(int regDst, int opSz, int ofs, int tok)
 }
 
 STATIC
-void GenPostIncDecIndirect(int regDst, int regSrc, int opSz, int tok)
+void GenPostIncDecIndirect(word regDst, word regSrc, word opSz, word tok)
 {
-  int instr = B322InstrAdd;
+  word instr = B322InstrAdd;
 
   if (tok != tokPostInc)
     instr = B322InstrSub;
@@ -1144,10 +1144,10 @@ void GenPostIncDecIndirect(int regDst, int regSrc, int opSz, int tok)
   GenExtendRegIfNeeded(regDst, opSz);
 }
 
-int CanUseTempRegs;
-int TempsUsed;
-int GenWreg = B322OpRegV0; // current working register (V0 or Tn or An)
-int GenLreg, GenRreg; // left operand register and right operand register after GenPopReg()
+word CanUseTempRegs;
+word TempsUsed;
+word GenWreg = B322OpRegV0; // current working register (V0 or Tn or An)
+word GenLreg, GenRreg; // left operand register and right operand register after GenPopReg()
 
 /*
   General idea behind GenWreg, GenLreg, GenRreg:
@@ -1194,7 +1194,7 @@ int GenLreg, GenRreg; // left operand register and right operand register after 
 */
 
 STATIC
-void GenWregInc(int inc)
+void GenWregInc(word inc)
 {
   if (inc > 0)
   {
@@ -1267,10 +1267,10 @@ void GenPopReg(void)
 #define tokNum0        0x103
 
 STATIC
-void GenPrep(int* idx)
+void GenPrep(word* idx)
 {
-  int tok;
-  int oldIdxRight, oldIdxLeft, t0, t1;
+  word tok;
+  word oldIdxRight, oldIdxLeft, t0, t1;
 
   if (*idx < 0)
     //error("GenFuse(): idx < 0\n");
@@ -1294,7 +1294,7 @@ void GenPrep(int* idx)
       {
         if (tok == tokUMod || tok == tokAssignUMod)
         {
-          stack[oldIdxRight][1] = (int)(m - 1);
+          stack[oldIdxRight][1] = (word)(m - 1);
           tok = (tok == tokUMod) ? '&' : tokAssignAnd;
         }
         else
@@ -1416,7 +1416,7 @@ void GenPrep(int* idx)
     t0 = stack[oldIdxLeft][0];
     if (t1 != tokNumInt && t0 == tokNumInt)
     {
-      int xor;
+      word xor;
 
       t1 = stack[oldIdxLeft][1];
       memmove(stack[oldIdxLeft], stack[oldIdxLeft + 1], (oldIdxRight - oldIdxLeft) * sizeof(stack[0]));
@@ -1588,7 +1588,7 @@ char CmpBlocks[6/*op*/][2/*condbranch*/][3/*constness*/][2] =
 };
 
 STATIC
-void GenCmp(int* idx, int op)
+void GenCmp(word* idx, word op)
 {
   // TODO: direct conversion from MIPS to B322 is very inefficient, so optimize this!
   /*
@@ -1612,17 +1612,17 @@ void GenCmp(int* idx, int op)
   BLEZ a (a <=0)  BGT a r0 (a > 0)
   */
   // constness: 0 = zero const, 1 = non-zero const, 2 = non-const
-  int constness = (stack[*idx - 1][0] == tokNumInt) ? (stack[*idx - 1][1] != 0) : 2;
-  int constval = (constness == 1) ? truncInt(stack[*idx - 1][1]) : 0;
+  word constness = (stack[*idx - 1][0] == tokNumInt) ? (stack[*idx - 1][1] != 0) : 2;
+  word constval = (constness == 1) ? truncInt(stack[*idx - 1][1]) : 0;
   // condbranch: 0 = no conditional branch, 1 = branch if true, 2 = branch if false
-  int condbranch = (*idx + 1 < sp) ? (stack[*idx + 1][0] == tokIf) + (stack[*idx + 1][0] == tokIfNot) * 2 : 0;
-  int unsign = op >> 4;
-  int instrBGEdependingOnSign = unsign ? B322InstrBgeU : B322InstrBge;
-  int instrBGTdependingOnSign = unsign ? B322InstrBgtU : B322InstrBgt;
+  word condbranch = (*idx + 1 < sp) ? (stack[*idx + 1][0] == tokIf) + (stack[*idx + 1][0] == tokIfNot) * 2 : 0;
+  word unsign = op >> 4;
+  word instrBGEdependingOnSign = unsign ? B322InstrBgeU : B322InstrBge;
+  word instrBGTdependingOnSign = unsign ? B322InstrBgtU : B322InstrBgt;
 
-  int label = condbranch ? stack[*idx + 1][1] : 0;
+  word label = condbranch ? stack[*idx + 1][1] : 0;
   char* p;
-  int i;
+  word i;
 
   op &= 0xF;
   if (constness == 2)
@@ -1872,7 +1872,7 @@ void GenCmp(int* idx, int op)
 }
 
 STATIC
-int GenIsCmp(int t)
+word GenIsCmp(word t)
 {
   return
     t == '<' ||
@@ -1892,12 +1892,12 @@ int GenIsCmp(int t)
 STATIC
 void GenExpr0(void)
 {
-  int i;
-  int gotUnary = 0;
-  int maxCallDepth = 0;
-  int callDepth = 0;
-  int paramOfs = 0;
-  int t = sp - 1;
+  word i;
+  word gotUnary = 0;
+  word maxCallDepth = 0;
+  word callDepth = 0;
+  word paramOfs = 0;
+  word t = sp - 1;
 
   if (stack[t][0] == tokIf || stack[t][0] == tokIfNot || stack[t][0] == tokReturn)
     t--;
@@ -1921,8 +1921,8 @@ void GenExpr0(void)
 
   for (i = 0; i < sp; i++)
   {
-    int tok = stack[i][0];
-    int v = stack[i][1];
+    word tok = stack[i][0];
+    word v = stack[i][1];
 
     switch (tok)
     {
@@ -2129,7 +2129,7 @@ void GenExpr0(void)
     case tokURShift:
       if (stack[i - 1][0] == tokNumInt && tok != '*')
       {
-        int instr = GenGetBinaryOperatorInstr(tok);
+        word instr = GenGetBinaryOperatorInstr(tok);
         GenPrintInstr3Operands(instr, 0,
                                GenWreg, 0,
                                B322OpConst, stack[i - 1][1],
@@ -2137,7 +2137,7 @@ void GenExpr0(void)
       }
       else
       {
-        int instr = GenGetBinaryOperatorInstr(tok);
+        word instr = GenGetBinaryOperatorInstr(tok);
         GenPopReg();
         GenPrintInstr3Operands(instr, 0,
                                GenLreg, 0,
@@ -2216,7 +2216,7 @@ void GenExpr0(void)
     case tokPostAdd:
     case tokPostSub:
       {
-        int instr = GenGetBinaryOperatorInstr(tok);
+        word instr = GenGetBinaryOperatorInstr(tok);
         GenPopReg();
         if (GenWreg == GenLreg)
         {
@@ -2261,7 +2261,7 @@ void GenExpr0(void)
     case tokAssignURSh:
       if (stack[i - 1][0] == tokRevLocalOfs || stack[i - 1][0] == tokRevIdent)
       {
-        int instr = GenGetBinaryOperatorInstr(tok);
+        word instr = GenGetBinaryOperatorInstr(tok);
 
         if (stack[i - 1][0] == tokRevLocalOfs)
           GenReadLocal(TEMP_REG_B, v, stack[i - 1][1]);
@@ -2280,8 +2280,8 @@ void GenExpr0(void)
       }
       else
       {
-        int instr = GenGetBinaryOperatorInstr(tok);
-        int lsaved, rsaved;
+        word instr = GenGetBinaryOperatorInstr(tok);
+        word lsaved, rsaved;
         GenPopReg();
         if (GenWreg == GenLreg)
         {
@@ -2364,7 +2364,7 @@ void GenExpr0(void)
       }
       else
       {
-        int lsaved, rsaved;
+        word lsaved, rsaved;
         GenPopReg();
         if (GenWreg == GenLreg)
         {
@@ -2598,7 +2598,7 @@ void GenExpr0(void)
 }
 
 STATIC
-void GenDumpChar(int ch)
+void GenDumpChar(word ch)
 {
   if (ch < 0)
   {
@@ -2630,7 +2630,7 @@ void GenFin(void)
   // No idea what this does (something with structs??), so I just literally converted it to B322 asm
   if (StructCpyLabel)
   {
-    int lbl = LabelCnt++;
+    word lbl = LabelCnt++;
 
     puts2(CodeHeaderFooter[0]);
 
