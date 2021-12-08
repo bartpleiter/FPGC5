@@ -66,11 +66,6 @@ void GenInit(void)
   UseLeadingUnderscores = 0;
 }
 
-STATIC
-word GenInitParams(word argc, char** argv, word* idx)
-{
-  return 0;
-}
 
 STATIC
 void GenInitFinalize(void)
@@ -664,7 +659,7 @@ void GenJumpIfNotZero(word label)
                          B322OpNumLabel, label);
 }
 
-fpos_t GenPrologPos;
+word GenPrologPos = 0;
 word GenLeaf;
 
 STATIC
@@ -701,11 +696,11 @@ void GenWriteFrameSize(void) //WORDSIZE
 STATIC
 void GenUpdateFrameSize(void)
 {
-  fpos_t pos;
-  fgetpos(OutFile, &pos);
-  fsetpos(OutFile, &GenPrologPos);
+  word curpos = 0;
+  curpos = fgetpos(OutFile);
+  fsetpos(OutFile, GenPrologPos);
   GenWriteFrameSize();
-  fsetpos(OutFile, &pos);
+  fsetpos(OutFile, curpos);
 }
 
 STATIC
@@ -729,7 +724,7 @@ void GenFxnProlog(void)
 
   GenLeaf = 1; // will be reset to 0 if a call is generated
 
-  fgetpos(OutFile, &GenPrologPos);
+  GenPrologPos = fgetpos(OutFile);
   GenWriteFrameSize();
 }
 

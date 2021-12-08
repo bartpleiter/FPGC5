@@ -208,15 +208,15 @@ int fsetpos(FILE*, fpos_t*);
 #define MAX_CHAR_QUEUE_LEN   (MAX_STRING_LEN + 1)
 
 #ifndef MAX_MACRO_TABLE_LEN
-#define MAX_MACRO_TABLE_LEN  (4096+1024)
+#define MAX_MACRO_TABLE_LEN  (8192+1024)
 #endif
 
 #ifndef MAX_IDENT_TABLE_LEN
-#define MAX_IDENT_TABLE_LEN  (4096+1024+512) // must be greater than MAX_IDENT_LEN
+#define MAX_IDENT_TABLE_LEN  (8192+1024+512) // must be greater than MAX_IDENT_LEN
 #endif
 
 #ifndef SYNTAX_STACK_MAX
-#define SYNTAX_STACK_MAX (2048+1024)
+#define SYNTAX_STACK_MAX (4096+1024)
 #endif
 
 #ifndef MAX_FILE_NAME_LEN

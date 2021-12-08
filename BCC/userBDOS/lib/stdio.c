@@ -232,3 +232,29 @@ word fputc(word i, char c)
     s[0] = c;
     return fputs(i, s);
 }
+
+word printf(char* s)
+{
+    //TODO: do escape character handling
+
+    BDOS_PrintConsole(s);
+}
+
+word printd(word d)
+{
+    if (d < 0)
+    {
+        BDOS_PrintcConsole('-');
+        BDOS_PrintDecConsole(-d);
+    }
+    else
+    {
+        BDOS_PrintDecConsole(d);
+    }
+    
+}
+
+void exit(word i)
+{
+    asm("jump Return_BDOS\n");
+}

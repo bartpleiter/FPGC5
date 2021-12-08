@@ -13,6 +13,14 @@ int main()
 
     BDOS_PrintConsole("Testing stdio implementation\n");
 
+    word i = -3;
+
+    printd(i);
+
+
+
+    /*
+
     char* file1 = "/test/file1.txt";
     char* file2 = "/test/file4.txt";
 
@@ -56,7 +64,7 @@ int main()
     fclose(F2);
 
 
-    
+    */
 
     return 'q';
 }

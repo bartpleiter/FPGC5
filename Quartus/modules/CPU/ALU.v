@@ -45,7 +45,7 @@ wire [31:0] res_ADD     = a + b;
 wire [31:0] res_SUB     = a - b;
 wire [31:0] res_SHIFTL  = a << b[5:0];
 wire [31:0] res_SHIFTR  = a >> b[5:0];
-wire [31:0] res_MULT    = a * b;
+wire [31:0] res_MULT    = $signed(a) * $signed(b);
 wire [31:0] res_NOTA    = ~ a;
 
 // Multiplexer to select output
