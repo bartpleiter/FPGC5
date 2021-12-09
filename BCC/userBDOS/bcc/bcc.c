@@ -972,6 +972,7 @@ void ShiftChar(void)
     if (ch == EOF)
       ch = '\0';
     CharQueue[CharQueueLen++] = ch;
+    //BDOS_PrintcConsole(ch);
   }
 }
 
@@ -1035,7 +1036,7 @@ void IncludeFile(word quot)
     }
     strcpy(FileNames[FileCnt], TokenValueString);
     strcat(cFileDir, FileNames[FileCnt]);
-    Files[FileCnt] = fopen(cFileDir, "r");
+    Files[FileCnt] = fopen(cFileDir, 0);
   }
 
   // Next, iterate the search paths trying to open "file" or <file>.
@@ -1064,7 +1065,7 @@ void IncludeFile(word quot)
           // Use '/' as a separator, typical for Linux/Unix,
           // but also supported by file APIs in DOS/Windows just as '\\'
           FileNames[FileCnt][plen] = '/';
-          if ((Files[FileCnt] = fopen(FileNames[FileCnt], "r")) != NULL)
+          if ((Files[FileCnt] = fopen(FileNames[FileCnt], 0)) != NULL)
             break;
         }
         i += plen + 1;
@@ -3093,9 +3094,13 @@ word AllocLocal(unsigned size)
   CurFxnLocalOfs = (word)((CurFxnLocalOfs - size) & ~(SizeOfWord - 1u));
   if (CurFxnLocalOfs >= oldOfs ||
       CurFxnLocalOfs != truncInt(CurFxnLocalOfs) ||
-      CurFxnLocalOfs < -GenMaxLocalsSize())
+      (unsigned int)CurFxnLocalOfs < (unsigned int) (-GenMaxLocalsSize()))
     //error("AllocLocal(): Local variables take too much space\n");
+  {
+    printf("a");
     errorVarSize();
+  }
+    
 
   if (CurFxnMinLocalOfs > CurFxnLocalOfs)
     CurFxnMinLocalOfs = CurFxnLocalOfs;
@@ -3171,8 +3176,9 @@ word exprval(word* idx, word* ExprTypeSynPtr, word* ConstExpr)
         }
         else
         {
-          printf("Call to undeclared function ");
-          warning(ident);
+          // silent this warning for now, since it seems to trigger false positives
+          //printf("Call to undeclared function ");
+          //warning(ident);
           // Implicitly declare "extern int ident();"
           PushSyntax2(tokIdent, s);
           PushSyntax('(');
@@ -4695,11 +4701,8 @@ word puts2(char* s)
     return 0;
   // Turbo C++ 1.01's fputs() returns EOF if s is empty, which is wrong.
   // Hence the workaround.
-  if (*s == '\0' || (res = fputs(s, OutFile)) >= 0)
-  {
-    // unlike puts(), fputs() doesn't append '\n', append it manually
-    res = fputc('\n', OutFile);
-  }
+  fputs(OutFile, s);
+  res = fputc(OutFile, '\n');
   return res;
 }
 
@@ -4709,7 +4712,10 @@ STATIC
 word printf2(char* sToWrite)
 {
   if (!OutFile)
+  {
+    printf("COULD NOT WRITE TO OUT!");
     return 0;
+  }
 
   // TODO: escape handling
 
@@ -5115,7 +5121,11 @@ word GetDeclSize(word SyntaxPtr, word SizeForDeref)
       size *= 2;
       if (size != truncUint(size))
         //error("Variable too big\n");
+      {
+        printf("b");
         errorVarSize();
+      }
+        
       return (word)size;
     case tokInt:
     case tokUnsigned:
@@ -5127,7 +5137,10 @@ word GetDeclSize(word SyntaxPtr, word SizeForDeref)
       size *= SizeOfWord;
       if (size != truncUint(size))
         //error("Variable too big\n");
+      {
+        printf("c");
         errorVarSize();
+      }
       return (word)size;
     case '[':
       if (SyntaxStack0[i + 1] != tokNumInt && SyntaxStack0[i + 1] != tokNumUint)
@@ -5139,7 +5152,10 @@ word GetDeclSize(word SyntaxPtr, word SizeForDeref)
       size *= SyntaxStack1[i + 1];
       if (size != truncUint(size))
         //error("Variable too big\n");
+      {
+        printf("d");
         errorVarSize();
+      }
       i += 2;
       arr = 1;
       break;
@@ -5156,7 +5172,10 @@ word GetDeclSize(word SyntaxPtr, word SizeForDeref)
         //  errorVarSize();
         size *= s;
         if (size != truncUint(size))
+        {
+          printf("d");
           errorVarSize();
+        }
         return (word)size;
       }
       return 0;
@@ -5629,7 +5648,10 @@ lcont:
         tmp = sz;
         sz = (sz + alignment - 1) & ~(alignment - 1);
         if (sz < tmp || sz != truncUint(sz))
+        {
+          printf("e");
           errorVarSize();
+        }
         SyntaxStack1[typePtr + 2] = (word)sz;
 
         tok = GetToken();
@@ -6576,7 +6598,10 @@ word ParseDecl(word tok, unsigned structInfo[4], word cast, word label)
           tmp = structInfo[2];
           structInfo[2] = (structInfo[2] + newAlignment - 1) & ~(newAlignment - 1);
           if (structInfo[2] < tmp || structInfo[2] != truncUint(structInfo[2]))
+          {
+            printf("f");
             errorVarSize();
+          }
           // Change tokIdent to tokMemberIdent and insert a local var offset token
           SyntaxStack0[lastSyntaxPtr] = tokMemberIdent;
           InsertSyntax2(lastSyntaxPtr + 1, tokLocalOfs, (word)structInfo[2]);
@@ -6587,7 +6612,10 @@ word ParseDecl(word tok, unsigned structInfo[4], word cast, word label)
             tmp = structInfo[2];
             structInfo[2] += sz;
             if (structInfo[2] < tmp || structInfo[2] != truncUint(structInfo[2]))
+            {
+              printf("g");
               errorVarSize();
+            }
           }
           // Update max member size for unions
           else if (structInfo[3] < (unsigned)sz)
@@ -6792,6 +6820,8 @@ word ParseDecl(word tok, unsigned structInfo[4], word cast, word label)
         CurHeaderFooter = CodeHeaderFooter;
         puts2(CurHeaderFooter[0]);
 
+        //BDOS_PrintlnConsole(CurFxnName);
+        //printf2("; put the function label here:\n");
         GenLabel(CurFxnName, Static);
 
 
@@ -7023,13 +7053,22 @@ void AddFxnParamSymbols(word SyntaxPtr)
       PushSyntax2(tokLocalOfs, paramOfs);
 
       if (sz + SizeOfWord - 1 < sz)
+      {
+        printf("h");
         errorVarSize();
+      }
       sz = (sz + SizeOfWord - 1) & ~(SizeOfWord - 1u);
       if (paramOfs + sz < paramOfs)
+      {
+        printf("i");
         errorVarSize();
+      }
       paramOfs += sz;
       if (paramOfs > (unsigned)GenMaxLocalsSize())
+      {
+        printf("j");
         errorVarSize();
+      }
 
       // Duplicate this parameter in the symbol table
       i++;
@@ -7881,12 +7920,35 @@ int main()
 
   GenInit();
 
-  // TODO: parse arguments, hardcoded for now
+  // TODO: add BDOS path to filenames if not absolute path
   compileOS = 0;
   compileUserBDOS = 1;
 
+  char infilename[64];
+  BDOS_GetArgN(1, infilename);
+  if (infilename[0] == 0)
+  {
+    strcat(infilename, BDOS_GetPath());
+    if (infilename[strlen(infilename)-1] != '/')
+    {
+        strcat(infilename, "/");
+    }
+    strcat(infilename, "CODE.C");
+    //strcpy(infilename, "/TEST/TEST.C");
+  }
+  if (infilename[0] != '/')
+  {
+    char bothPath[64];
+    bothPath[0] = 0;
+    strcat(bothPath, BDOS_GetPath());
+    if (bothPath[strlen(bothPath)-1] != '/')
+    {
+        strcat(bothPath, "/");
+    }
+    strcat(bothPath, infilename);
+    strcpy(infilename, bothPath);
+  }
 
-  char* infilename = "TEST/TEST.C";
   if (FileCnt == 0)
   {
     // If it's none of the known options,
@@ -7897,7 +7959,7 @@ int main()
       errorFileName();
     }
     strcpy(FileNames[0], infilename);
-    if ((Files[0] = fopen(FileNames[0], "r")) == NULL)
+    if ((Files[0] = fopen(FileNames[0], 0)) == NULL)
     {
       //error("Cannot open file \"%s\"\n", FileNames[0]);
       errorFile(FileNames[0]);
@@ -7907,12 +7969,35 @@ int main()
     FileCnt++;
   }
 
-  char* outfilename = "TEST/A.OUT";
+  char outfilename[64];
+  BDOS_GetArgN(2, outfilename);
+  if (outfilename[0] == 0)
+  {
+    strcat(outfilename, BDOS_GetPath());
+    if (outfilename[strlen(outfilename)-1] != '/')
+    {
+        strcat(outfilename, "/");
+    }
+    strcat(outfilename, "OUT.ASM");
+    //strcpy(outfilename, "/TEST/A.OUT");
+  }
+  if (outfilename[0] != '/')
+  {
+    char bothPath[64];
+    bothPath[0] = 0;
+    strcat(bothPath, BDOS_GetPath());
+    if (bothPath[strlen(bothPath)-1] != '/')
+    {
+        strcat(bothPath, "/");
+    }
+    strcat(bothPath, outfilename);
+    strcpy(outfilename, bothPath);
+  }
 
   if (FileCnt == 1 && OutFile == NULL)
   {
     // This should be the output file name
-    if ((OutFile = fopen(outfilename, "w")) == NULL)
+    if ((OutFile = fopen(outfilename, 1)) == NULL)
     {
       //error("Cannot open output file \"%s\"\n", argv[i]);
       errorFile(outfilename);

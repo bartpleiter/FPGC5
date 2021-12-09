@@ -14,6 +14,7 @@ char fopenList[FOPEN_MAX_FILES][FOPEN_FILENAME_LIMIT]; // filenames for each ope
 word fopenCurrentlyOpen[FOPEN_MAX_FILES]; // which indexes are currently opened
 word fopenCursors[FOPEN_MAX_FILES]; // cursors of currently opened files
 word CH376CurrentlyOpened = 0; // index in fopenList which is currently opened on CH376
+word updateCursor = 0; // if the cursor is locally updated
 
 // fopen replacement
 // requires full paths
@@ -80,8 +81,9 @@ word fopen(const char* fname, const word write)
         }
         i++;
     }
-        BDOS_PrintConsole("E: The maximum number of files are already opened. Forgot to close some files?\n");
-        return 0;
+
+    BDOS_PrintConsole("E: The maximum number of files are already opened. Forgot to close some files?\n");
+    return 0;
 }
 
 
@@ -144,6 +146,13 @@ word fgetc(word i)
             BDOS_PrintConsole("E: Invalid path\n");
             return EOF;
         }
+    }
+
+    // update cursor if needed
+    if (updateCursor)
+    {
+        FS_setCursor(fopenCursors[i]);
+        updateCursor = 0;
     }
 
     // read char and increment cursor locally
@@ -210,12 +219,20 @@ word fputs(word i, char* s)
         }
     }
 
+    // update cursor if needed
+    if (updateCursor)
+    {
+        FS_setCursor(fopenCursors[i]);
+        updateCursor = 0;
+    }
+
     // write string and increment cursor locally
     word slen = strlen(s);
     word retval = FS_writeFile(s, slen);
     if (retval != FS_ANSW_USB_INT_SUCCESS)
     {
         // assume EOF
+        BDOS_PrintConsole("Write error??\n");
         return EOF;
     }
 
@@ -240,6 +257,7 @@ int fgetpos(word i)
 
 int fsetpos(word i, word c)
 {
+    updateCursor = 1;
     fopenCursors[i] = c;
     return 1;
 }

@@ -698,8 +698,19 @@ void GenUpdateFrameSize(void)
 {
   word curpos = 0;
   curpos = fgetpos(OutFile);
+  //printf("cur: ");
+  //printd(curpos);
+  //printf("\ngoto: ");
+  //printd(GenPrologPos);
+  //printf("\n");
   fsetpos(OutFile, GenPrologPos);
   GenWriteFrameSize();
+
+  //printf("back to cur: ");
+  //printd(curpos);
+  //printf("\n");
+  //printf("\n");
+
   fsetpos(OutFile, curpos);
 }
 
@@ -725,7 +736,14 @@ void GenFxnProlog(void)
   GenLeaf = 1; // will be reset to 0 if a call is generated
 
   GenPrologPos = fgetpos(OutFile);
-  GenWriteFrameSize();
+  
+  // write an empty space for the frame size
+  word x;
+  for(x = 0; x < 100; x++)
+  {
+    printf2(" ");
+  }
+  printf2("\n");
 }
 
 STATIC
@@ -753,7 +771,10 @@ void GenGrowStack(word size) //WORDSIZE
 STATIC
 void GenFxnEpilog(void)
 {
+
+  //printf("DONE with function\n");
   GenUpdateFrameSize();
+  //printf("BackToEnd\n");
 
   if (!GenLeaf)
     GenPrintInstr2Operands(B322InstrRead, 0,
