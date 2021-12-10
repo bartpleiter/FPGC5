@@ -316,6 +316,10 @@ word FS_connectDrive()
     p[0] = '/';
     p[1] = 0; // terminate string
 
+    // also reset path backup
+    char* pb = (char *) SHELL_PATH_BACKUP;
+    strcpy(pb, p);
+
     return FS_WaitGetStatus();
 }
 

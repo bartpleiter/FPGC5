@@ -8,9 +8,6 @@
 // uses gfx.c
 // uses stdlib.c
 
-// Backup address of current path
-#define SHELL_PATH_BACKUP 0x100100
-
 // Address of current command line
 #define SHELL_CMD_ADDR 0x100200
 

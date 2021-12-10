@@ -1,5 +1,13 @@
+#define word char
+
+#include "lib/stdlib.c"
+#include "lib/sys.c"
+#include "lib/math.c"
+
 int main() 
 {
+    char* x = BDOS_GetPath();
+    BDOS_PrintlnConsole(x);
     return 1;
 }
 

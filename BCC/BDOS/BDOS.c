@@ -15,6 +15,9 @@
 // Address of loaded user program
 #define RUN_ADDR 0x400000
 
+// Backup address of current path
+#define SHELL_PATH_BACKUP 0x100100
+
 // Temp address for (potentially) large temporary outputs/buffers
 // eg: output of listDir or print chunks. 
 #define TEMP_ADDR 0x200000
