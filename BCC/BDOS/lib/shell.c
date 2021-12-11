@@ -17,7 +17,7 @@
 // Chunk size for reading files and programs
 // NOTE: must be dividable by 4
 #define SHELL_FILE_READ_CHUNK_SIZE 512
-#define SHELL_PROGRAM_READ_CHUNK_SIZE 4096
+#define SHELL_PROGRAM_READ_CHUNK_SIZE 8192
 
 
 /*
@@ -207,7 +207,7 @@ void SHELL_runFile(char* arg, word useBin)
 
                         // Update the amount of bytes sent
                         bytesSent += partToSend;
-                        b += MATH_divU(partToSend, 4); // divide by 4 because one address is 4 bytes
+                        b += (partToSend>>2); // divide by 4 because one address is 4 bytes
                     }
 
                     // close file after done

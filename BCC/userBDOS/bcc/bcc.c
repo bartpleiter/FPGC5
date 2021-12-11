@@ -7959,7 +7959,8 @@ int main()
       errorFileName();
     }
     strcpy(FileNames[0], infilename);
-    if ((Files[0] = fopen(FileNames[0], 0)) == NULL)
+    Files[0] = fopen(FileNames[0], 0);
+    if (fcanopen(Files[0]) == NULL)
     {
       //error("Cannot open file \"%s\"\n", FileNames[0]);
       errorFile(FileNames[0]);
@@ -7997,7 +7998,8 @@ int main()
   if (FileCnt == 1 && OutFile == NULL)
   {
     // This should be the output file name
-    if ((OutFile = fopen(outfilename, 1)) == NULL)
+    OutFile = fopen(outfilename, 1);
+    if (fcanopen(OutFile) == NULL)
     {
       //error("Cannot open output file \"%s\"\n", argv[i]);
       errorFile(outfilename);
@@ -8052,6 +8054,7 @@ int main()
 
   GenStartCommentLine(); 
   printf2("Compilation succeeded.\n");
+  printf("Compilation succeeded.\n");
 
   if (OutFile)
     fclose(OutFile);

@@ -86,6 +86,46 @@ word fopen(const char* fname, const word write)
     return 0;
 }
 
+// returns EOF if file cannot be opened
+word fcanopen(word i)
+{
+    if (CH376CurrentlyOpened == i)
+    {
+        return 0;
+    }
+
+    // close last one first, unless there is no last
+    if (CH376CurrentlyOpened != 0)
+    {
+        //BDOS_PrintConsole("fgetc: Closed previous file\n");
+        FS_close();
+    }
+
+
+    // if the resulting path is correct (can be file or directory)
+    if (FS_sendFullPath(fopenList[i]) == FS_ANSW_USB_INT_SUCCESS)
+    {
+
+        // if we can successfully open the file (not directory)
+        if (FS_open() == FS_ANSW_USB_INT_SUCCESS)
+        {
+            CH376CurrentlyOpened = i;
+            return 0;
+        }
+        else
+        {
+            return EOF;
+        }
+    }
+    else
+    {
+        return EOF;
+    }
+
+    return EOF;
+
+}
+
 
 // closes file at index
 // also closes the file on CH376 if it is currently open there as well
@@ -232,7 +272,7 @@ word fputs(word i, char* s)
     if (retval != FS_ANSW_USB_INT_SUCCESS)
     {
         // assume EOF
-        BDOS_PrintConsole("Write error??\n");
+        //BDOS_PrintConsole("Write error??\n");
         return EOF;
     }
 
