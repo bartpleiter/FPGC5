@@ -94,13 +94,8 @@ word fcanopen(word i)
         return 0;
     }
 
-    // close last one first, unless there is no last
-    if (CH376CurrentlyOpened != 0)
-    {
-        //BDOS_PrintConsole("fgetc: Closed previous file\n");
-        FS_close();
-    }
-
+    FS_close();
+    CH376CurrentlyOpened = 0;
 
     // if the resulting path is correct (can be file or directory)
     if (FS_sendFullPath(fopenList[i]) == FS_ANSW_USB_INT_SUCCESS)
@@ -109,7 +104,7 @@ word fcanopen(word i)
         // if we can successfully open the file (not directory)
         if (FS_open() == FS_ANSW_USB_INT_SUCCESS)
         {
-            CH376CurrentlyOpened = i;
+            FS_close();
             return 0;
         }
         else
@@ -123,7 +118,6 @@ word fcanopen(word i)
     }
 
     return EOF;
-
 }
 
 
@@ -206,6 +200,8 @@ word fgetc(word i)
 
     fopenCursors[i]++;
 
+    BDOS_PrintcConsole(gotchar);
+
     return gotchar;
 }
 
@@ -272,7 +268,7 @@ word fputs(word i, char* s)
     if (retval != FS_ANSW_USB_INT_SUCCESS)
     {
         // assume EOF
-        //BDOS_PrintConsole("Write error??\n");
+        BDOS_PrintConsole("fputs: Write error??\n");
         return EOF;
     }
 

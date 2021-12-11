@@ -77,53 +77,44 @@ void GenInitFinalize(void)
   {
     printf2(
       ".code\n"
-      "; Setup stack and return function before jumping to Main of BDOS user program\n"
-      "; BDOS user programs have their stack to keep the other stacks intact\n"
+      
       "Main:\n"
-      "    load32 0 r14            ; initialize base pointer address\n"
-      "    load32 0x73FFFF r13     ; initialize user main stack address\n"
-      "    addr2reg Return_BDOS r1 ; get address of return function\n"
-      "    or r0 r1 r15            ; copy return addr to r15\n"
-      "    jump main               ; jump to main of C program\n"
-      "    halt                    ; should not get here\n"
-      "\n"
-      "; Function that is called after Main of C user program has returned\n"
-      "; Here we do some post processing before jumping back to BDOS\n"
-      "; Its adrress should be on top of the hardware stack\n"
+      "    load32 0 r14\n"
+      "    load32 0x73FFFF r13\n"
+      "    addr2reg Return_BDOS r1\n"
+      "    or r0 r1 r15\n"
+      "    jump main\n"
+      "    halt\n"
+      
       "Return_BDOS:\n"
-      "    ; notify program has ended\n"
+      
       "    load32 0x100300 r1\n"
       "    write 0 r1 r0\n"
-      "\n"
+      
       "    pop r1\n"
       "    jumpr 3 r1\n"
-      "    halt    ; should not get here\n"
-      "\n"
-      "; COMPILED C CODE HERE\n");
+      "    halt\n"
+      );
   }
   else
   {
     printf2(
       ".code\n"
-      "; Setup stack and return function before jumping to Main of C program\n"
+      
       "Main:\n"
-      "    load32 0 r14            ; initialize base pointer address\n"
-      "    load32 0x77FFFF r13     ; initialize main stack address\n"
-      "    addr2reg Return_UART r1 ; get address of return function\n"
-      "    or r0 r1 r15            ; copy return addr to r15\n"
-      "    jump main               ; jump to main of C program\n"
-      "                            ; should return to the address in r15\n"
-      "    halt                    ; should not get here\n"
-      "\n"
-      "; Function that is called after Main of C program has returned\n"
-      "; Return value should be in R1\n"
-      "; Send it over UART and halt afterwards\n"
+      "    load32 0 r14\n"
+      "    load32 0x77FFFF r13\n"
+      "    addr2reg Return_UART r1\n"
+      "    or r0 r1 r15\n"
+      "    jump main\n"
+      
+      "    halt\n"
+      
       "Return_UART:\n"
-      "    load32 0xC02723 r1          ; r1 = 0xC02723 | UART tx\n"
-      "    write 0 r1 r2               ; write r2 over UART\n"
-      "    halt                        ; halt\n"
-      "\n"
-      "; COMPILED C CODE HERE\n");
+      "    load32 0xC02723 r1\n"
+      "    write 0 r1 r2\n"
+      "    halt\n"
+      );
   }
 }
 
@@ -138,14 +129,17 @@ STATIC
 void GenWordAlignment(word bss)
 {
   (void)bss;
-  printf2("; .align 2\n");
+  if (doAnnotations)
+  {
+    printf2("; .align 2\n");
+  }
 }
 
 STATIC
 void GenLabel(char* Label, word Static)
 {
   {
-    if (!Static && GenExterns)
+    if (!Static && GenExterns && doAnnotations)
     {
       printf2("; .globl ");
       printf2(Label);
@@ -191,9 +185,12 @@ STATIC
 void GenZeroData(unsigned Size, word bss)
 {
   (void)bss;
-  printf2("; .space ");
-  printd2(truncUint(Size));
-  printf2("\n");
+  if (doAnnotations)
+  {
+    printf2("; .space ");
+    printd2(truncUint(Size));
+    printf2("\n");
+  }
 
   // B322 implementation of .space:
   if (Size > 0)
@@ -429,7 +426,7 @@ void GenPrintOperand(word op, word val)
     case B322OpConst: printd2(truncInt(val)); break;
     case B322OpLabelLo:
       // should not be called anymore
-      printf2("LABELLO WHOOPS!\n");
+      printf("LABELLO WHOOPS!\n");
       /*
       printf2("%%lo(");
       GenPrintLabel(IdentTable + val);
@@ -626,7 +623,10 @@ void GenJumpIfEqual(word val, word label)
 STATIC
 void GenJumpIfZero(word label)
 {
-  printf2(" ; JumpIfZero\n");
+  if (doAnnotations)
+  {
+    printf2(" ; JumpIfZero\n");
+  }
   /* if Wreg == 0, jump to label
   GenPrintInstr3Operands(MipsInstrBEQ, 0,
                          GenWreg, 0,
@@ -644,7 +644,10 @@ void GenJumpIfZero(word label)
 STATIC
 void GenJumpIfNotZero(word label)
 {
-  printf2(" ; JumpIfNotZero\n");
+  if (doAnnotations)
+  {
+    printf2(" ; JumpIfNotZero\n");
+  }
   /* if Wreg != 0, jump to label
   GenPrintInstr3Operands(MipsInstrBNE, 0,
                          GenWreg, 0,
@@ -684,13 +687,13 @@ void GenWriteFrameSize(void) //WORDSIZE
   //printf2(" %csw r15, 4 r14\n", GenLeaf ? ';' : ' ');
   if (GenLeaf)
   {
-    printf2(" ;");
+    printf2("                 ");
   }
   else
   {
-    printf2("  ");
+    printf2(" write 4 r14 r15\n"); // write r15 to memory[r14+4]
   }
-  printf2(" write 4 r14 r15\n"); // write r15 to memory[r14+4]
+  
 }
 
 STATIC
@@ -1940,23 +1943,26 @@ void GenExpr0(void)
     word tok = stack[i][0];
     word v = stack[i][1];
 
-    switch (tok)
+    if (doAnnotations)
     {
-    case tokNumInt: printf2(" ; "); printd2(truncInt(v)); printf2("\n"); break;
-    //case tokNumUint: printf2(" ; %uu\n", truncUint(v)); break;
-    case tokIdent: case tokRevIdent: printf2(" ; "); printf2(IdentTable + v); printf2("\n"); break;
-    case tokLocalOfs: case tokRevLocalOfs: printf2(" ; local ofs\n"); break;
-    case ')': printf2(" ; ) fxn call\n"); break;
-    case tokUnaryStar: printf2(" ; * (read dereference)\n"); break;
-    case '=': printf2(" ; = (write dereference)\n"); break;
-    case tokShortCirc: printf2(" ; short-circuit "); break;
-    case tokGoto: printf2(" ; sh-circ-goto "); break;
-    case tokLogAnd: printf2(" ; short-circuit && target\n"); break;
-    case tokLogOr: printf2(" ; short-circuit || target\n"); break;
-    case tokIf: case tokIfNot: case tokReturn: break;
-    case tokNum0: printf2(" ; 0\n"); break;
-    case tokAssign0:  printf2(" ; =\n"); break;
-    default: printf2(" ; "); printf2(GetTokenName(tok)); printf2("\n"); break;
+      switch (tok)
+      {
+      case tokNumInt: printf2(" ; "); printd2(truncInt(v)); printf2("\n"); break;
+      //case tokNumUint: printf2(" ; %uu\n", truncUint(v)); break;
+      case tokIdent: case tokRevIdent: printf2(" ; "); printf2(IdentTable + v); printf2("\n"); break;
+      case tokLocalOfs: case tokRevLocalOfs: printf2(" ; local ofs\n"); break;
+      case ')': printf2(" ; ) fxn call\n"); break;
+      case tokUnaryStar: printf2(" ; * (read dereference)\n"); break;
+      case '=': printf2(" ; = (write dereference)\n"); break;
+      case tokShortCirc: printf2(" ; short-circuit "); break;
+      case tokGoto: printf2(" ; sh-circ-goto "); break;
+      case tokLogAnd: printf2(" ; short-circuit && target\n"); break;
+      case tokLogOr: printf2(" ; short-circuit || target\n"); break;
+      case tokIf: case tokIfNot: case tokReturn: break;
+      case tokNum0: printf2(" ; 0\n"); break;
+      case tokAssign0:  printf2(" ; =\n"); break;
+      default: printf2(" ; "); printf2(GetTokenName(tok)); printf2("\n"); break;
+      }
     }
 
     switch (tok)
@@ -2564,10 +2570,13 @@ void GenExpr0(void)
       break;
 
     case tokShortCirc:
-      if (v >= 0)
-        printf2("&&\n");
-      else
-        printf2("||\n");
+      if (doAnnotations)
+      {
+        if (v >= 0)
+          printf2("&&\n");
+        else
+          printf2("||\n");
+      }
       if (v >= 0)
         GenJumpIfZero(v); // &&
       else
@@ -2575,7 +2584,10 @@ void GenExpr0(void)
       gotUnary = 0;
       break;
     case tokGoto:
-      printf2("goto\n");
+      if (doAnnotations)
+      {
+        printf2("goto\n");
+      }
       GenJumpUncond(v);
       gotUnary = 0;
       break;
@@ -2688,83 +2700,62 @@ void GenFin(void)
   {
     printf2(
       ".code\n"
-      "; END OF COMPILED C CODE\n"
-      "\n"
-      "; Interrupt handlers for BDOS user program\n"
-      "; Has some administration before jumping to Label_int[ID]\n"
-      "; To prevent interfering with other stacks, they have their own stack\n"
-      "; Because this is a BDOS user program, the interrupts are called from the BDOS interrupt handlers\n"
-      "; Therefore, it should return to that interrupt handler and not use reti\n"
-      "\n"
+      
       "Int1:\n"
-      "\n"
-      "    load32 0x7BFFFF r13     ; initialize user int stack address\n"
-      "    load32 0 r14            ; initialize base pointer address\n"
-      "    addr2reg Return_Interrupt r1 ; get address of return function\n"
-      "    or r0 r1 r15            ; copy return addr to r15\n"
-      "    jump int1         ; jump to interrupt handler of C program\n"
-      "                            ; should return to the address we just put on the stack\n"
-      "    halt                    ; should not get here\n"
-      "\n"
-      "\n"
+      
+      "    load32 0x7BFFFF r13\n"
+      "    load32 0 r14\n"
+      "    addr2reg Return_Interrupt r1\n"
+      "    or r0 r1 r15\n"
+      "    jump int1\n"
+      
+      "    halt\n"
+      
       "Int2:\n"
-      "\n"
-      "    load32 0x7BFFFF r13     ; initialize user int stack address\n"
-      "    load32 0 r14            ; initialize base pointer address\n"
-      "    addr2reg Return_Interrupt r1 ; get address of return function\n"
-      "    or r0 r1 r15            ; copy return addr to r15\n"
-      "    jump int2         ; jump to interrupt handler of C program\n"
-      "                            ; should return to the address we just put on the stack\n"
-      "    halt                    ; should not get here\n"
-      "\n"
-      "\n"
+      
+      "    load32 0x7BFFFF r13\n"
+      "    load32 0 r14\n"
+      "    addr2reg Return_Interrupt r1\n"
+      "    or r0 r1 r15\n"
+      "    jump int2\n"
+      
+      "    halt\n"
+      
+      
       "Int3:\n"
-      "\n"
-      "    load32 0x7BFFFF r13     ; initialize user int stack address\n"
-      "    load32 0 r14            ; initialize base pointer address\n"
-      "    addr2reg Return_Interrupt r1 ; get address of return function\n"
-      "    or r0 r1 r15            ; copy return addr to r15\n"
-      "    jump int3         ; jump to interrupt handler of C program\n"
-      "                            ; should return to the address we just put on the stack\n"
-      "    halt                    ; should not get here\n"
-      "\n"
-      "\n"
+      
+      "    load32 0x7BFFFF r13\n"
+      "    load32 0 r14\n"
+      "    addr2reg Return_Interrupt r1\n"
+      "    or r0 r1 r15\n"
+      "    jump int3\n"
+      
+      "    halt\n"
+      
+      
       "Int4:\n"
-      "\n"
-      "    load32 0x7BFFFF r13     ; initialize user int stack address\n"
-      "    load32 0 r14            ; initialize base pointer address\n"
-      "    addr2reg Return_Interrupt r1 ; get address of return function\n"
-      "    or r0 r1 r15            ; copy return addr to r15\n"
-      "    jump int4         ; jump to interrupt handler of C program\n"
-      "                            ; should return to the address we just put on the stack\n"
-      "    halt                    ; should not get here\n"
-      "\n"
-      "\n"
-      "; Function that is called after any interrupt handler from C has returned\n"
-      "; Rreturns to BDOS interrupt handler\n"
+      
+      "    load32 0x7BFFFF r13\n"
+      "    load32 0 r14\n"
+      "    addr2reg Return_Interrupt r1\n"
+      "    or r0 r1 r15\n"
+      "    jump int4\n"
+      
+      "    halt\n"
+      
       "Return_Interrupt:\n"
-      "\n"
-      "    ; RETURN\n"
+      
+      
       "    pop r1\n"
       "    jumpr 3 r1\n"
-      "\n"
-      "    halt        ; should not get here\n"
+      
+      "    halt\n"
     );
   }
   else
   {
     printf2(
-      ".code\n"
-      "; END OF COMPILED C CODE\n"
-      "\n"
-      "; Interrupt handlers\n"
-      "; Has some administration before jumping to Label_int[ID]\n"
-      "; To prevent interfering with other stacks, they have their own stack\n"
-      "; Also, all registers have to be backed up and restored to hardware stack\n"
-      "; A return function has to be put on the stack as wel that the C code interrupt handler\n"
-      "; will jump to when it is done\n"
-      "\n"
-      "\n"
+
       ".code\n"
       "Int1:\n"
       "    push r1\n"
@@ -2782,16 +2773,16 @@ void GenFin(void)
       "    push r13\n"
       "    push r14\n"
       "    push r15\n"
-      "\n"
-      "    load32 0x7FFFFF r13     ; initialize (BDOS) int stack address\n"
-      "    load32 0 r14            ; initialize base pointer address\n"
-      "    addr2reg Return_Interrupt r1 ; get address of return function\n"
-      "    or r0 r1 r15            ; copy return addr to r15\n"
-      "    jump int1               ; jump to interrupt handler of C program\n"
-      "                            ; should return to the address we just put on the stack\n"
-      "    halt                    ; should not get here\n"
-      "\n"
-      "\n"
+      
+      "    load32 0x7FFFFF r13\n"
+      "    load32 0 r14\n"
+      "    addr2reg Return_Interrupt r1\n"
+      "    or r0 r1 r15\n"
+      "    jump int1\n"
+      
+      "    halt\n"
+      
+      
       "Int2:\n"
       "    push r1\n"
       "    push r2\n"
@@ -2808,16 +2799,16 @@ void GenFin(void)
       "    push r13\n"
       "    push r14\n"
       "    push r15\n"
-      "\n"
-      "    load32 0x7FFFFF r13     ; initialize (BDOS) int stack address\n"
-      "    load32 0 r14            ; initialize base pointer address\n"
-      "    addr2reg Return_Interrupt r1 ; get address of return function\n"
-      "    or r0 r1 r15            ; copy return addr to r15\n"
-      "    jump int2               ; jump to interrupt handler of C program\n"
-      "                            ; should return to the address we just put on the stack\n"
-      "    halt                    ; should not get here\n"
-      "\n"
-      "\n"
+      
+      "    load32 0x7FFFFF r13\n"
+      "    load32 0 r14\n"
+      "    addr2reg Return_Interrupt r1\n"
+      "    or r0 r1 r15\n"
+      "    jump int2\n"
+      
+      "    halt\n"
+      
+      
       "Int3:\n"
       "    push r1\n"
       "    push r2\n"
@@ -2834,16 +2825,16 @@ void GenFin(void)
       "    push r13\n"
       "    push r14\n"
       "    push r15\n"
-      "\n"
-      "    load32 0x7FFFFF r13     ; initialize (BDOS) int stack address\n"
-      "    load32 0 r14            ; initialize base pointer address\n"
-      "    addr2reg Return_Interrupt r1 ; get address of return function\n"
-      "    or r0 r1 r15            ; copy return addr to r15\n"
-      "    jump int3               ; jump to interrupt handler of C program\n"
-      "                            ; should return to the address we just put on the stack\n"
-      "    halt                    ; should not get here\n"
-      "\n"
-      "\n"
+      
+      "    load32 0x7FFFFF r13\n"
+      "    load32 0 r14\n"
+      "    addr2reg Return_Interrupt r1\n"
+      "    or r0 r1 r15\n"
+      "    jump int3\n"
+      
+      "    halt\n"
+      
+      
       "Int4:\n"
       "    push r1\n"
       "    push r2\n"
@@ -2860,18 +2851,16 @@ void GenFin(void)
       "    push r13\n"
       "    push r14\n"
       "    push r15\n"
-      "\n"
-      "    load32 0x7FFFFF r13     ; initialize (BDOS) int stack address\n"
-      "    load32 0 r14            ; initialize base pointer address\n"
-      "    addr2reg Return_Interrupt r1 ; get address of return function\n"
-      "    or r0 r1 r15            ; copy return addr to r15\n"
-      "    jump int4               ; jump to interrupt handler of C program\n"
-      "                            ; should return to the address we just put on the stack\n"
-      "    halt                    ; should not get here\n"
-      "\n"
-      "\n"
-      "; Function that is called after any interrupt handler from C has returned\n"
-      "; Restores all registers and issues RETI instruction to continue from original code\n"
+      
+      "    load32 0x7FFFFF r13\n"
+      "    load32 0 r14\n"
+      "    addr2reg Return_Interrupt r1\n"
+      "    or r0 r1 r15\n"
+      "    jump int4\n"
+      
+      "    halt\n"
+      
+      
       "Return_Interrupt:\n"
       "    pop r15\n"
       "    pop r14\n"
@@ -2888,34 +2877,30 @@ void GenFin(void)
       "    pop r3\n"
       "    pop r2\n"
       "    pop r1\n"
-      "\n"
-      "    reti        ; return from interrrupt\n"
-      "\n"
-      "    halt        ; should not get here\n");
+      
+      "    reti\n"
+      "    halt\n");
   }
 
   if (compileOS)
   {
     printf2(
       ".code\n"
-      "\n; Syscall handler for OS\n"
-      "; Because this is not called during an interrupt, we use a different stack\n"
-      ";  located at the end of BDOS heap\n"
-      "\n"
+      
       "Syscall:\n"
-      "    load32 0x3FFFFF r13     ; initialize syscall stack address\n"
-      "    load32 0 r14            ; initialize base pointer address\n"
-      "    addr2reg Return_Syscall r1 ; get address of return function\n"
-      "    or r0 r1 r15            ; copy return addr to r15\n"
-      "    jump syscall      ; jump to syscall handler of C program\n"
-      "                            ; should return to the address we just put on the stack\n"
-      "    halt                    ; should not get here\n"
-      "\n"
+      "    load32 0x3FFFFF r13\n"
+      "    load32 0 r14\n"
+      "    addr2reg Return_Syscall r1\n"
+      "    or r0 r1 r15\n"
+      "    jump syscall\n"
+      
+      "    halt\n"
+      
       "Return_Syscall:\n"
       "    pop r1\n"
       "    jumpr 3 r1\n"
-      "\n"
-      "    halt        ; should not get here\n"
+      
+      "    halt\n"
       );
   }
 

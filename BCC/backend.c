@@ -2695,8 +2695,6 @@ void GenFin(void)
       "; A return function has to be put on the stack as wel that the C code interrupt handler\n"
       "; will jump to when it is done\n"
       "\n"
-      "\n"
-      ".code\n"
       "Int1:\n"
       "    push r1\n"
       "    push r2\n"

@@ -411,6 +411,7 @@ word GetFxnInfo(word ExprTypeSynPtr, word* MinParams, word* MaxParams, word* Ret
 word verbose = 0;
 word warnings = 0;
 word warnCnt = 0;
+word doAnnotations = 0;
 
 // custom compiler flags
 word compileUserBDOS = 0;
@@ -3097,7 +3098,7 @@ word AllocLocal(unsigned size)
       (unsigned int)CurFxnLocalOfs < (unsigned int) (-GenMaxLocalsSize()))
     //error("AllocLocal(): Local variables take too much space\n");
   {
-    printf("a");
+    //printf("a");
     errorVarSize();
   }
     
@@ -4537,111 +4538,113 @@ word ParseExpr(word tok, word* GotUnary, word* ExprTypeSynPtr, word* ConstExpr, 
     // and after manipulations
     for (j = 0; j < 2; j++)
     {
-
-      word i;
-      GenStartCommentLine();
-      if (j) printf2("Expanded");
-      else printf2("RPN'ized");
-      printf2(" expression: \"");
-      for (i = 0; i < sp; i++)
+      if (doAnnotations)
       {
-        word tok = stack[i][0];
-        switch (tok)
+        word i;
+        GenStartCommentLine();
+        if (j) printf2("Expanded");
+        else printf2("RPN'ized");
+        printf2(" expression: \"");
+        for (i = 0; i < sp; i++)
         {
-        case tokNumInt:
-          printd2(truncInt(stack[i][1]));
-          break;
-        case tokNumUint:
-          printd2(truncUint(stack[i][1]));
-          break;
+          word tok = stack[i][0];
+          switch (tok)
+          {
+          case tokNumInt:
+            printd2(truncInt(stack[i][1]));
+            break;
+          case tokNumUint:
+            printd2(truncUint(stack[i][1]));
+            break;
 
-        case tokIdent:
-          {
-            char* p = IdentTable + stack[i][1];
-            if (isdigit(*p))
-              printf2("L");
-            printf2(p);
-          }
-          break;
-        case tokShortCirc:
-          if (stack[i][1] >= 0)
-          {
-            printf2("[sh&&->");
-            printd2(stack[i][1]);
-            printf2("]");
-          }
-          else
-          {
-            printf2("[sh||->");
-            printd2(-stack[i][1]);
-            printf2("]");
-          }
-          break;
-        case tokLocalOfs:
-          printf2("(@");
-          printd2(truncInt(stack[i][1]));
-          printf2(")");
-          break;
-        case tokUnaryStar:
-          if (j) 
-          {
-            printf2("*(");
-            printd2(stack[i][1]);
+          case tokIdent:
+            {
+              char* p = IdentTable + stack[i][1];
+              if (isdigit(*p))
+                printf2("L");
+              printf2(p);
+            }
+            break;
+          case tokShortCirc:
+            if (stack[i][1] >= 0)
+            {
+              printf2("[sh&&->");
+              printd2(stack[i][1]);
+              printf2("]");
+            }
+            else
+            {
+              printf2("[sh||->");
+              printd2(-stack[i][1]);
+              printf2("]");
+            }
+            break;
+          case tokLocalOfs:
+            printf2("(@");
+            printd2(truncInt(stack[i][1]));
             printf2(")");
-          }
-          else printf2("*u");
-          break;
-        case '(': case ',':
-          if (!j)
-          {
+            break;
+          case tokUnaryStar:
+            if (j) 
+            {
+              printf2("*(");
+              printd2(stack[i][1]);
+              printf2(")");
+            }
+            else printf2("*u");
+            break;
+          case '(': case ',':
+            if (!j)
+            {
+              char* ctmp = " ";
+              ctmp[0] = tok;
+              printf2(ctmp);
+            } 
+              
+            // else printf2("\b");
+            break;
+          case ')':
+            if (j) printf2("(");
+
             char* ctmp = " ";
             ctmp[0] = tok;
             printf2(ctmp);
-          } 
-            
-          // else printf2("\b");
-          break;
-        case ')':
-          if (j) printf2("(");
 
-          char* ctmp = " ";
-          ctmp[0] = tok;
-          printf2(ctmp);
-
-          if (j) printd2(stack[i][1]);
-          break;
-        default:
-          printf2(GetTokenName(tok));
-          if (j)
-          {
-            switch (tok)
+            if (j) printd2(stack[i][1]);
+            break;
+          default:
+            printf2(GetTokenName(tok));
+            if (j)
             {
-            case tokLogOr: case tokLogAnd:
-              printf2("[");
-              printd2(stack[i][1]);
-              printf2("]");
-              break;
-            case '=':
-            case tokInc: case tokDec:
-            case tokPostInc: case tokPostDec:
-            case tokAssignAdd: case tokAssignSub:
-            case tokPostAdd: case tokPostSub:
-            case tokAssignMul:
-            case tokAssignDiv: case tokAssignMod:
-            case tokAssignUDiv: case tokAssignUMod:
-            case tokAssignLSh: case tokAssignRSh: case tokAssignURSh:
-            case tokAssignAnd: case tokAssignXor: case tokAssignOr:
-              printf2("(");
-              printd2(stack[i][1]);
-              printf2(")");
-              break;
+              switch (tok)
+              {
+              case tokLogOr: case tokLogAnd:
+                printf2("[");
+                printd2(stack[i][1]);
+                printf2("]");
+                break;
+              case '=':
+              case tokInc: case tokDec:
+              case tokPostInc: case tokPostDec:
+              case tokAssignAdd: case tokAssignSub:
+              case tokPostAdd: case tokPostSub:
+              case tokAssignMul:
+              case tokAssignDiv: case tokAssignMod:
+              case tokAssignUDiv: case tokAssignUMod:
+              case tokAssignLSh: case tokAssignRSh: case tokAssignURSh:
+              case tokAssignAnd: case tokAssignXor: case tokAssignOr:
+                printf2("(");
+                printd2(stack[i][1]);
+                printf2(")");
+                break;
+              }
             }
+            break;
           }
-          break;
+          printf2(" ");
         }
-        printf2(" ");
+        printf2("\"\n");
       }
-      printf2("\"\n");
 
       if (!j)
       {
@@ -4656,30 +4659,32 @@ word ParseExpr(word tok, word* GotUnary, word* ExprTypeSynPtr, word* ConstExpr, 
       }
       else if (*ConstExpr)
       {
-        GenStartCommentLine();
-
-        switch (SyntaxStack0[*ExprTypeSynPtr])
+        if (doAnnotations)
         {
-        case tokChar:
-        case tokSChar:
-        case tokUChar:
-        case tokShort:
-        case tokUShort:
-        case tokInt:
-          printf2("Expression value: ");
-          printd2(truncInt(*ConstVal));
-          printf2("\n");
-          break;
+          GenStartCommentLine();
 
-        default:
-        case tokUnsigned:
-          printf2("Expression value: ");
-          printd2(truncUint(*ConstVal));
-          printf2("\n");
-          break;
+          switch (SyntaxStack0[*ExprTypeSynPtr])
+          {
+          case tokChar:
+          case tokSChar:
+          case tokUChar:
+          case tokShort:
+          case tokUShort:
+          case tokInt:
+            printf2("Expression value: ");
+            printd2(truncInt(*ConstVal));
+            printf2("\n");
+            break;
+
+          default:
+          case tokUnsigned:
+            printf2("Expression value: ");
+            printd2(truncUint(*ConstVal));
+            printf2("\n");
+            break;
+          }
         }
       }
-
     }
   }
 
@@ -4757,11 +4762,13 @@ void error(char* strToPrint)
     if (Files[i])
       fclose(Files[i]);
 
+  /*
   puts2("");
 
   DumpSynDecls();
   DumpMacroTable();
   DumpIdentTable();
+  */
 
   // using stdout implicitly instead of stderr explicitly because:
   // - stderr can be a macro and it's unknown if standard headers
@@ -4771,7 +4778,7 @@ void error(char* strToPrint)
   // - output to stderr can interfere/overlap with buffered
   //   output to stdout and the result may literally look ugly
 
-  GenStartCommentLine(); printf2("Compilation failed.\n");
+  //GenStartCommentLine(); printf2("Compilation failed.\n");
 
   if (OutFile)
     fclose(OutFile);
@@ -4785,6 +4792,7 @@ void error(char* strToPrint)
   printf("\n");
 
   printf(strToPrint);
+  printf("\n");
 
   exit(EXIT_FAILURE);
 }
@@ -5122,7 +5130,7 @@ word GetDeclSize(word SyntaxPtr, word SizeForDeref)
       if (size != truncUint(size))
         //error("Variable too big\n");
       {
-        printf("b");
+        //printf("b");
         errorVarSize();
       }
         
@@ -5138,7 +5146,7 @@ word GetDeclSize(word SyntaxPtr, word SizeForDeref)
       if (size != truncUint(size))
         //error("Variable too big\n");
       {
-        printf("c");
+        //printf("c");
         errorVarSize();
       }
       return (word)size;
@@ -5153,7 +5161,7 @@ word GetDeclSize(word SyntaxPtr, word SizeForDeref)
       if (size != truncUint(size))
         //error("Variable too big\n");
       {
-        printf("d");
+        //printf("d");
         errorVarSize();
       }
       i += 2;
@@ -5173,7 +5181,7 @@ word GetDeclSize(word SyntaxPtr, word SizeForDeref)
         size *= s;
         if (size != truncUint(size))
         {
-          printf("d");
+          //printf("d");
           errorVarSize();
         }
         return (word)size;
@@ -5649,7 +5657,7 @@ lcont:
         sz = (sz + alignment - 1) & ~(alignment - 1);
         if (sz < tmp || sz != truncUint(sz))
         {
-          printf("e");
+          //printf("e");
           errorVarSize();
         }
         SyntaxStack1[typePtr + 2] = (word)sz;
@@ -6599,7 +6607,7 @@ word ParseDecl(word tok, unsigned structInfo[4], word cast, word label)
           structInfo[2] = (structInfo[2] + newAlignment - 1) & ~(newAlignment - 1);
           if (structInfo[2] < tmp || structInfo[2] != truncUint(structInfo[2]))
           {
-            printf("f");
+            //printf("f");
             errorVarSize();
           }
           // Change tokIdent to tokMemberIdent and insert a local var offset token
@@ -6613,7 +6621,7 @@ word ParseDecl(word tok, unsigned structInfo[4], word cast, word label)
             structInfo[2] += sz;
             if (structInfo[2] < tmp || structInfo[2] != truncUint(structInfo[2]))
             {
-              printf("g");
+              //printf("g");
               errorVarSize();
             }
           }
@@ -6649,7 +6657,10 @@ word ParseDecl(word tok, unsigned structInfo[4], word cast, word label)
       // in an expression with a cast, e.g. (typedecl)expr, we're done
       if (ExprLevel && !structInfo)
       {
-        DumpDecl(lastSyntaxPtr, 0);
+        if (doAnnotations)
+        {
+          DumpDecl(lastSyntaxPtr, 0);
+        }
         return tok;
       }
 
@@ -6661,8 +6672,11 @@ word ParseDecl(word tok, unsigned structInfo[4], word cast, word label)
         word initLabel = 0;
         word bss = (!hasInit) & UseBss;
 
-        if (isGlobal)
-          DumpDecl(lastSyntaxPtr, 0);
+        if (doAnnotations)
+        {
+          if (isGlobal)
+            DumpDecl(lastSyntaxPtr, 0);
+        }
 
         if (hasInit)
         {
@@ -6700,9 +6714,12 @@ word ParseDecl(word tok, unsigned structInfo[4], word cast, word label)
           // Generate global initializers
           if (hasInit)
           {
-            if (isGlobal)
+            if (doAnnotations)
             {
-              GenStartCommentLine(); printf2("=\n");
+              if (isGlobal)
+              {
+                GenStartCommentLine(); printf2("=\n");
+              }
             }
             tok = InitVar(lastSyntaxPtr, tok);
             // Update the size in case it's an incomplete array
@@ -6725,13 +6742,19 @@ word ParseDecl(word tok, unsigned structInfo[4], word cast, word label)
           // update its offset in the offset token
           SyntaxStack1[lastSyntaxPtr + 1] = AllocLocal(sz);
 
-          DumpDecl(lastSyntaxPtr, 0);
+          if (doAnnotations)
+          {
+            DumpDecl(lastSyntaxPtr, 0);
+          }
         }
 
         // Copy global initializers into local vars
         if (isLocal & needsGlobalInit)
         {
-          GenStartCommentLine(); printf2("=\n");
+          if (doAnnotations)
+          {
+            GenStartCommentLine(); printf2("=\n");
+          }
           if (!StructCpyLabel)
             StructCpyLabel = LabelCnt++;
 
@@ -6799,7 +6822,10 @@ word ParseDecl(word tok, unsigned structInfo[4], word cast, word label)
         word i;
         word endLabel = 0;
 
-        DumpDecl(lastSyntaxPtr, 0);
+        if (doAnnotations)
+        {
+          DumpDecl(lastSyntaxPtr, 0);
+        }
 
         CurFxnName = IdentTable + SyntaxStack1[lastSyntaxPtr];
         IsMain = !strcmp(CurFxnName, "main");
@@ -6879,10 +6905,14 @@ word ParseDecl(word tok, unsigned structInfo[4], word cast, word label)
         SyntaxStackCnt = undoSymbolsPtr; // remove all params and locals
         SyntaxStack1[SymFuncPtr] = DummyIdent;
       }
+
       else if (isFxn)
       {
-        // function prototype
-        DumpDecl(lastSyntaxPtr, 0);
+        if (doAnnotations)
+        {
+          // function prototype
+          DumpDecl(lastSyntaxPtr, 0);
+        }
       }
 
       CheckRedecl(lastSyntaxPtr);
@@ -7054,19 +7084,19 @@ void AddFxnParamSymbols(word SyntaxPtr)
 
       if (sz + SizeOfWord - 1 < sz)
       {
-        printf("h");
+        //printf("h");
         errorVarSize();
       }
       sz = (sz + SizeOfWord - 1) & ~(SizeOfWord - 1u);
       if (paramOfs + sz < paramOfs)
       {
-        printf("i");
+        //printf("i");
         errorVarSize();
       }
       paramOfs += sz;
       if (paramOfs > (unsigned)GenMaxLocalsSize())
       {
-        printf("j");
+        //printf("j");
         errorVarSize();
       }
 
@@ -7077,7 +7107,10 @@ void AddFxnParamSymbols(word SyntaxPtr)
         tok = SyntaxStack0[i];
         if (tok == tokIdent || tok == ')')
         {
-          DumpDecl(paramPtr, 0);
+          if (doAnnotations)
+          {
+            DumpDecl(paramPtr, 0);
+          }
           if (IdentTable[SyntaxStack1[paramPtr]] == '<')
             error("Parameter name expected\n");
           CheckRedecl(paramPtr);
@@ -7161,7 +7194,10 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
       word undoSymbolsPtr = SyntaxStackCnt;
       word undoLocalOfs = CurFxnLocalOfs;
       word undoIdents = IdentTableLen;
-      GenStartCommentLine(); printf2("{\n");
+      if (doAnnotations)
+      {
+        GenStartCommentLine(); printf2("{\n");
+      }
       ParseLevel++;
       tok = ParseBlock(BrkCntTarget, casesIdx);
       ParseLevel--;
@@ -7171,7 +7207,10 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
       UndoNonLabelIdents(undoIdents); // remove all identifier names, except those of labels
       SyntaxStackCnt = undoSymbolsPtr; // remove all params and locals
       CurFxnLocalOfs = undoLocalOfs; // destroy on-stack local variables
-      GenStartCommentLine(); printf2("}\n");
+      if (doAnnotations)
+      {
+        GenStartCommentLine(); printf2("}\n");
+      }
       tok = GetToken();
     }
     else if (tok == tokReturn)
@@ -7179,7 +7218,10 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
       // DONE: functions returning void vs non-void
       word retVoid = CurFxnReturnExprTypeSynPtr >= 0 &&
                     SyntaxStack0[CurFxnReturnExprTypeSynPtr] == tokVoid;
-      GenStartCommentLine(); printf2("return\n");
+      if (doAnnotations)
+      {
+        GenStartCommentLine(); printf2("return\n");
+      }
       tok = GetToken();
       if (tok == ';')
       {
@@ -7274,7 +7316,10 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
       word labelBefore = LabelCnt++;
       word labelAfter = LabelCnt++;
       word forever = 0;
-      GenStartCommentLine(); printf2("while\n");
+      if (doAnnotations)
+      {
+        GenStartCommentLine(); printf2("while\n");
+      }
 
       tok = GetToken();
       if (tok != '(')
@@ -7345,7 +7390,10 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
       word labelBefore = LabelCnt++;
       word labelWhile = LabelCnt++;
       word labelAfter = LabelCnt++;
-      GenStartCommentLine(); printf2("do\n");
+      if (doAnnotations)
+      {
+        GenStartCommentLine(); printf2("do\n");
+      }
       GenNumLabel(labelBefore);
 
       tok = GetToken();
@@ -7356,7 +7404,10 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
         //error("ParseStatement(): 'while' expected after 'do statement'\n");
         errorUnexpectedToken(tok);
 
-      GenStartCommentLine(); printf2("while\n");
+      if (doAnnotations)
+      {
+        GenStartCommentLine(); printf2("while\n");
+      }
       tok = GetToken();
       if (tok != '(')
         //error("ParseStatement(): '(' expected after 'while'\n");
@@ -7424,7 +7475,10 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
     {
       word labelAfterIf = LabelCnt++;
       word labelAfterElse = LabelCnt++;
-      GenStartCommentLine(); printf2("if\n");
+      if (doAnnotations)
+      {
+        GenStartCommentLine(); printf2("if\n");
+      }
 
       tok = GetToken();
       if (tok != '(')
@@ -7486,7 +7540,10 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
       {
         GenJumpUncond(labelAfterElse);
         GenNumLabel(labelAfterIf);
-        GenStartCommentLine(); printf2("else\n");
+        if (doAnnotations)
+        {
+          GenStartCommentLine(); printf2("else\n");
+        }
         tok = GetToken();
         tok = ParseStatement(tok, BrkCntTarget, casesIdx);
         GenNumLabel(labelAfterElse);
@@ -7506,7 +7563,10 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
       static word expr3Stack[STACK_SIZE >> 1][2];
       static word expr3Sp;
 
-      GenStartCommentLine(); printf2("for\n");
+      if (doAnnotations)
+      {
+        GenStartCommentLine(); printf2("for\n");
+      }
       tok = GetToken();
       if (tok != '(')
         //error("ParseStatement(): '(' expected after 'for'\n");
@@ -7636,7 +7696,10 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
     }
     else if (tok == tokBreak)
     {
-      GenStartCommentLine(); printf2("break\n");
+      if (doAnnotations)
+      {
+        GenStartCommentLine(); printf2("break\n");
+      }
       if ((tok = GetToken()) != ';')
         //error("ParseStatement(): ';' expected\n");
         errorUnexpectedToken(tok);
@@ -7648,7 +7711,10 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
     }
     else if (tok == tokCont)
     {
-      GenStartCommentLine(); printf2("continue\n");
+      if (doAnnotations)
+      {
+        GenStartCommentLine(); printf2("continue\n");
+      }
       if ((tok = GetToken()) != ';')
         //error("ParseStatement(): ';' expected\n");
         errorUnexpectedToken(tok);
@@ -7664,7 +7730,10 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
       word brkLabel = LabelCnt++;
       word lbl = LabelCnt++;
       word i;
-      GenStartCommentLine(); printf2("switch\n");
+      if (doAnnotations)
+      {
+        GenStartCommentLine(); printf2("switch\n");
+      }
 
       tok = GetToken();
       if (tok != '(')
@@ -7727,7 +7796,10 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
     else if (tok == tokCase)
     {
       word i;
-      GenStartCommentLine(); printf2("case\n");
+      if (doAnnotations)
+      {
+        GenStartCommentLine(); printf2("case\n");
+      }
 
       if (!casesIdx)
         //error("ParseStatement(): 'case' must be within 'switch' statement\n");
@@ -7762,7 +7834,10 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
     }
     else if (tok == tokDefault)
     {
-      GenStartCommentLine(); printf2("default\n");
+      if (doAnnotations)
+      {
+        GenStartCommentLine(); printf2("default\n");
+      }
 
       if (!casesIdx)
         //error("ParseStatement(): 'default' must be within 'switch' statement\n");
@@ -7819,9 +7894,12 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
       if ((tok = GetToken()) != tokIdent)
         errorUnexpectedToken(tok);
       GenStartCommentLine(); 
-      printf2("goto ");
-      printf2(TokenIdentName);
-      printf2("\n");
+      if (doAnnotations)
+      {
+        printf2("goto ");
+        printf2(TokenIdentName);
+        printf2("\n");
+      }
       GenJumpUncond(AddGotoLabel(TokenIdentName, 0));
       if ((tok = GetToken()) != ';')
         errorUnexpectedToken(tok);
@@ -7833,9 +7911,12 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
       if (tok == tokGotoLabel)
       {
         // found a label
-        GenStartCommentLine(); 
-        printf2(IdentTable + stack[0][1]);
-        printf2(":\n");
+        if (doAnnotations)
+        {
+          GenStartCommentLine(); 
+          printf2(IdentTable + stack[0][1]);
+          printf2(":\n");
+        }
         GenNumLabel(AddGotoLabel(IdentTable + stack[0][1], 1));
         // a statement is needed after "label:"
         statementNeeded = 1;
@@ -7960,10 +8041,14 @@ int main()
     }
     strcpy(FileNames[0], infilename);
     Files[0] = fopen(FileNames[0], 0);
-    if (fcanopen(Files[0]) == NULL)
+    if (fcanopen(Files[0]) == EOF)
     {
       //error("Cannot open file \"%s\"\n", FileNames[0]);
       errorFile(FileNames[0]);
+    }
+    else
+    {
+      printf("Opened input file\n");
     }
     LineNos[0] = LineNo;
     LinePoss[0] = LinePos;
@@ -7999,13 +8084,16 @@ int main()
   {
     // This should be the output file name
     OutFile = fopen(outfilename, 1);
-    if (fcanopen(OutFile) == NULL)
+    if (fcanopen(OutFile) == EOF)
     {
       //error("Cannot open output file \"%s\"\n", argv[i]);
       errorFile(outfilename);
     }
+    else
+    {
+      printf("Opened output file\n");
+    }
   }
-
 
   if (!FileCnt)
     error("Input file not specified\n");
@@ -8016,19 +8104,12 @@ int main()
   GenInitFinalize();
 
   // Define a few macros useful for conditional compilation
+  /*
   DefineMacro("__SMALLER_C__", "0x0100");
-  if (SizeOfWord == 2)
-    DefineMacro("__SMALLER_C_16__", "");
-  else if (SizeOfWord == 4)
-    DefineMacro("__SMALLER_C_32__", "");
-  if (OutputFormat == FormatSegHuge)
-    DefineMacro("__HUGE__", "");
-  if (OutputFormat == FormatSegUnreal)
-    DefineMacro("__UNREAL__", "");
-  if (CharIsSigned)
-    DefineMacro("__SMALLER_C_SCHAR__", "");
-  else
-    DefineMacro("__SMALLER_C_UCHAR__", "");
+  DefineMacro("__SMALLER_C_32__", "");
+  DefineMacro("__SMALLER_C_SCHAR__", "");
+  */
+
 
   // populate CharQueue[] with the initial file characters
   ShiftChar();
@@ -8040,21 +8121,23 @@ int main()
 
   GenFin();
 
-  DumpSynDecls();
+  if (doAnnotations)
+  {
+    DumpSynDecls();
+    DumpMacroTable();
+    DumpIdentTable();
+  }
+  
 
-  DumpMacroTable();
-
-
-  DumpIdentTable();
-
+  /*
   GenStartCommentLine(); 
   printf2("Next label number: ");
   printd2(LabelCnt);
   printf2("\n");
+  */
 
-  GenStartCommentLine(); 
-  printf2("Compilation succeeded.\n");
-  printf("Compilation succeeded.\n");
+  //GenStartCommentLine(); 
+  printf("Compile done\n");
 
   if (OutFile)
     fclose(OutFile);
