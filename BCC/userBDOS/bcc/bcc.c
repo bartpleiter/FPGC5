@@ -7979,6 +7979,7 @@ word ParseBlock(word BrkCntTarget[2], word casesIdx)
 
 int main() 
 {
+  printf("BCC Compiler\n");
   // Run-time initializer for SyntaxStack0[] to reduce
   // executable file size (SyntaxStack0[] will be in .bss)
   static unsigned char SyntaxStackInit[] =
@@ -8048,7 +8049,7 @@ int main()
     }
     else
     {
-      printf("Opened input file\n");
+      //printf("Opened input file\n");
     }
     LineNos[0] = LineNo;
     LinePoss[0] = LinePos;
@@ -8091,7 +8092,7 @@ int main()
     }
     else
     {
-      printf("Opened output file\n");
+      //printf("Opened output file\n");
     }
   }
 
@@ -8137,7 +8138,7 @@ int main()
   */
 
   //GenStartCommentLine(); 
-  printf("Compile done\n");
+  printf("Finished compiling\n");
 
   if (OutFile)
     fclose(OutFile);
