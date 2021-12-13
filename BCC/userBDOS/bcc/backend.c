@@ -195,10 +195,20 @@ void GenZeroData(unsigned Size, word bss)
   // B322 implementation of .space:
   if (Size > 0)
   {
-    printf2(".dw");
     word i;
     for (i = 0; i < Size; i++)
     {
+      if (MATH_modU(i, 100) == 0)
+      {
+        if (i == 0)
+        {
+          printf2(".dw");
+        }
+        else
+        {
+          printf2("\n.dw");
+        }
+      }
       printf2(" 0");
     }
     printf2("\n");
