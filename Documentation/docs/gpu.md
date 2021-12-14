@@ -1,7 +1,7 @@
 # GPU (FSX2)
 
 !!! danger
-    Big update, RGBs and VGA are gone (so the info below is outdated). Now uses a 25MHz HDMI (slightly out of spec) 640x480 signal to send the 320x200 (doubled) video output. There is still a bug in the tile bg scrolling and the sprite renderer has to be completely redesigned (and therefore does not work now)
+    Almost all of this is outdated now, since I have changed video outputs multiple times now. I now have HDMI output (640x480) and 240P NTSC composite, so no VGA or RGBs anymore.
 
 The GPU generates a progressive 320x200@60hz RGBs signal using a pixel clock of ~6.944MHz.
 It uses a tile based rendering system inspired by the NES PPU in order to prevent having to use a frame buffer and therefore save video RAM (since the FPGA only has ~64KB of SRAM/block RAM). Tile rendering works as follows:

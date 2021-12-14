@@ -1,7 +1,7 @@
 # C Compiler
 
 !!! info "TODO"
-	Update this page!
+	Very outdated! now using a C compiler based on SmallerC (written in C)
 
 Using the C compiler it is possible to compile C code to B322 assembly. Using C it is way easier to write code for the FPGC5, although it is less optimized and currently not perfectly stable.
 

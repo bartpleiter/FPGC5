@@ -64,8 +64,8 @@ $C02722 +------------------------+
         |                        |
         | UART0 RX (MAIN)$C02722 |
         | UART0 TX (MAIN)$C02723 |
-        | UART1 RX (APU) $C02724 |
-        | UART1 TX (APU) $C02725 |
+        | Unused         $C02724 |
+        | Unused         $C02725 |
         | UART2 RX (EXT) $C02726 |
         | UART2 TX (EXT) $C02727 |
         | SPI0   (FLASH) $C02728 |
@@ -91,7 +91,7 @@ $C02722 +------------------------+
         | Timer2_ctrl    $C0273C |
         | Timer3_val     $C0273D |
         | Timer3_ctrl    $C0273E |
-        | SNESpad        $C0273F |
+        | Unused         $C0273F |
         | PS/2 Keyboard  $C02740 |
         | BOOT_MODE      $C02741 |
         +------------------------+ $C02741

@@ -1,5 +1,8 @@
 # Programmer
 
+!!! info "TODO"
+	Very outdated :(
+
 The Programmer folder contains all files related to programming the FPGC5 and the SPI flash. 
 
 The compileROM.sh script converts the code.list file, the file with machine instructions in text, to a binary (code.bin) file. The file size will be a multiple of 4096 bytes, because the old external SPI flash programmer expects a file of this size. 

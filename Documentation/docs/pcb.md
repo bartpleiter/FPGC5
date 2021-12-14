@@ -1,7 +1,7 @@
 # I/O Board
 
 !!! info "TODO"
-	Rename to I/O Board, add second PCB version, add schematics etc.
+	Very very outdated, PCBv3 is already done!
 
 I have designed an I/O wing for the FPGA development board, as a replacement for the cardboard box where I used to glue everything in. The PCB was designed using KiCad and manufactured by JLCPCB. The KiCad project files (including schematic, PCB and 3D models) are in the PCB folder.
 

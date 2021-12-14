@@ -59,7 +59,7 @@ The fetch, readMem and writeBack phase can take multiple clock cycles because of
 
 <figure>
     <img align="center" src="images/timer.png" alt="timer waveform">
-    <figcaption>Timer waveform. Running instructions from SDRAM.</figcaption>
+    <figcaption>Timer waveform. Running instructions from SDRAM (outdated simulation!).</figcaption>
 </figure>
 
 ### Instruction Decoder
@@ -74,21 +74,21 @@ The 16 32 bit registers have the current functions:
 Register|Hardware 	|Assembly	|C
 -----------------------------------------------------
 R0 		|Always 0	|Always 0	|Always 0
-R1 		|GP			|Arg|retval |GP (1st arg|retval)
-R2 		|GP			|Arg|retval |GP (2nd arg)
-R3 		|GP			|Arg|retval |GP (3rd arg)
-R4 		|GP			|GP			|GP
-R5 		|GP			|GP			|GP
-R6 		|GP			|GP			|GP
-R7 		|GP			|GP			|Temp
-R8 		|GP			|GP			|GP
-R9 		|GP			|GP			|GP
-R10		|GP			|GP			|GP
-R11		|GP			|GP			|GP
+R1 		|GP			|Arg|retval |Very local temp reg
+R2 		|GP			|Arg|retval |Ret0
+R3 		|GP			|Arg|retval |Ret1
+R4 		|GP			|GP			|Arg0
+R5 		|GP			|GP			|Arg1
+R6 		|GP			|GP			|Arg2
+R7 		|GP			|GP			|Arg3
+R8 		|GP			|GP			|GP0
+R9 		|GP			|GP			|GP1
+R10		|GP			|GP			|GP2
+R11		|GP			|GP			|Temp
 R12		|GP			|GP			|Temp
-R13		|GP			|GP			|Temp
-R14		|GP			|GP			|RBP (base pointer)
-R15		|GP			|Ret Ptr 	|RSP (stack pointer)
+R13		|GP			|GP			|SP
+R14		|GP			|GP			|BP
+R15		|GP			|Ret Ptr 	|Ret addr
 ```
 The register bank has two read ports and one write port. Internally on the FPGA, the registers are implemented as two block RAM modules to increase performance and save space. One module contains the highest 16 bits, the other the lowest 16 bits. This made it easy to implement the `LOADHI` instruction.
 
@@ -98,7 +98,7 @@ Note that the program counter is not part of the register bank, as it is a seper
 Stack memory with internal stack pointer. The stack is mostly used in assembly coding for jumping to functions and backing up or restoring registers in interrupt handlers or functions. In combination with the SavPC instruction, one can easily jump to (and return from) functions in assembly (C uses a software stack).
 
 The pointer wraps around in case of a push when the stack is full or in case of a pop when the stack is empty.
-The stack is 1024 words deep. The stack pointer and stack memory are not accessible by the rest of the CPU. This and the small size make the stack mostly unusable for the C compiler. For this, a software stack implementation using the 32MiB SDRAM main memory and a GP register is used. However, the hardware stack is used to quickly backup and restore all 15 GP registers during an interrupt.
+The stack is 1024 words deep. The stack pointer and stack memory are not accessible by the rest of the CPU. This and the small size make the stack mostly unusable for the C compiler. For this, a software stack implementation using the 32MiB SDRAM main memory and R13,R14,R15 are used. However, the hardware stack is used to quickly backup and restore all 15 GP registers during an interrupt.
 
 ### ALU
 Can execute 16 different operations on two 32 bit inputs. Has two flags, which are used for branch instructions. It also has an input flag `skip`. When set, the output of the ALU will just be input B. This is useful for writing values to a register after a `READ`.
@@ -114,12 +114,12 @@ SUB       0100   A  -   B
 SHIFTL    0101   A  <<  B
 SHIFTR    0110   A  >>  B
 NOTA      0111   ~A
-MULT      1000   A  *   B
+MULT      1000   A  *   B (signed!)
 ```
 
-The remaining seven Opcodes are reserved for future (maybe signed?) operations.
+The remaining seven Opcodes are reserved for future operations.
 
-Internally, the CPU uses flags for executing the branch instructions. These are not readable by other instructions, because they are not saved in a register:
+Internally, the CPU uses flags for executing the branch instructions. Depending on the instruction flags these comparisons can be signed. The flags are not readable by other instructions, because they are not saved in a register:
 ``` text
 Flags
 ---------

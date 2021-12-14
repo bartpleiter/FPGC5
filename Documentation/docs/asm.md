@@ -1,4 +1,8 @@
 # Assembler for B322
+
+!!! info
+    This is both outdated (no .code/.data/.rdata/.bss, no --bdos or --os, etc.) and only applies to the cross-assembler written in Python!
+
 The basic way to write code for the B322 is by using the B322 assembly language. Using the assembly language you can write the most optimal code, although it might not be the best way for big or complex programs. For high performance functions like copying VRAM tables, assembly is a good solution. For big and complex software, it is better to write the code in C. The C compiler compiles to this assembly language.
 
 The assembler compiles the assembly code to 32 bit machine instructions. The input file is currently code.asm, and the output is printed to stdout.
