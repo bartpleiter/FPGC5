@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Interface to program SPI Flash using FPGC4 as programmer
+Interface to program SPI Flash using FPGC as programmer
 """
 
 import serial
@@ -18,7 +18,7 @@ BLOCKSIZE = 32768
 PAGESIZE = 256
 
 
-parser = argparse.ArgumentParser(description='Interface to FPGC4 SPI Flash Programmer')
+parser = argparse.ArgumentParser(description='Interface to FPGC SPI Flash Programmer')
 
 parser.add_argument('-d', dest='device', default='COM3',
                     help='serial port to communicate with')
@@ -55,7 +55,7 @@ port = serial.Serial(args.device, baudrate=args.baud_rate, timeout=None)
 
 
 """
-SENDING PROGRAMMER BINARY TO FPGC4
+SENDING PROGRAMMER BINARY TO FPGC
 """
 
 
@@ -78,7 +78,7 @@ fileSize = bytes(wordList[5])
 
 #print(int.from_bytes(fileSize, "big"), flush=True)
 
-print("Writing flash programmer to FPGC4")
+print("Writing flash programmer to FPGC")
 
 # write filesize
 port.write(fileSize)
@@ -103,7 +103,7 @@ while not doneSending:
         doneSending = True
 
 port.read(1) # should return 'd', though I'm not checking on it
-print("Done programming FPGC4", flush=True)
+print("Done programming FPGC", flush=True)
 
 
 
@@ -116,7 +116,7 @@ INTERACTING WITH PROGRAMMER
 def sendSingleByte(b):
     port.write(b)
 
-    # give FPGC4 time to process byte, windows (cpu intensive) alternative for #sleep(0.00XYZ) 
+    # give FPGC time to process byte, windows (cpu intensive) alternative for #sleep(0.00XYZ) 
     now = time.time_ns() // 1000000 
     while ((time.time_ns() // 1000000) < now + 2):
         pass
@@ -194,7 +194,7 @@ def writeBuffer(addr):
 
 def writePage(page, addr):
     fillBuffer(page) # fill buffer with page
-    writeBuffer(addr) # tell FPGC4 to write the buffer to addr
+    writeBuffer(addr) # tell FPGC to write the buffer to addr
     
 
 
@@ -278,7 +278,7 @@ def writeFlash(inFile, addr = 0, verify = False, outFile = "verify.bin"):
 
 
 print()
-print("---FPGC4 FLASH PROGRAMMER---")
+print("---FPGC FLASH PROGRAMMER---")
 
 
 if args.command == "read":

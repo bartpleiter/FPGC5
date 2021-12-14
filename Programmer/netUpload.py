@@ -14,6 +14,8 @@ if len(sys.argv) >= 2:
 
 outname = filename # name of the file on FPGC
 
+# TODO: check on valid 8.3 filename
+
 if len(sys.argv) >= 3:
     outname = sys.argv[2]
 

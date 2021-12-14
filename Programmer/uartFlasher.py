@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# WSL1 version. Deamon thread stops automatically when program stops
-# I do not expect this to happen on "real" linux
 
 import serial
 from time import sleep
