@@ -1,57 +1,12 @@
-#include "lib/stdlib.h" 
+// Flash programmer
+// Tool to flash the SPI flash chip
 
-// Sets SPI0_CS low
-void SpiBeginTransfer()
-{
-    ASM("\
-    // backup regs ;\
-    push r1 ;\
-    push r2 ;\
-    \
-    load32 0xC02729 r2          // r2 = 0xC02729 | SPI0_CS ;\
-    \
-    load 0 r1                   // r1 = 0 (enable) ;\
-    write 0 r2 r1               // write to SPI0_CS ;\
-    \
-    // restore regs ;\
-    pop r2 ;\
-    pop r1 ;\
-    ");
-}
+#define word char
 
-// Sets SPI0_CS high
-void SpiEndTransfer()
-{
-    ASM("\
-    // backup regs ;\
-    push r1 ;\
-    push r2 ;\
-    \
-    load32 0xC02729 r2          // r2 = 0xC02729 | SPI0_CS ;\
-    \
-    load 1 r1                   // r1 = 1 (disable) ;\
-    write 0 r2 r1               // write to SPI0_CS ;\
-    \
-    // restore regs ;\
-    pop r2 ;\
-    pop r1 ;\
-    ");
-}
-
-// write dataByte and return read value
-// write 0x00 for a read
-// INPUT:
-//   r5: byte to write
-// OUTPUT:
-//   r1: read value
-int SpiTransfer(int dataByte)
-{
-    ASM("\
-    load32 0xC02728 r1      // r1 = 0xC02728 | SPI address      ;\
-    write 0 r1 r5           // write r5 over SPI                ;\
-    read 0 r1 r1            // read return value                ;\
-    ");
-}
+#include "data/ASCII_BW.c"
+#include "lib/math.c"
+#include "lib/stdlib.c"
+#include "lib/gfx.c"
 
 
 #define COMMAND_IDLE                    0
@@ -68,15 +23,15 @@ int SpiTransfer(int dataByte)
 
 // the current command the program is busy with
 // if idle, should listen to UART for new command
-int currentCommand = COMMAND_IDLE;
+word currentCommand;
 
 // UART buffer that stores a single command
-int UARTbufferIndex = 0;
-int UARTbuffer[COMMAND_SIZE] = 0;
+word UARTbufferIndex = 0;
+word UARTbuffer[COMMAND_SIZE];
 
 // Buffer of a page to write
-int pageBufferIndex = 0;
-int pageBuffer[PAGE_SIZE] = 0;
+word pageBufferIndex = 0;
+word pageBuffer[PAGE_SIZE];
 
 /* Description of commands:
 
@@ -91,6 +46,80 @@ READ x(24bit) Bytes from address y(24bit):
     b7: '\n' (indicate end of command)
 */
 
+void initVram()
+{
+    GFX_initVram(); // clear all VRAM
+    GFX_copyPaletteTable((word)DATA_PALETTE_DEFAULT);
+    GFX_copyPatternTable((word)DATA_ASCII_DEFAULT);
+
+    GFX_cursor = 0;
+}
+
+// Workaround for defines in ASM
+void SpiFlash_asmDefines()
+{
+    asm(
+        "define W5500_SPI0_CS_ADDR = 0xC02729 ; address of SPI0_CS\n"
+        "define W5500_SPI0_ADDR = 0xC02728    ; address of SPI0\n"
+        );
+}
+
+// Sets SPI0_CS low
+void SpiBeginTransfer()
+{
+    asm(
+        "; backup regs\n"
+        "push r1\n"
+        "push r2\n"
+
+        "load32 W5500_SPI0_CS_ADDR r2       ; r2 = W5500_SPI0_CS_ADDR\n"
+
+        "load 0 r1                          ; r1 = 0 (enable)\n"
+        "write 0 r2 r1                      ; write to SPI0_CS\n"
+
+        "; restore regs\n"
+        "pop r2\n"
+        "pop r1\n"
+        );
+}
+
+// Sets SPI0_CS high
+void SpiEndTransfer()
+{
+    asm(
+        "; backup regs\n"
+        "push r1\n"
+        "push r2\n"
+
+        "load32 W5500_SPI0_CS_ADDR r2       ; r2 = W5500_SPI0_CS_ADDR\n"
+
+        "load 1 r1                          ; r1 = 1 (disable)\n"
+        "write 0 r2 r1                      ; write to SPI0_CS\n"
+
+        "; restore regs\n"
+        "pop r2\n"
+        "pop r1\n"
+        );
+}
+
+// write dataByte and return read value
+// write 0x00 for a read
+// Writes byte over SPI0
+word SpiTransfer(word dataByte)
+{
+    word retval = 0;
+    asm(
+        "load32 W5500_SPI0_ADDR r2          ; r2 = W5500_SPI0_ADDR\n"
+        "write 0 r2 r4                      ; write r4 over SPI0\n"
+        "read 0 r2 r2                       ; read return value\n"
+        "write -4 r14 r2                    ; write to stack to return\n"
+        );
+
+    return retval;
+}
+
+
+
 // inits SPI by enabling SPI0 and resetting the chip
 void initSPI()
 {
@@ -98,7 +127,7 @@ void initSPI()
     SpiEndTransfer();
 
     // enable SPI0
-    int *p = (int *) 0xC0272A; // set address (SPI0 enable)
+    word *p = (word *) 0xC0272A; // set address (SPI0 enable)
     *p = 1; // write value
     delay(10);
 
@@ -131,25 +160,29 @@ void readDeviceID()
     SpiTransfer(0);
     SpiTransfer(0);
     SpiTransfer(0);
-    int manufacturer = SpiTransfer(0);
-    int deviceID = SpiTransfer(0);
+    word manufacturer = SpiTransfer(0);
+    word deviceID = SpiTransfer(0);
     SpiEndTransfer();
 
-    char buffer[10];
-    itoah(manufacturer, &buffer[0]);
-    uprintln(&buffer[0]);
+    char b[10];
+    itoah(manufacturer, b);
+    GFX_PrintConsole("Chip manufacturer: ");
+    GFX_PrintConsole(b);
+    GFX_PrintConsole("\n");
 
-    itoah(deviceID, &buffer[0]);
-    uprintln(&buffer[0]);
+    GFX_PrintConsole("Chip ID: ");
+    itoah(deviceID, b);
+    GFX_PrintConsole(b);
+    GFX_PrintConsole("\n");
 }
 
 
-void readAndPrint(int len, int addr24, int addr16, int addr8)
+void readAndPrint(word len, word addr24, word addr16, word addr8)
 {
-    int l = len;
-    int a24 = addr24;
-    int a16 = addr16;
-    int a8 = addr8;
+    word l = len;
+    word a24 = addr24;
+    word a16 = addr16;
+    word a8 = addr8;
 
     SpiBeginTransfer();
     SpiTransfer(0x03);
@@ -158,10 +191,10 @@ void readAndPrint(int len, int addr24, int addr16, int addr8)
     SpiTransfer(a8);
 
 
-    for (int i = 0; i < l; i++)
+    word i;
+    for (i = 0; i < l; i++)
     {
-        int b = SpiTransfer(0x00);
-        uprintc((char)b);
+        uprintc(SpiTransfer(0x00));
     }
 
     SpiEndTransfer();
@@ -205,7 +238,7 @@ Register 3: (default: 0x60)
 
 */
 
-int readStatusRegister(int reg)
+word readStatusRegister(word reg)
 {
     SpiBeginTransfer();
 
@@ -216,7 +249,7 @@ int readStatusRegister(int reg)
     else
         SpiTransfer(0x05);
 
-    int status = SpiTransfer(0);
+    word status = SpiTransfer(0);
     SpiEndTransfer();
 
     return status;
@@ -229,21 +262,20 @@ void enableWrite()
     SpiBeginTransfer();
     SpiTransfer(0x06);
     SpiEndTransfer();
-    delay(10);
 }
 
 
 // Executes chip erase operation
 // TAKES AT LEAST 20 SECONDS!
 // Returns 1 on success
-int chipErase()
+word chipErase()
 {
     enableWrite();
 
-    int status = readStatusRegister(1);
+    word status = readStatusRegister(1);
 
     // Check if write is enabled
-    if ((status &&& 0x2) == 0)
+    if ((status & 0x2) == 0)
         return 0;
 
     // Send command
@@ -255,9 +287,8 @@ int chipErase()
     // Wait for busy bit to be 0
     status = 1;
 
-    while((status &&& 0x1) == 1) 
+    while((status & 0x1) == 1) 
     {
-        delay(1);
         status = readStatusRegister(1);
     }
 
@@ -269,19 +300,19 @@ int chipErase()
 // Executes 32KiB block erase operation
 // Erases the 32KiB block that contains the given byte address
 // Returns 1 on success
-int blockErase(int addr24, int addr16, int addr8)
+word blockErase(word addr24, word addr16, word addr8)
 {
 
-    int a24 = addr24;
-    int a16 = addr16;
-    int a8 = addr8;
+    word a24 = addr24;
+    word a16 = addr16;
+    word a8 = addr8;
 
     enableWrite();
 
-    int status = readStatusRegister(1);
+    word status = readStatusRegister(1);
 
     // Check if write is enabled
-    if ((status &&& 0x2) == 0)
+    if ((status & 0x2) == 0)
         return 0;
 
     // Send command
@@ -296,9 +327,8 @@ int blockErase(int addr24, int addr16, int addr8)
     // Wait for busy bit to be 0
     status = 1;
 
-    while((status &&& 0x1) == 1) 
+    while((status & 0x1) == 1) 
     {
-        delay(1);
         status = readStatusRegister(1);
     }
 
@@ -310,22 +340,20 @@ int blockErase(int addr24, int addr16, int addr8)
 // The address is the byte address of the first byte to write
 // Data wraps around at the end of a page,
 //  so last address byte will usually be 0
-// Currently writes only A's to test without having to fill a buffer
-// A 256 byte write buffer should be used in the future
 // Returns 1 on success
-int pageProgram(int addr24, int addr16, int addr8)
+word pageProgram(word addr24, word addr16, word addr8)
 {
 
-    int a24 = addr24;
-    int a16 = addr16;
-    int a8 = addr8;
+    word a24 = addr24;
+    word a16 = addr16;
+    word a8 = addr8;
 
     enableWrite();
 
-    int status = readStatusRegister(1);
+    word status = readStatusRegister(1);
 
     // Check if write is enabled
-    if ((status &&& 0x2) == 0)
+    if ((status & 0x2) == 0)
         return 0;
 
     // Send command
@@ -336,8 +364,9 @@ int pageProgram(int addr24, int addr16, int addr8)
     SpiTransfer(a8);
 
     // Send page
-    int *p_pageBuffer = pageBuffer;
-    for (int i = 0; i < 256; i++)
+    word *p_pageBuffer = pageBuffer;
+    word i;
+    for (i = 0; i < 256; i++)
     {
         SpiTransfer(*(p_pageBuffer + i));
     }
@@ -348,9 +377,8 @@ int pageProgram(int addr24, int addr16, int addr8)
     // Wait for busy bit to be 0
     status = 1;
 
-    while((status &&& 0x1) == 1) 
+    while((status & 0x1) == 1) 
     {
-        delay(1);
         status = readStatusRegister(1);
     }
 
@@ -367,13 +395,20 @@ void processCommand()
     else if (currentCommand == COMMAND_FLASH_READ)
     {
 
-        int len = UARTbuffer[1] << 16;
+        word len = UARTbuffer[1] << 16;
         len += UARTbuffer[2] << 8;
         len += UARTbuffer[3];
 
-        int addr24 = UARTbuffer[4];
-        int addr16 = UARTbuffer[5];
-        int addr8 = UARTbuffer[6];
+        word addr24 = UARTbuffer[4];
+        word addr16 = UARTbuffer[5];
+        word addr8 = UARTbuffer[6];
+
+        GFX_printWindowColored("                                        ", 40, GFX_WindowPosFromXY(0, 8), 0);
+        GFX_printWindowColored("Reading ", 8, GFX_WindowPosFromXY(0, 8), 0);
+        char b[10];
+        itoa(len, b);
+        GFX_printWindowColored(b, strlen(b), GFX_WindowPosFromXY(8, 8), 0);
+        GFX_printWindowColored(" bytes", 6, GFX_WindowPosFromXY(8 + strlen(b), 8), 0);
 
         readAndPrint(len, addr24, addr16, addr8);
 
@@ -382,22 +417,38 @@ void processCommand()
     }
     else if (currentCommand == COMMAND_FLASH_ERASE_BLOCK)
     {
-        int addr24 = UARTbuffer[4];
-        int addr16 = UARTbuffer[5];
-        int addr8 = UARTbuffer[6];
+        word addr24 = UARTbuffer[4];
+        word addr16 = UARTbuffer[5];
+        word addr8 = UARTbuffer[6];
 
         blockErase(addr24, addr16, addr8);
+        word addrCombined = ((addr24 << 16) + (addr16 << 8) + addr8) >> 15;
+
+        GFX_printWindowColored("                                        ", 40, GFX_WindowPosFromXY(0, 8), 0);
+        GFX_printWindowColored("Block ", 6, GFX_WindowPosFromXY(0, 8), 0);
+        char b[10];
+        itoa(addrCombined, b);
+        GFX_printWindowColored(b, strlen(b), GFX_WindowPosFromXY(6, 8), 0);
+        GFX_printWindowColored(" erased", 7, GFX_WindowPosFromXY(6 + strlen(b), 8), 0);
 
         currentCommand = COMMAND_IDLE;
         uprintc('r');
     }
     else if (currentCommand == COMMAND_FLASH_WRITE)
     {
-        int addr24 = UARTbuffer[4];
-        int addr16 = UARTbuffer[5];
-        int addr8 = UARTbuffer[6];
+        word addr24 = UARTbuffer[4];
+        word addr16 = UARTbuffer[5];
+        word addr8 = UARTbuffer[6];
 
         pageProgram(addr24, addr16, addr8);
+        word addrCombined = (addr24 << 8) + addr16;
+
+        GFX_printWindowColored("                                        ", 40, GFX_WindowPosFromXY(0, 8), 0);
+        GFX_printWindowColored("Page ", 5, GFX_WindowPosFromXY(0, 8), 0);
+        char b[10];
+        itoa(addrCombined, b);
+        GFX_printWindowColored(b, strlen(b), GFX_WindowPosFromXY(5, 8), 0);
+        GFX_printWindowColored(" written", 8, GFX_WindowPosFromXY(5 + strlen(b), 8), 0);
 
         currentCommand = COMMAND_IDLE;
         uprintc('r');
@@ -417,9 +468,18 @@ void processCommand()
 
 int main() 
 {
-    
-    initSPI();
+    initVram();
+    GFX_PrintConsole("Flash Programmer\n\n");
 
+    currentCommand = COMMAND_IDLE;
+
+    initSPI();
+    GFX_PrintConsole("SPI0 mode set\n");
+
+    readDeviceID();
+
+
+    GFX_PrintConsole("\nReady to receive commands\n\n");
     // Notify that we are ready to recieve commands
     uprintc('r');
 
@@ -433,8 +493,11 @@ int main()
 
 void int1()
 {
-    int *p = (int *) 0x4C0000; // set address (timer1 state)
+    /*
+    word *p = (word *) 0x4C0000; // set address (timer1 state)
     *p = 1; // write value
+    */
+    timer1Value = 1; // notify ending of timer1
 }
 
 void int2()
@@ -451,11 +514,11 @@ void int3()
     if (currentCommand == COMMAND_FILL_BUFFER)
     {
         // read byte
-        int *p = (int *)0xC02722;   // address of UART RX
-        int b = *p;                 // read byte from UART
+        word *p = (word *)0xC02722;   // address of UART RX
+        word b = *p;                 // read byte from UART
 
         // write byte to buffer, increase index
-        int *p_pageBuffer = pageBuffer;
+        word *p_pageBuffer = pageBuffer;
         *(p_pageBuffer + pageBufferIndex) = b;
         pageBufferIndex++;
 
@@ -464,11 +527,11 @@ void int3()
     else if (currentCommand == COMMAND_IDLE)
     {
         // read byte
-        int *p = (int *)0xC02722;   // address of UART RX
-        int b = *p;                 // read byte from UART
+        word *p = (word *)0xC02722;   // address of UART RX
+        word b = *p;                 // read byte from UART
 
         // write byte to buffer, increase index
-        int *p_UARTbuffer = UARTbuffer;
+        word *p_UARTbuffer = UARTbuffer;
         *(p_UARTbuffer + UARTbufferIndex) = b;
         UARTbufferIndex++;
 
@@ -492,6 +555,4 @@ void int3()
 void int4()
 {
 }
-
-
 

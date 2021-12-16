@@ -639,6 +639,11 @@ void SHELL_parseCommand(char* p)
             p[0] = '/';
             p[1] = 0; // terminate string
         }
+
+        // update path backup
+        char* pa = (char *) FS_PATH_ADDR;
+        char* pb = (char *) SHELL_PATH_BACKUP;
+        strcpy(pb, pa);
     }
 
     // CLEAR

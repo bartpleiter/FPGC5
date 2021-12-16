@@ -43,7 +43,6 @@ The general structure of this project:
 FPGC5
 ├── Assembler           // Assembler (in Python) and assembly code files
 ├── BCC                 // C compiler project, also contains programs and OS
-├── DeprCcompiler       // Old C compiler project (in Python)
 ├── Documentation       // Documentation website project
 ├── Graphics            // Scripts for graphics related stuff
 ├── MidiConverter       // Scripts to convert .mid files into audio asm code
