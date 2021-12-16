@@ -188,7 +188,9 @@ void SHELL_runFile(char* arg, word useBin)
 
                     word bytesSent = 0;
 
-                    GFX_PrintConsole("Loading program");
+                    GFX_PrintConsole("Loading");
+
+                    word loopCount = 0; // counter for animation
 
                     // loop until all bytes are sent
                     while (bytesSent != fileSize)
@@ -203,18 +205,39 @@ void SHELL_runFile(char* arg, word useBin)
                             uprintln("W: Error reading file\n");
 
                         // indicate progress
-                        GFX_PrintcConsole('.');
+                        if (loopCount == 3)
+                        {
+                            GFX_PrintcConsole(0x8); // backspace
+                            GFX_PrintcConsole(0x8); // backspace
+                            GFX_PrintcConsole(0x8); // backspace
+                            loopCount = 0;
+                        }
+                        else
+                        {
+                            GFX_PrintcConsole('.');
+                            loopCount++;
+                        }
 
                         // Update the amount of bytes sent
                         bytesSent += partToSend;
                         b += (partToSend>>2); // divide by 4 because one address is 4 bytes
                     }
 
+                    // remove the dots
+                    for (loopCount; loopCount > 0; loopCount--)
+                    {
+                        GFX_PrintcConsole(0x8); // backspace
+                    }
+
                     // close file after done
                     FS_close();
 
-                    // end with a newline for the next shell prompt
-                    GFX_PrintConsole("done!\n");
+                    // remove the loading text
+                    word i;
+                    for (i = 0; i < 7; i++)
+                    {
+                        GFX_PrintcConsole(0x8); // backspace
+                    }
 
                     BDOS_Backup();
 

@@ -144,21 +144,62 @@ int main()
         // Block when downloading file
         if (NETLOADER_transferState == NETLOADER_STATE_USB_DATA)
         {
-            GFX_PrintConsole("Downloading file");
-            while (NETLOADER_transferState == NETLOADER_STATE_USB_DATA)
-            {
-                NETLOADER_loop(NETLOADER_SOCKET);
-                GFX_PrintcConsole('.');
-            }
-            GFX_PrintConsole("Done!\n");
-
             // New shell line
+            GFX_PrintcConsole('\n');
             char* p = (char *) SHELL_CMD_ADDR;
             // clear buffer
             p[0] = 0;
             SHELL_commandIdx = 0;
             // print shell prompt
             SHELL_print_prompt();
+
+            GFX_PrintConsole("Downloading");
+            word loopCount = 0; // counter for animation
+            word smallLoopCount = 0; // to slow down the animation
+
+            while (NETLOADER_transferState == NETLOADER_STATE_USB_DATA)
+            {
+                NETLOADER_loop(NETLOADER_SOCKET);
+
+                // indicate progress
+                if (loopCount == 3 && smallLoopCount == 4)
+                {
+                    GFX_PrintcConsole(0x8); // backspace
+                    GFX_PrintcConsole(0x8); // backspace
+                    GFX_PrintcConsole(0x8); // backspace
+                    loopCount = 0;
+                }
+                else
+                {
+                    if (smallLoopCount == 4)
+                    {
+                        GFX_PrintcConsole('.');
+                        loopCount++;
+                    }
+                }
+
+                if (smallLoopCount == 4)
+                {
+                    smallLoopCount = 0;
+                }
+                else
+                {
+                    smallLoopCount++;
+                }
+            }
+            
+            // remove the dots
+            for (loopCount; loopCount > 0; loopCount--)
+            {
+                GFX_PrintcConsole(0x8); // backspace
+            }
+
+            // remove the loading text
+            word i;
+            for (i = 0; i < 11; i++)
+            {
+                GFX_PrintcConsole(0x8); // backspace
+            }
 
         }
 

@@ -74,18 +74,30 @@ void NETLOADER_appendBufferToRunAddress(char* b, word len)
 void NETLOADER_handleSession(word s)
 {
     // Size of received data
-    word rsize;
-    rsize = wizGetSockReg16(s, WIZNET_SnRX_RSR);
+    // Double check to reduce error rate
+    word rsize = 0;
+    word rsizeValidate = 0;
+    do {
+        rsize = wizGetSockReg16(s, WIZNET_SnRX_RSR);
+        if (rsize != 0)
+        {
+            // twice on purpose
+            rsizeValidate = wizGetSockReg16(s, WIZNET_SnRX_RSR);
+            rsizeValidate = wizGetSockReg16(s, WIZNET_SnRX_RSR);
+        }
+    } 
+    while (rsize != rsizeValidate);
 
     if (rsize == 0)
     {
-        wizCmd(s, WIZNET_CR_DISCON);
+        // ignore, probably no data yet
         return;
     }
 
     // Receive frame
     char* rbuf = (char *) TEMP_ADDR;
     wizReadRecvData(s, rbuf, rsize);
+    rbuf[rsize] = 0; //terminate
 
     // Keep track if we received an unexpected frame
     word frameError = 0;
@@ -158,7 +170,7 @@ void NETLOADER_handleSession(word s)
             }
             else
             {
-                frameError = 1;
+                frameError = 2;
             }
         }
     }
@@ -186,7 +198,7 @@ void NETLOADER_handleSession(word s)
         }
         else
         {
-            frameError = 1;
+            frameError = 3;
         }
     }
 
@@ -199,7 +211,7 @@ void NETLOADER_handleSession(word s)
             // write buffer to opened file
             if (FS_writeFile(rbuf + 4, rsize - 4) != FS_ANSW_USB_INT_SUCCESS)
             {
-                frameError = 1;
+                frameError = 4;
             }
         }
         // Check on finish frame
@@ -213,12 +225,12 @@ void NETLOADER_handleSession(word s)
         }
         else
         {
-            frameError = 1;
+            frameError = 5;
         }
     }
     else
     {
-        frameError = 1;
+        frameError = 6;
     }
 
 
@@ -226,6 +238,20 @@ void NETLOADER_handleSession(word s)
     // Error report and go back to init state
     if (frameError != 0)
     {
+        /* useful for debugging the error
+        uprint("frameError: ");
+        char b[10];
+        itoa(frameError, b);
+        uprintln(b);
+
+        uprint("rsize: ");
+        itoa(rsize, b);
+        uprintln(b);
+
+        uprint("rbuf: ");
+        uprintln(rbuf);
+        */
+
         // notify error
         char* retTxt = "ERROR";
         wizWriteDataFromMemory(s, retTxt, 5);
@@ -262,7 +288,7 @@ void NETLOADER_init(word s)
 
 // Check for a change in the socket status
 // Handles change if exists
-void NETLOADER_loop(word s)
+word NETLOADER_loop(word s)
 {
     // Get status for socket s
     word sxStatus = wizGetSockReg8(s, WIZNET_SnSR);
@@ -276,18 +302,31 @@ void NETLOADER_loop(word s)
     {
         // Handle session when a connection is established
         NETLOADER_handleSession(s);
-        delay(1);
+        //delay(10);
     }
-    else if (sxStatus == WIZNET_SOCK_LISTEN || sxStatus == WIZNET_SOCK_SYNSENT || sxStatus == WIZNET_SOCK_SYNRECV)
+    else if (sxStatus == WIZNET_SOCK_LISTEN)
+    {
+        // Keep on listening
+        return 1;
+    }
+    else if (sxStatus == WIZNET_SOCK_SYNSENT || sxStatus == WIZNET_SOCK_SYNRECV || sxStatus == WIZNET_SOCK_FIN_WAIT || sxStatus == WIZNET_SOCK_TIME_WAIT)
     {
         // Do nothing in these cases
-        return;
+        return 2;
     }
     else
     {
+        /*
+        uprintln("Got unknown status:");
+        char b[10];
+        itoah(sxStatus, b);
+        uprintln(b);
+        */
         // In other cases, reset the socket
         wizInitSocketTCP(s, NETLOADER_PORT);
     }
+
+    return 0;
 }
 
 

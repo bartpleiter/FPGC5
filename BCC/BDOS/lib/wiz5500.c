@@ -534,9 +534,9 @@ word wizReadRecvData(word s, char* buf, word buflen)
 
   // Remove read data from rxbuffer to make space for new data
   word nsize = rxrd + buflen;
-    wizSetSockReg16(s, WIZNET_SnRX_RD, nsize);  //replace read data pointer
-    //tell the wiznet we have retrieved the data
-    wizCmd(s, WIZNET_CR_RECV);
+  wizSetSockReg16(s, WIZNET_SnRX_RD, nsize);  //replace read data pointer
+  //tell the wiznet we have retrieved the data
+  wizCmd(s, WIZNET_CR_RECV);
 
   // Terminate buffer for printing in case the data was a string
   //*(buf + buflen) = 0;
