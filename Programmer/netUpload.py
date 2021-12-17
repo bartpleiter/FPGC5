@@ -28,7 +28,7 @@ for attempt in range(10):
 
     # init connection
     s = socket.socket()
-    port = 6969
+    port = 3220
 
     try:
         s.connect(("192.168.0.213", port))

@@ -61,9 +61,6 @@ void BDOS_Restore();
 #include "lib/shell.c"
 
 
-
-
-
 // Initializes CH376 and mounts drive
 // returns 1 on success
 word BDOS_Init_FS()
@@ -113,8 +110,6 @@ void BDOS_Restore()
 }
 
 
-
-
 int main() 
 {
     // Indicate that no user program is running
@@ -124,16 +119,24 @@ int main()
     BDOS_Reinit_VRAM();
     
     // Print welcome message
-    GFX_PrintConsole("BDOS\n");
+    GFX_PrintConsole("Starting BDOS\n");
 
+    GFX_PrintConsole("Init network...");
     NETLOADER_init(NETLOADER_SOCKET);
+    GFX_PrintConsole("DONE\n");
+
 
     // Init file system
+    GFX_PrintConsole("Init filesystem...");
     if (!BDOS_Init_FS())
         return 0;
+    GFX_PrintConsole("DONE\n");
 
     // Init USB keyboard driver
+    GFX_PrintConsole("Init USB keyboard...");
     USBkeyboard_init();
+    GFX_PrintConsole("DONE\n");
+
 
     // Init shell
     SHELL_init();

@@ -7,7 +7,7 @@
 // uses wiz5500.c
 
 // Port for network bootloader
-#define NETLOADER_PORT 6969
+#define NETLOADER_PORT 3220
 // Socket to listen to (0-7)
 #define NETLOADER_SOCKET 0
 

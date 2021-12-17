@@ -53,6 +53,11 @@ void SHELL_init()
     p[0] = 0;
     SHELL_commandIdx = 0;
 
+    // clear screen
+    GFX_clearWindowtileTable();
+    GFX_clearWindowpaletteTable();
+    GFX_cursor = 0;
+
     SHELL_print_prompt();
 }
 
