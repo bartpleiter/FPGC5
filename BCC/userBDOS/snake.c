@@ -7,7 +7,7 @@
 #include "lib/sys.c"
 #include "lib/gfx.c"
 
-#define START_DELAY 350
+#define START_DELAY 120
 #define STEP_DELAY 20
 #define MIN_DELAY 30
 
@@ -327,13 +327,13 @@ void gameUpdate()
 {
     word keepTail = checkFoodCollision();
     updatePlayer(keepTail);
+    drawScore();
+    drawFood();
+    drawPlayer();
     if (checkGameOver())
     {
         doGameOver();
     }
-    drawScore();
-    drawFood();
-    drawPlayer();
 }
 
 void init()
