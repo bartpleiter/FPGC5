@@ -155,7 +155,7 @@ void SHELL_ldir(char* arg)
 
 // Implementation of run command
 // Loads file to memory at RUN_ADDR and jumps to it
-// Argument is passed in arg and should end with a \0 (not space)
+// Argument is passed in arg and should end with a \0 or space
 // If useBin is set, it will look for the file in the /BIN folder
 void SHELL_runFile(char* arg, word useBin)
 {
@@ -163,6 +163,19 @@ void SHELL_runFile(char* arg, word useBin)
     char* p = (char *) FS_PATH_ADDR;
     char* pb = (char *) SHELL_PATH_BACKUP;
     strcpy(pb, p);
+
+    // replace space with \0
+    word i = 0;
+    word putBackSpaceIndex = 0; // and put back later for args
+    while(*(arg+i) != ' ' && *(arg+i) != 0)
+    {
+        i++;
+    }
+    if (*(arg+i) == ' ')
+    {
+        putBackSpaceIndex = i;
+    }
+    *(arg+i) = 0;
 
     if (useBin)
     {
@@ -242,6 +255,12 @@ void SHELL_runFile(char* arg, word useBin)
                     for (i = 0; i < 7; i++)
                     {
                         GFX_PrintcConsole(0x8); // backspace
+                    }
+
+                    // put back the space in the command
+                    if (putBackSpaceIndex != 0)
+                    {
+                        *(arg+putBackSpaceIndex) = ' ';
                     }
 
                     BDOS_Backup();
@@ -575,7 +594,7 @@ void SHELL_printHelp()
 {
     GFX_PrintConsole("BDOS for FPGC\n");
     GFX_PrintConsole("Currently supported commands:\n");
-    GFX_PrintConsole("- RUN    [arg1]\n");
+    GFX_PrintConsole("- ./file [args]\n");
     GFX_PrintConsole("- CD     [arg1]\n");
     GFX_PrintConsole("- LS     [arg1]\n");
     GFX_PrintConsole("- CLEAR\n");
@@ -593,7 +612,7 @@ void SHELL_printHelp()
 
 // Parses command line buffer and executes command if found
 // Commands to parse:
-// [x] RUN
+// [x] ./ (RUN)
 // [x] CD
 // [x] LS
 // [x] CLEAR
@@ -606,20 +625,11 @@ void SHELL_printHelp()
 // [] DUMP (print from memory address)
 void SHELL_parseCommand(char* p)
 {
-    // RUN
-    if (SHELL_commandCompare(p, "run"))
+    // ./ (RUN)
+    // No commandCompare, because special case with no space
+    if (p[0] == '.' && p[1] == '/' && p[2] != 0)
     {
-        word args = SHELL_numberOfArguments(p);
-        // if incorrect number of arguments
-        if (args != 1)
-        {
-            GFX_PrintConsole("E: Expected 1 argument\n");
-            return;
-        }
-        else
-        {
-            SHELL_runFile(p+4, 0); // pointer to start of first arg, which ends with \0
-        }
+        SHELL_runFile(p+2, 0); // pointer to start of filename, which ends with \0 or space
     }
 
     // LS

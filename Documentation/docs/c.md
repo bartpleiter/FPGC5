@@ -143,3 +143,40 @@ Int S* 	= Interrupt stack, a separate stack for interrupt handlers
 R* 		= Currently unused, reserved for future things
 
 ```
+
+
+## NOTES
+
+Notes that came up while working on BCC:
+- the goal of this C compiler is to write code for the FPGC, not to be compliant to anything C related!
+- should probably use chars as much as possible, since they are 32 bits in my case and the compiler will align this with memory (might want to typedef tho)
+- should optimize the reimplementation of BDOS as much as possible now I have the chance
+
+- includes:
+    - all includes should be .c files, there is no linker and everything should be considered as one big C file
+    - because no linking and .h files, only the main.c file should include all libraries, so libraries should not include files themselves (main.c should do that for them)
+       Might want to add in comments which includes the library needs
+    - if there are two functions that call each other (or some kind of loop), you should be able to just add a template function at the top (like a header file does)
+    - global variables accessed by libraries should be defined above the #include
+
+- ASM:
+    - use this:
+    ``` text
+    // r2 contains the return value, r4 contains the argument
+    int asmReturn(int x)
+    {
+        int retval = 0;
+
+        asm("load 4 r3\n"
+            "add r4 r3 r2    ;adding two regs\n"
+            "sub r2 1 r2     ;remove one to get 10\n"
+            "write -4 r14 r2 ;write to stack to return");
+
+        return retval;
+    }
+    ```
+
+- comparison is signed by default. For unsigned comparison, cast both expressions to (unsigned int) -> forces bge/bgt instead of bges/bgts
+
+- could optimize for speed by converting more basic functions to ASM
+    - also, the ch376 asm functions could use a COPY instruction instead of a read followed by write

@@ -16,7 +16,7 @@ then
             # WSL1/Linux version
             if [[ $1 == "flash" ||  $1 == "write" ]]
             then
-                (cd ../Programmer && bash compileROM.sh && echo "Flashing binary to FPGC flash" && python3 flash.py write)
+                (cd ../Programmer && bash compileROM.sh && echo "Flashing binary to FPGC flash" && python3 flash.py write -v verify.bin)
             else
                 (cd ../Programmer && bash compileROM.sh noPadding && echo "Sending binary to FPGC" && python3 uartFlasher.py)
             fi
