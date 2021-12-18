@@ -15,8 +15,8 @@
 // Address of loaded user program
 #define RUN_ADDR 0x400000
 
-// Backup address of current path
-#define SHELL_PATH_BACKUP 0x100100
+// Backup of current path
+#define FS_PATH_MAX_LENGHT 256
 
 // Temp address for (potentially) large temporary outputs/buffers
 // eg: output of listDir or print chunks. 
@@ -41,6 +41,9 @@ word UserprogramRunning = 0;
 void BDOS_Backup();
 void BDOS_Restore();
 
+// Path variable and its backup variable
+char SHELL_path[FS_PATH_MAX_LENGHT];
+char SHELL_pathBackup[FS_PATH_MAX_LENGHT];
 
 // Data includes
 #include "data/ASCII_BW.c"
@@ -149,10 +152,10 @@ int main()
         {
             // New shell line
             GFX_PrintcConsole('\n');
-            char* p = (char *) SHELL_CMD_ADDR;
+
             // clear buffer
-            p[0] = 0;
-            SHELL_commandIdx = 0;
+            SHELL_clearCommand();
+
             // print shell prompt
             SHELL_print_prompt();
 
@@ -249,10 +252,10 @@ void syscall()
             p[0] = 0;
             break;
         case 4: // Get arguments
-            p[0] = SHELL_CMD_ADDR;
+            p[0] = SHELL_command;
             break;
         case 5: // Get path (backup)
-            p[0] = SHELL_PATH_BACKUP;
+            p[0] = SHELL_pathBackup;
             break;
         case 6: // Get usb keyboard buffer
             p[0] = USBkeyboard_buffer_parsed;

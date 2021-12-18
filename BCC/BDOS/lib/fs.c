@@ -8,9 +8,6 @@
 
 // uses stdlib.c
 
-// Address of current path string
-#define FS_PATH_ADDR 0x100000
-
 #define FS_INTERRUPT_ADDR 0xC0272D
 
 //CH376 Codes
@@ -312,13 +309,11 @@ word FS_connectDrive()
     FS_spiEndTransfer();
 
     // reset path variable to /
-    char* p = (char *) FS_PATH_ADDR;
-    p[0] = '/';
-    p[1] = 0; // terminate string
+    SHELL_path[0] = '/';
+    SHELL_path[1] = 0; // terminate string
 
     // also reset path backup
-    char* pb = (char *) SHELL_PATH_BACKUP;
-    strcpy(pb, p);
+    strcpy(SHELL_pathBackup, SHELL_path);
 
     return FS_WaitGetStatus();
 }
@@ -921,33 +916,31 @@ word FS_changeDir(char* f)
 // Assumes no trailing / in path
 void FS_goUpDirectory()
 {
-    char* p = (char *) FS_PATH_ADDR;
-
     // Do nothing if at root
-    if (p[0] == '/' && p[1] == 0)
+    if (SHELL_path[0] == '/' && SHELL_path[1] == 0)
         return;
 
     word i = 0;
     word lastSlash = 0;
 
     // Loop through path
-    while (p[i] != 0)
+    while (SHELL_path[i] != 0)
     {
         // Save location of lastest /
-        if (p[i] == '/')
+        if (SHELL_path[i] == '/')
             lastSlash = i;
 
         i++;
     }
 
     // Set location of last slash to end of string
-    p[lastSlash] = 0;
+    SHELL_path[lastSlash] = 0;
 
     // Fix removal of root directory /
-    if (p[0] != '/')
+    if (SHELL_path[0] != '/')
     {
-        p[0] = '/';
-        p[1] = 0; // terminate string
+        SHELL_path[0] = '/';
+        SHELL_path[1] = 0; // terminate string
     }
 }
 
@@ -957,11 +950,9 @@ void FS_goUpDirectory()
 // Returns FS_ANSW_USB_INT_SUCCESS on success
 word FS_setRelativePath(char* f)
 {
-    char* p = (char *) FS_PATH_ADDR;
-
     // Get length of currentPath
     word currentPathLength = 0;
-    while (p[currentPathLength] != 0)
+    while (SHELL_path[currentPathLength] != 0)
         currentPathLength++;
 
     // Append current path with /
@@ -969,7 +960,7 @@ word FS_setRelativePath(char* f)
     if (currentPathLength == 1)
         currentPathLength -= 1;
     else
-        p[currentPathLength] = '/';
+        SHELL_path[currentPathLength] = '/';
 
 
     // Append relative path
@@ -977,26 +968,26 @@ word FS_setRelativePath(char* f)
     word relativePathIndex = 0;
     while (f[relativePathIndex] != 0)
     {
-        p[currentPathIndex] = f[relativePathIndex];
+        SHELL_path[currentPathIndex] = f[relativePathIndex];
         currentPathIndex++;
         relativePathIndex++;
     }
 
     // Terminate new current path
-    p[currentPathIndex] = 0;
+    SHELL_path[currentPathIndex] = 0;
 
     // Test new path and revert if failure
-    word retval = FS_changeDir(p);
+    word retval = FS_changeDir(SHELL_path);
     if (retval != FS_ANSW_USB_INT_SUCCESS)
     {
         // In case of being at root path
         if (currentPathLength == 0)
         {
-            p[0] = '/';
-            p[1] = 0;
+            SHELL_path[0] = '/';
+            SHELL_path[1] = 0;
         }
         else
-            p[currentPathLength] = 0; // set terminator back to original place
+            SHELL_path[currentPathLength] = 0; // set terminator back to original place
     }
     
     return retval;
@@ -1028,9 +1019,8 @@ word FS_changePath(char* f)
         word retval = FS_changeDir(f);
         if (retval == FS_ANSW_USB_INT_SUCCESS)
         {
-            char* p = (char *) FS_PATH_ADDR;
-            // Copy f to p
-            strcpy(p, f);
+            // Copy f to SHELL_path
+            strcpy(SHELL_path, f);
         }
         
         return retval;
@@ -1044,22 +1034,20 @@ word FS_changePath(char* f)
 
 // Calculates full path given arg f.
 // f can be relative or absolute.
-// full path is written to FS_PATH_ADDR
+// full path is written to SHELL_path
 // no checks are done to verify if the path is valid
-// so backup of FS_PATH_ADDR is advised
+// so backup of SHELL_path is advised
 void FS_getFullPath(char* f)
 {
     if (f[0] == 0)
         return;
 
-    char* p = (char *) FS_PATH_ADDR;
-
     // absolutee path
     if (f[0] == '/')
-        strcpy(p, f); // Copy f to p
+        strcpy(SHELL_path, f); // Copy f to SHELL_path
     else
     {
-        strcat(p, "/"); // Append / to p
-        strcat(p, f); // Append f to p
+        strcat(SHELL_path, "/"); // Append / to SHELL_path
+        strcat(SHELL_path, f); // Append f to SHELL_path
     }
 }

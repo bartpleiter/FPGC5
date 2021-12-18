@@ -128,9 +128,8 @@ void NETLOADER_handleSession(word s)
 
                 // TODO: error handling for all if cases
 
-                char* p = (char *) FS_PATH_ADDR;
                 // sanity check current path
-                if (FS_sendFullPath(p) == FS_ANSW_USB_INT_SUCCESS)
+                if (FS_sendFullPath(SHELL_path) == FS_ANSW_USB_INT_SUCCESS)
                 {
                     word retval = FS_open();
                     // check that we can open the path
@@ -148,7 +147,7 @@ void NETLOADER_handleSession(word s)
                             if (FS_createFile() == FS_ANSW_USB_INT_SUCCESS)
                             {
                                 // open the path again
-                                FS_sendFullPath(p);
+                                FS_sendFullPath(SHELL_path);
                                 FS_open();
                                 // send filename again
                                 FS_sendSinglePath(rbuf + 4);

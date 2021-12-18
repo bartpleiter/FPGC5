@@ -8,8 +8,11 @@
 // uses gfx.c
 // uses stdlib.c
 
-// Address of current command line
-#define SHELL_CMD_ADDR 0x100200
+// Max length of a single command
+#define SHELL_CMD_MAX_LENGTH 128
+
+// The number of commands to remember
+#define SHELL_CMD_HISTORY_LENGTH 32
 
 // Address of user program (already defined in BDOS.c)
 //#define RUN_ADDR 0x400000
@@ -19,27 +22,24 @@
 #define SHELL_FILE_READ_CHUNK_SIZE 512
 #define SHELL_PROGRAM_READ_CHUNK_SIZE 8192
 
-
-/*
-SHELL PLAN:
-
-- multiple if-statements to check for start of line equals one of the commands
-- call function for each of the commands
-- each function checks if the number of arguments match the expected amount
-- each function is called with a pointer to the input AND output of the command
-- after the function is done, the output is printed to screen, but in the future some preprocessing can be done on the string to allow for output redirection
-*/
-
+// The current command that is being typed
+char SHELL_command[SHELL_CMD_MAX_LENGTH];
 word SHELL_commandIdx = 0; // index in current command
+
 word SHELL_promptCursorPos = 0;
 
+// Clears the current command in memory
+void SHELL_clearCommand()
+{
+    SHELL_command[0] = 0;
+    SHELL_commandIdx = 0;
+}
 
 // Prints current display prompt
 void SHELL_print_prompt()
 {
     // TODO: if path > X chars, only show last X-1 chars with some character in front
-    char* p = (char *) FS_PATH_ADDR;
-    GFX_PrintConsole(p);
+    GFX_PrintConsole(SHELL_path);
     GFX_PrintConsole("> ");
     SHELL_promptCursorPos = GFX_cursor;
 }
@@ -49,9 +49,7 @@ void SHELL_print_prompt()
 void SHELL_init()
 {
     // clear current command
-    char* p = (char *) SHELL_CMD_ADDR;
-    p[0] = 0;
-    SHELL_commandIdx = 0;
+    SHELL_clearCommand();
 
     // clear screen
     GFX_clearWindowtileTable();
@@ -129,22 +127,20 @@ word SHELL_numberOfArguments(char* p)
 void SHELL_ldir(char* arg)
 {
     // backup current path
-    char* p = (char *) FS_PATH_ADDR;
-    char* pb = (char *) SHELL_PATH_BACKUP;
-    strcpy(pb, p);
+    strcpy(SHELL_pathBackup, SHELL_path);
 
     // add arg to path
     if (FS_changePath(arg) == FS_ANSW_USB_INT_SUCCESS)
     {
         // do listdir
         char *b = (char *) TEMP_ADDR;
-        if (FS_listDir(p, b) == FS_ANSW_USB_INT_SUCCESS)
+        if (FS_listDir(SHELL_path, b) == FS_ANSW_USB_INT_SUCCESS)
         {
             GFX_PrintConsole(b);
         }
 
         // restore path
-        strcpy(p, pb);
+        strcpy(SHELL_path, SHELL_pathBackup);
     }
     else
     {
@@ -160,9 +156,7 @@ void SHELL_ldir(char* arg)
 void SHELL_runFile(char* arg, word useBin)
 {
     // backup current path
-    char* p = (char *) FS_PATH_ADDR;
-    char* pb = (char *) SHELL_PATH_BACKUP;
-    strcpy(pb, p);
+    strcpy(SHELL_pathBackup, SHELL_path);
 
     // replace space with \0
     word i = 0;
@@ -179,8 +173,8 @@ void SHELL_runFile(char* arg, word useBin)
 
     if (useBin)
     {
-        strcpy(p, "/BIN/");
-        strcat(p, arg);
+        strcpy(SHELL_path, "/BIN/");
+        strcat(SHELL_path, arg);
     }
     else
     {
@@ -189,7 +183,7 @@ void SHELL_runFile(char* arg, word useBin)
     }
 
     // if the resulting path is correct (can be file or directory)
-    if (FS_sendFullPath(p) == FS_ANSW_USB_INT_SUCCESS)
+    if (FS_sendFullPath(SHELL_path) == FS_ANSW_USB_INT_SUCCESS)
     {
 
         // if we can successfully open the file (not directory)
@@ -338,7 +332,7 @@ void SHELL_runFile(char* arg, word useBin)
     }
 
     // restore path
-    strcpy(p, pb);
+    strcpy(SHELL_path, SHELL_pathBackup);
 }
 
 
@@ -348,15 +342,13 @@ void SHELL_runFile(char* arg, word useBin)
 void SHELL_printFile(char* arg)
 {
     // backup current path
-    char* p = (char *) FS_PATH_ADDR;
-    char* pb = (char *) SHELL_PATH_BACKUP;
-    strcpy(pb, p);
+    strcpy(SHELL_pathBackup, SHELL_path);
 
     // create full path using arg
     FS_getFullPath(arg);
 
     // if the resulting path is correct (can be file or directory)
-    if (FS_sendFullPath(p) == FS_ANSW_USB_INT_SUCCESS)
+    if (FS_sendFullPath(SHELL_path) == FS_ANSW_USB_INT_SUCCESS)
     {
 
         // if we can successfully open the file (not directory)
@@ -409,7 +401,7 @@ void SHELL_printFile(char* arg)
         GFX_PrintConsole("E: Invalid path\n");
 
     // restore path
-    strcpy(p, pb);
+    strcpy(SHELL_path, SHELL_pathBackup);
 }
 
 
@@ -417,15 +409,13 @@ void SHELL_printFile(char* arg)
 void SHELL_remove(char* arg)
 {
     // backup current path
-    char* p = (char *) FS_PATH_ADDR;
-    char* pb = (char *) SHELL_PATH_BACKUP;
-    strcpy(pb, p);
+    strcpy(SHELL_pathBackup, SHELL_path);
 
     // create full path using arg
     FS_getFullPath(arg);
 
     // if the resulting path is correct (can be file or directory)
-    if (FS_sendFullPath(p) == FS_ANSW_USB_INT_SUCCESS)
+    if (FS_sendFullPath(SHELL_path) == FS_ANSW_USB_INT_SUCCESS)
     {
 
         // if we can successfully open the file (not directory)
@@ -455,7 +445,7 @@ void SHELL_remove(char* arg)
         GFX_PrintConsole("E: Invalid path\n");
 
     // restore path
-    strcpy(p, pb);
+    strcpy(SHELL_path, SHELL_pathBackup);
 }
 
 
@@ -463,12 +453,10 @@ void SHELL_remove(char* arg)
 void SHELL_createFile(char* arg)
 {
     // backup current path
-    char* p = (char *) FS_PATH_ADDR;
-    char* pb = (char *) SHELL_PATH_BACKUP;
-    strcpy(pb, p);
+    strcpy(SHELL_pathBackup, SHELL_path);
 
     // if current path is correct (can be file or directory)
-    if (FS_sendFullPath(p) == FS_ANSW_USB_INT_SUCCESS)
+    if (FS_sendFullPath(SHELL_path) == FS_ANSW_USB_INT_SUCCESS)
     {
         word retval = FS_open();
         // check that we can open the path
@@ -500,7 +488,7 @@ void SHELL_createFile(char* arg)
         GFX_PrintConsole("E: Invalid path\n");
 
     // restore path
-    strcpy(p, pb);
+    strcpy(SHELL_path, SHELL_pathBackup);
 }
 
 
@@ -508,12 +496,10 @@ void SHELL_createFile(char* arg)
 void SHELL_createDir(char* arg)
 {
     // backup current path
-    char* p = (char *) FS_PATH_ADDR;
-    char* pb = (char *) SHELL_PATH_BACKUP;
-    strcpy(pb, p);
+    strcpy(SHELL_pathBackup, SHELL_path);
 
     // if current path is correct (can be file or directory)
-    if (FS_sendFullPath(p) == FS_ANSW_USB_INT_SUCCESS)
+    if (FS_sendFullPath(SHELL_path) == FS_ANSW_USB_INT_SUCCESS)
     {
         word retval = FS_open();
         // check that we can open the path
@@ -545,7 +531,7 @@ void SHELL_createDir(char* arg)
         GFX_PrintConsole("E: Invalid path\n");
 
     // restore path
-    strcpy(p, pb);
+    strcpy(SHELL_path, SHELL_pathBackup);
 }
 
 
@@ -553,12 +539,10 @@ void SHELL_createDir(char* arg)
 void SHELL_copy(char* src, char* dst)
 {
     // backup current path
-    char* p = (char *) FS_PATH_ADDR;
-    char* pb = (char *) SHELL_PATH_BACKUP;
-    strcpy(pb, p);
+    strcpy(SHELL_pathBackup, SHELL_path);
 
     // if current path is correct (can be file or directory)
-    if (FS_sendFullPath(p) == FS_ANSW_USB_INT_SUCCESS)
+    if (FS_sendFullPath(SHELL_path) == FS_ANSW_USB_INT_SUCCESS)
     {
         word retval = FS_open();
         // check that we can open the path
@@ -585,7 +569,7 @@ void SHELL_copy(char* src, char* dst)
         GFX_PrintConsole("E: Invalid path\n");
 
     // restore path
-    strcpy(p, pb);
+    strcpy(SHELL_path, SHELL_pathBackup);
 }
 
 
@@ -673,15 +657,12 @@ void SHELL_parseCommand(char* p)
         else // if no args, go to root
         {
             // reset path variable to /
-            char* p = (char *) FS_PATH_ADDR;
-            p[0] = '/';
-            p[1] = 0; // terminate string
+            SHELL_path[0] = '/';
+            SHELL_path[1] = 0; // terminate string
         }
 
         // update path backup
-        char* pa = (char *) FS_PATH_ADDR;
-        char* pb = (char *) SHELL_PATH_BACKUP;
-        strcpy(pb, pa);
+        strcpy(SHELL_pathBackup, SHELL_path);
     }
 
     // CLEAR
@@ -793,13 +774,13 @@ void SHELL_parseCommand(char* p)
         char commandBuf[16]; // filenames cannot be larger than 12 characters anyways, so this should be enough
         word i = 0;
         commandBuf[0] = 0;
-        while (p[i] != 0 && p[i] != ' ' && i < 16)
+        while (p[i] != 0 && p[i] != ' ' && i < 15)
         {
             commandBuf[i] = p[i];
             i++;
         }
         commandBuf[i] = 0; // terminate buffer
-        SHELL_runFile(&commandBuf[0], 1);
+        SHELL_runFile(commandBuf, 1);
         return;
     }
 }
@@ -821,9 +802,8 @@ void SHELL_loop()
             // replace last char in buffer by 0 (if not at start)
             if (SHELL_commandIdx != 0)
             {
-                SHELL_commandIdx -= 1;
-                char* p = (char *) SHELL_CMD_ADDR;
-                p[SHELL_commandIdx] = 0;
+                SHELL_commandIdx--;
+                SHELL_command[SHELL_commandIdx] = 0;
             }
 
             // prevent removing characters from the shell prompt
@@ -847,27 +827,25 @@ void SHELL_loop()
             GFX_PrintcConsole(c);
 
             // parse/execute command
-            char* p = (char *) SHELL_CMD_ADDR;
-            SHELL_parseCommand(p);
+            SHELL_parseCommand(SHELL_command);
 
             // clear buffer
-            p[0] = 0;
-            SHELL_commandIdx = 0;
+            SHELL_clearCommand();
 
             // print shell prompt
             SHELL_print_prompt();
         }
         else
         {
-            // add to command buffer and print character
-            char* p = (char *) SHELL_CMD_ADDR;
-            p[SHELL_commandIdx] = c;
-            SHELL_commandIdx += 1;
-            p[SHELL_commandIdx] = 0; // terminate
-            GFX_PrintcConsole(c);
+            if (SHELL_commandIdx < SHELL_CMD_MAX_LENGTH)
+            {
+                // add to command buffer and print character
+                SHELL_command[SHELL_commandIdx] = c;
+                SHELL_commandIdx++;
+                SHELL_command[SHELL_commandIdx] = 0; // terminate
+                GFX_PrintcConsole(c);
+            }
         }
-
-
     }
 }
 
