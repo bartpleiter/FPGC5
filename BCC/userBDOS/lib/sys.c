@@ -166,3 +166,21 @@ char* BDOS_GetPath()
     word* p = syscall(5);
     return (char*) p[0];
 }
+
+// Returns if key is held on USB keyboard
+word BDOS_USBkeyHeld(word c)
+{
+    word* p = syscall(6);
+    word* usbKeyBuffer = (char*) p[0];
+    
+    word i;
+    for (i = 0; i < 8; i++)
+    {
+        uprintlnDec(usbKeyBuffer[i]);
+        if (usbKeyBuffer[i] == c)
+        {
+            return 1;
+        }
+    }
+    return 0;
+}

@@ -34,6 +34,7 @@
 
 word USBkeyboard_endp_mode = 0x80;
 word USBkeyboard_buffer[8];
+word USBkeyboard_buffer_parsed[8];
 word USBkeyboard_buffer_prev[8];
 
 word USBkeyboard_holdCounter = 0;
@@ -249,6 +250,13 @@ void USBkeyboard_receive_data(char* usbBuf)
     for (i = 0; i < len; i++)
     {
         usbBuf[i] = USBkeyboard_spiTransfer(0x00);
+
+        // also put the parsed button into a separate buffer
+        // convert to ascii/code using table
+        // add new ascii/code to fifo
+        word *tableNomal = (word*) &DATA_USBSCANCODE_NORMAL;
+        tableNomal += USBKEYBOARD_DATA_OFFSET; // set offset to data in function
+        USBkeyboard_buffer_parsed[i] = *(tableNomal+usbBuf[i]);
     }
 
     USBkeyboard_spiEndTransfer();

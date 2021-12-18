@@ -228,43 +228,38 @@ int main()
 2 - HID_FifoRead
 3 - GFX_PrintcConsole
 4 - Get arguments
+5 - Get path (backup)
+6 - Get USB keyboard buffer (8 words)
 */
 void syscall()
 {
     word* p = (word*) SYSCALL_RETVAL_ADDR;
     word ID = p[0];
 
-    // HID_FifoAvailable()
-    if (ID == 1)
+    switch(ID)
     {
-        word x = HID_FifoAvailable();
-        p[0] = x;
-    }
-    // HID_FifoRead()
-    else if (ID == 2)
-    {
-        word x = HID_FifoRead();
-        p[0] = x;
-    }
-    // GFX_PrintcConsole()
-    else if (ID == 3)
-    {
-        GFX_PrintcConsole(p[1]);
-        p[0] = 0;
-    }
-    // Get arguments
-    else if (ID == 4)
-    {
-        p[0] = SHELL_CMD_ADDR;
-    }
-    // Get path (backup)
-    else if (ID == 5)
-    {
-        p[0] = SHELL_PATH_BACKUP;
-    }
-    else
-    {
-        p[0] = 0;
+        case 1: // HID_FifoAvailable()
+            p[0] = HID_FifoAvailable();
+            break;
+        case 2: // HID_FifoRead()
+            p[0] = HID_FifoRead();
+            break;
+        case 3: // GFX_PrintcConsole()
+            GFX_PrintcConsole(p[1]);
+            p[0] = 0;
+            break;
+        case 4: // Get arguments
+            p[0] = SHELL_CMD_ADDR;
+            break;
+        case 5: // Get path (backup)
+            p[0] = SHELL_PATH_BACKUP;
+            break;
+        case 6: // Get usb keyboard buffer
+            p[0] = USBkeyboard_buffer_parsed;
+            break;
+        default:
+            p[0] = 0;
+            break;
     }
 }
 
