@@ -28,11 +28,123 @@ word SHELL_commandIdx = 0; // index in current command
 
 word SHELL_promptCursorPos = 0;
 
+// History of commands
+char SHELL_history[SHELL_CMD_HISTORY_LENGTH][SHELL_CMD_MAX_LENGTH];
+word SHELL_historyPtr = 0; // index of next entry in history
+word SHELL_historySelectIdx = 0; // index of selected entry in history
+word SHELL_historyMovedBackwards = 0; // number of times that the user moved backwards in history
+word SHELL_historyLength = 0; // number of filled entries in history
+
+
+// Appends current CMD to history, ignores empty commands
+void SHELL_historyAppend()
+{
+    // ignore empty command
+    if (SHELL_command[0] == 0)
+    {
+        return;
+    }
+
+    // wrap around if full, overwriting the oldest entries
+    if (SHELL_historyPtr == SHELL_CMD_HISTORY_LENGTH)
+    {
+        SHELL_historyPtr = 0;
+    }
+
+    strcpy(SHELL_history[SHELL_historyPtr], SHELL_command);
+
+    SHELL_historyPtr++;
+    // sync currently selected with the latest command
+    SHELL_historySelectIdx = SHELL_historyPtr;
+
+    // no need to update length if the history is already full
+    if (SHELL_historyLength < SHELL_CMD_HISTORY_LENGTH)
+    {
+        SHELL_historyLength++;
+    }
+}
+
+void SHELL_historyGoBack()
+{
+    // ignore if we have gone fully back in time
+    if (SHELL_historyMovedBackwards < SHELL_historyLength)
+    {
+        SHELL_historyMovedBackwards++;
+
+        // go back in history, wrap around select idx
+        if (SHELL_historySelectIdx == 0)
+        {
+            SHELL_historySelectIdx = SHELL_CMD_HISTORY_LENGTH;
+        }
+        else
+        {
+            SHELL_historySelectIdx--;
+        }
+        SHELL_setCommand(SHELL_history[SHELL_historySelectIdx]);
+    }
+}
+
+void SHELL_historyGoForwards()
+{
+    // only if we are in the past
+    if (SHELL_historyMovedBackwards > 0)
+    {
+        SHELL_historyMovedBackwards--;
+
+        // go forward in history, wrap around select idx
+        if (SHELL_historySelectIdx == SHELL_CMD_HISTORY_LENGTH)
+        {
+            SHELL_historySelectIdx = 0;
+        }
+        else
+        {
+            SHELL_historySelectIdx++;
+        }
+        SHELL_setCommand(SHELL_history[SHELL_historySelectIdx]);
+
+        // clear command if back in present
+        if (SHELL_historyMovedBackwards == 0)
+        {
+            // use backspaces to clear the text on screen
+            while (SHELL_commandIdx > 0)
+            {
+                GFX_PrintcConsole(0x8);
+                SHELL_commandIdx--;
+            }
+            SHELL_clearCommand();
+        }
+    }
+}
+
 // Clears the current command in memory
 void SHELL_clearCommand()
 {
     SHELL_command[0] = 0;
     SHELL_commandIdx = 0;
+}
+
+// Clears current command and replaces it with cmd
+void SHELL_setCommand(char* cmd)
+{
+    if (cmd[0] == 0)
+    {
+        return;
+    }
+
+    // clear current command on screen by doing backspaces
+    while (SHELL_commandIdx > 0)
+    {
+        GFX_PrintcConsole(0x8);
+        SHELL_commandIdx--;
+    }
+
+    strcpy(SHELL_command, cmd);
+
+    // set new shell cmd index
+    SHELL_commandIdx = strlen(SHELL_command);
+
+    // print new command
+    GFX_PrintConsole(SHELL_command);
 }
 
 // Prints current display prompt
@@ -792,9 +904,17 @@ void SHELL_loop()
     {
         word c = HID_FifoRead();
 
+        // special keys, like arrow keys
         if (c > 255)
         {
-            // do nothing for now when extended key is pressed
+            if (c == 258) // arrow up
+            {
+                SHELL_historyGoBack();
+            }
+            else if (c == 259) // arrow down
+            {
+                SHELL_historyGoForwards();
+            }
         }
         else if (c == 0x8) // backspace
         {
@@ -809,7 +929,7 @@ void SHELL_loop()
             // prevent removing characters from the shell prompt
             if (GFX_cursor > SHELL_promptCursorPos)
             {
-                // print backspace to console to remove last typed character (allowed to desync if newline for now)
+                // print backspace to console to remove last typed character
                 GFX_PrintcConsole(c);
             }
         }
@@ -823,6 +943,12 @@ void SHELL_loop()
         }
         else if (c == 0xa) // newline/enter
         {
+            // reset history counter
+            SHELL_historyMovedBackwards = 0;
+
+            // append command to history
+            SHELL_historyAppend();
+
             // start on new line
             GFX_PrintcConsole(c);
 
