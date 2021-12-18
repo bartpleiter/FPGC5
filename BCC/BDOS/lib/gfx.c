@@ -469,24 +469,48 @@ word GFX_BackgroundPosFromXY(word x, word y)
 }
 
 
-// TODO: could convert this to assembly for speed
+// scrolls up screen, clearing last line
 void GFX_ScrollUp()
 {
-    // start at first line
-    word *v = (word *) GFX_WINDOW_PATTERN_ADDR;
-    // copy each line to the line below
-    word i;
-    for (i = 0; i < 960; i++)
-    {
-        *v = *(v+40);
-        v += 1; 
-    }
-    // clear last line
-    for (i = 0; i < 40; i++)
-    {
-        *v = 0;
-        v += 1; 
-    }
+
+    asm(
+    "; backup registers\n"
+    "push r1\n"
+    "push r2\n"
+    "push r3\n"
+    "push r4\n"
+
+    "; GFX_WINDOW_PATTERN_ADDR address\n"
+    "load32 0xC01420 r1      ; r1 = window pattern addr 0xC01420\n"
+
+    "load32 0 r2 ; r2 = loopvar\n"
+    "load32 960 r3 ; r3 = loopmax\n"
+
+    "GFX_scrollUpLoop:\n"
+    "    read 40 r1 r4           ; read r1+40 to tmp r4\n"
+    "    write 0 r1 r4           ; write tmp r4 to r1\n"
+    "    add r1 1 r1             ; incr addr r1\n"
+    "    add r2 1 r2             ; incr loopvar r2\n"
+    "    beq r2 r3 2             ; keep looping for r3 times\n"
+    "    jump GFX_scrollUpLoop\n"
+
+    "load32 0 r2 ; r2 = loopvar\n"
+    "load32 40 r3 ; r3 = loopmax\n"
+
+    "GFX_clearLastLineLoop:\n"
+    "    write 0 r1 r0           ; clear at r1\n"
+    "    add r1 1 r1             ; incr addr r1\n"
+    "    add r2 1 r2             ; incr loopvar r2\n"
+    "    beq r2 r3 2             ; keep looping for r3 times\n"
+    "    jump GFX_clearLastLineLoop\n"
+
+    "; restore registers\n"
+    "pop r4\n"
+    "pop r3\n"
+    "pop r2\n"
+    "pop r1\n"
+    );
+
 }
 
 
@@ -513,7 +537,7 @@ void GFX_PrintcConsole(char c)
         *(v+GFX_cursor) = 0;
 
         // get next line number
-        word nl = MATH_div(GFX_cursor, 40) + 1;
+        word nl = MATH_divU(GFX_cursor, 40) + 1;
         // multiply by 40 to get the correct line
         GFX_cursor = nl * 40;
     }
@@ -536,7 +560,7 @@ void GFX_PrintcConsole(char c)
             *(v+GFX_cursor) = 0;
             *(v+GFX_cursor-1) = 0;
             // decrement cursor
-            GFX_cursor -= 1;
+            GFX_cursor--;
         }
     }
 
@@ -553,7 +577,7 @@ void GFX_PrintcConsole(char c)
         word *v = (word *) GFX_WINDOW_PATTERN_ADDR;
         *(v+GFX_cursor) = (word) c;
         // increment cursor
-        GFX_cursor += 1;
+        GFX_cursor++;
     }
 
 
