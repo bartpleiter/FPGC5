@@ -20,7 +20,7 @@
 // Chunk size for reading files and programs
 // NOTE: must be dividable by 4
 #define SHELL_FILE_READ_CHUNK_SIZE 512
-#define SHELL_PROGRAM_READ_CHUNK_SIZE 8192
+#define SHELL_PROGRAM_READ_CHUNK_SIZE 32768
 
 // The current command that is being typed
 char SHELL_command[SHELL_CMD_MAX_LENGTH];
@@ -718,6 +718,8 @@ void SHELL_printHelp()
 // [x] RM
 // [x] HELP
 // [] CP
+// [] MV (CP + RM source)
+// [] RENAME
 // [] DUMP (print from memory address)
 void SHELL_parseCommand(char* p)
 {

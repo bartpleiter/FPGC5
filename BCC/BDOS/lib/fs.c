@@ -355,7 +355,7 @@ word FS_setCursor(word s)
 // If bytesToWord is true, four bytes will be stored in one address/word
 // Can read 65536 bytes per call
 // Returns FS_ANSW_USB_INT_SUCCESS on success
-// TODO: this surely can be optimized for speed in some way!
+// TODO: this surely can be optimized for speed in some way! (hint: assembly)
 word FS_readFile(char* buf, word s, word bytesToWord) 
 {
     if (s == 0)
