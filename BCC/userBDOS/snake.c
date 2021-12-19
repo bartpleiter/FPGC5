@@ -1,4 +1,7 @@
 // Simple snake game
+// Use the arrow keys on the USB keyboard
+// If using a different HID, use the wasd keys
+// In any case, press esc to exit
 
 #define word char
 
@@ -379,32 +382,32 @@ int main()
                     BDOS_PrintcConsole('\n');
                     return 'q';
                     break;
-                /*
-                case BTN_LEFT:
+                
+                case 'a':
                     if (dirOnScreen != RIGHT)
                     {
                         dir = LEFT;
                     }
                     break;
-                case BTN_RIGHT:
+                case 'd':
                     if (dirOnScreen != LEFT)
                     {
                         dir = RIGHT;
                     }
                     break;
-                case BTN_UP:
+                case 'w':
                     if (dirOnScreen != DOWN)
                     {
                         dir = UP;
                     }
                     break;
-                case BTN_DOWN:
+                case 's':
                     if (dirOnScreen != UP)
                     {
                         dir = DOWN;
                     }
                     break;
-                */
+                
                 case '=':
                 case '+':
                     // speed things up

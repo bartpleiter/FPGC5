@@ -40,6 +40,7 @@ word UserprogramRunning = 0;
 // These functions are used by some of the other libraries
 void BDOS_Backup();
 void BDOS_Restore();
+void SHELL_clearCommand();
 
 // Path variable and its backup variable
 char SHELL_path[FS_PATH_MAX_LENGHT];
@@ -61,6 +62,7 @@ char SHELL_pathBackup[FS_PATH_MAX_LENGHT];
 #include "lib/fs.c"
 #include "lib/wiz5500.c"
 #include "lib/netloader.c"
+#include "lib/nethid.c"
 #include "lib/shell.c"
 
 
@@ -93,6 +95,22 @@ void BDOS_Reinit_VRAM()
     GFX_cursor = 0;
 }
 
+
+// Initialize networking
+void BDOS_initNetwork()
+{
+    // Init W5500
+    word ip_addr[4] = {192, 168, 0, 213};
+
+    word gateway_addr[4] = {192, 168, 0, 1};
+
+    word mac_addr[6] = {0xDE, 0xAD, 0xBE, 0xEF, 0x24, 0x64};
+
+    word sub_mask[4] = {255, 255, 255, 0};
+
+    wiz_Init(ip_addr, gateway_addr, mac_addr, sub_mask);
+}
+
 void BDOS_Backup()
 {
     // TODO look into what to backup
@@ -115,29 +133,33 @@ void BDOS_Restore()
 
 int main() 
 {
-    // Indicate that no user program is running
+    // indicate that no user program is running
     UserprogramRunning = 0;
 
-    // Start with loading ASCII table and set palette
+    // start with loading ASCII table and set palette
     BDOS_Reinit_VRAM();
     
-    // Print welcome message
-    GFX_PrintConsole("Starting BDOS\n");
+    GFX_PrintConsole("Starting BDOS\n"); // print welcome message
 
     GFX_PrintConsole("Init network...");
+    BDOS_initNetwork();
+    GFX_PrintConsole("DONE\n");
+
+    GFX_PrintConsole("Init netloader...");
     NETLOADER_init(NETLOADER_SOCKET);
     GFX_PrintConsole("DONE\n");
 
+    GFX_PrintConsole("Init netHID...");
+    NETHID_init(NETHID_SOCKET);
+    GFX_PrintConsole("DONE\n");
 
-    // Init file system
+    GFX_PrintConsole("Init USB keyboard...");
+    USBkeyboard_init();
+    GFX_PrintConsole("DONE\n");
+
     GFX_PrintConsole("Init filesystem...");
     if (!BDOS_Init_FS())
         return 0;
-    GFX_PrintConsole("DONE\n");
-
-    // Init USB keyboard driver
-    GFX_PrintConsole("Init USB keyboard...");
-    USBkeyboard_init();
     GFX_PrintConsole("DONE\n");
 
 
@@ -327,7 +349,6 @@ void int1()
 // extended interrupt handler
 void int2()
 {
-    
     int i = getIntID();
     if (i == INTID_PS2)
     {
@@ -452,6 +473,17 @@ void int3()
 // GFX framedrawn interrupt handler
 void int4()
 {
+    // look for a network HID input
+    if (NETHID_isInitialized == 1)
+    {
+        // check using CS if we are not interrupting any critical access to the W5500
+        word* spi3ChipSelect = (word*) 0xC02732;
+        if (*spi3ChipSelect == 1)
+        {
+
+            NETHID_loop(NETHID_SOCKET);
+        }
+    }
 
     // Check if a user program is running
     if (UserprogramRunning)

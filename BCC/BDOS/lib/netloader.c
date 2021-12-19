@@ -239,13 +239,10 @@ void NETLOADER_handleSession(word s)
     {
         /* useful for debugging the error
         uprint("frameError: ");
-        char b[10];
-        itoa(frameError, b);
-        uprintln(b);
+        uprintlnDec(frameError);
 
         uprint("rsize: ");
-        itoa(rsize, b);
-        uprintln(b);
+        uprintlnDec(rsize);
 
         uprint("rbuf: ");
         uprintln(rbuf);
@@ -269,17 +266,6 @@ void NETLOADER_handleSession(word s)
 // Initialize network bootloader on socket s
 void NETLOADER_init(word s)
 {
-    // Init W5500
-    word ip_addr[4] = {192, 168, 0, 213};
-
-    word gateway_addr[4] = {192, 168, 0, 1};
-
-    word mac_addr[6] = {0xDE, 0xAD, 0xBE, 0xEF, 0x24, 0x64};
-
-    word sub_mask[4] = {255, 255, 255, 0};
-
-    wiz_Init(ip_addr, gateway_addr, mac_addr, sub_mask);
-
     // Open socket in TCP Server mode
     wizInitSocketTCP(s, NETLOADER_PORT);
 }
@@ -317,9 +303,7 @@ word NETLOADER_loop(word s)
     {
         /*
         uprintln("Got unknown status:");
-        char b[10];
-        itoah(sxStatus, b);
-        uprintln(b);
+        uprintlnHex(sxStatus);
         */
         // In other cases, reset the socket
         wizInitSocketTCP(s, NETLOADER_PORT);
@@ -390,6 +374,10 @@ word NETLOADER_checkDone()
 
         // Indicate that no user program is running anymore
         UserprogramRunning = 0;
+
+        // Clear the shell
+        SHELL_clearCommand();
+        
         return 1;
     }
 

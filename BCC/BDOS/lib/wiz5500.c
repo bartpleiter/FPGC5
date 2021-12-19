@@ -435,7 +435,7 @@ void wizInitSocketTCP(word s, word port)
   wizSetSockReg16     (s, WIZNET_SnPORT, port);  //set tcp port
   wizCmd(s, WIZNET_CR_OPEN);
   wizCmd(s, WIZNET_CR_LISTEN);
-  delay(10); //wait a bit to make sure the socket is in the correct state (technically not necessary)
+  //delay(10); //wait a bit to make sure the socket is in the correct state (technically not necessary)
 }
 
 
