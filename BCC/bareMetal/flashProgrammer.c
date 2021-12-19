@@ -14,6 +14,7 @@
 #define COMMAND_FLASH_ERASE_BLOCK       101 // 'e'
 #define COMMAND_FLASH_WRITE             119 // 'w'
 #define COMMAND_FILL_BUFFER             98  // 'b'
+#define COMMAND_DONE                    100 // 'd'
 
 #define BLOCK_SIZE 32768
 #define SECTOR_SIZE 4096
@@ -412,6 +413,8 @@ void processCommand()
 
         readAndPrint(len, addr24, addr16, addr8);
 
+        GFX_printWindowColored(" done!", 5, GFX_WindowPosFromXY(8 + strlen(b) + 6, 8), 0);
+
         currentCommand = COMMAND_IDLE;
         uprintc('r');
     }
@@ -462,6 +465,16 @@ void processCommand()
             currentCommand = COMMAND_IDLE;
             uprintc('r');
         }
+    }
+    else if (currentCommand == COMMAND_DONE)
+    {
+        // notify done
+        GFX_printWindowColored("                                        ", 40, GFX_WindowPosFromXY(0, 6), 0);
+        GFX_printWindowColored("                                        ", 40, GFX_WindowPosFromXY(0, 8), 0);
+        GFX_printWindowColored("Done!", 5, GFX_WindowPosFromXY(0, 6), 0);
+
+        // allow new commands, just in case
+        currentCommand = COMMAND_IDLE;
     }
 }
 

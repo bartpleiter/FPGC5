@@ -293,3 +293,8 @@ elif args.command == "write":
 
 else:
     print("Command not fully implemented yet")
+
+# notify done
+port.read(1) # should return 'r', to indicate ready to accept command
+for x in range(8):
+    sendSingleByte( 'd'.encode('utf-8') )
