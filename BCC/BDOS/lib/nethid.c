@@ -10,7 +10,7 @@
 // Port for network bootloader
 #define NETHID_PORT 3222
 // Socket to listen to (0-7)
-#define NETHID_SOCKET 1
+#define NETHID_SOCKET 7
 
 word NETHID_isInitialized = 0;
 

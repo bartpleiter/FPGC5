@@ -1,4 +1,5 @@
 // Webserver
+// uses multiple sockets, except for socket 7 which is reserved by netHID
 
 #define word char
 
@@ -485,7 +486,6 @@ int main()
     wizInitSocketTCP(4, 80);
     wizInitSocketTCP(5, 80);
     wizInitSocketTCP(6, 80);
-    wizInitSocketTCP(7, 80);
 
     // Socket s status
     word sxStatus;
@@ -497,9 +497,9 @@ int main()
         HID_FifoRead(); // remove it from the buffer
         return 'q';
       }
-      // handle all sockets
+      // handle all sockets (socket 7 is reserved by netHID)
       word s;
-      for (s = 0; s < 8; s++)
+      for (s = 0; s < 7; s++)
       {
         // Get status for socket s
         sxStatus = wizGetSockReg8(s, WIZNET_SnSR);

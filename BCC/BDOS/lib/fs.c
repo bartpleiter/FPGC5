@@ -3,7 +3,6 @@
 * Handles all filesystem related work for BDOS using CH376.
 * Uses only bottom USB port (SPI1 CH376), 
 *  allowing top USB top to be used for other USB devices (like HID).
-* Uses blocking delays for now.
 */
 
 // uses stdlib.c
@@ -131,9 +130,8 @@ void FS_spiEndTransfer()
         );
 }
 
-// write dataByte and return read value
+// Write dataByte over SPI1 and return read value
 // write 0x00 for a read
-// Writes byte over SPI1 to CH376
 word FS_spiTransfer(word dataByte)
 {
     word retval = 0;
@@ -149,7 +147,6 @@ word FS_spiTransfer(word dataByte)
 
 
 
-
 // Get status after waiting for an interrupt
 word FS_WaitGetStatus()
 {
@@ -161,16 +158,11 @@ word FS_WaitGetStatus()
     }
     FS_spiBeginTransfer();
     FS_spiTransfer(FS_CMD_GET_STATUS);
-    FS_spiEndTransfer(); 
-    //delay(1);
-
-    FS_spiBeginTransfer();
     word retval = FS_spiTransfer(0x00);
     FS_spiEndTransfer(); 
 
     return retval;
 }
-
 
 // Get status without using interrupts
 word FS_noWaitGetStatus()
@@ -183,12 +175,10 @@ word FS_noWaitGetStatus()
     return retval;
 }
 
-
 // Function to send a string (without terminating 0)
 void FS_sendString(char* str)
 {
     char chr = *str;            // first character of str
-
     while (chr != 0)            // continue until null value
     {
         FS_spiTransfer(chr);
@@ -197,30 +187,27 @@ void FS_sendString(char* str)
     }
 }
 
-
 // Function to send data d of size s
 void FS_sendData(char* d, word s)
 {
-    char chr = *d;          // first byte of data
+    char chr = *d;              // first byte of data
 
+    // write s bytes
     word i;
-    for(i = 0; (unsigned int) i < (unsigned int)s; i++)  // write s bytes
+    for(i = 0; (unsigned int) i < (unsigned int)s; i++)
     {
         FS_spiTransfer(chr);
         d++;                    // go to next data address
-        chr = *d;           // get data from address
+        chr = *d;               // get data from address
     }
 }
 
-
 // Returns IC version of CH376 chip
-// Good test to know if the communication with chip works
+// good test to know if the communication with chip works
 word FS_getICver()
 {
     FS_spiBeginTransfer();
     FS_spiTransfer(FS_CMD_GET_IC_VER);
-    delay(1);
-
     word icVer = FS_spiTransfer(0x00);
     FS_spiEndTransfer();
 
@@ -228,7 +215,8 @@ word FS_getICver()
 }
 
 // Sets USB mode to mode, returns status code
-// Which should be FS_ANSW_RET_SUCCESS when successful
+// which should be FS_ANSW_RET_SUCCESS when successful
+// probably does not need all three delays though!
 word FS_setUSBmode(word mode)
 {
     FS_spiBeginTransfer();
@@ -249,15 +237,14 @@ word FS_setUSBmode(word mode)
     return status;
 }
 
-
-// resets and intitializes CH376
+// Resets and intitializes CH376
 // returns FS_ANSW_RET_SUCCESS on success
 word FS_init()
 {
     FS_spiEndTransfer(); // start with cs high
     delay(10);
 
-    // Reset
+    // reset
     FS_spiBeginTransfer();
     FS_spiTransfer(FS_CMD_RESET_ALL);
     FS_spiEndTransfer();
@@ -267,42 +254,48 @@ word FS_init()
     return FS_setUSBmode(FS_MODE_HOST_0);
 }
 
-
-// waits for drive connection,
-// sets usb host mode
-// waits for drive to be ready
-// mounts drive
-// also initializes current path to /
+// Connects a drive:
+// - waits for drive connection,
+// - sets usb host mode
+// - waits for drive to be ready
+// - mounts drive
+// - also initializes current path to /
 // returns FS_ANSW_USB_INT_SUCCESS on success
 word FS_connectDrive() 
 {
-    // Wait forever until an USB device is connected
+    // wait forever until an USB device is connected
     while(FS_WaitGetStatus() != FS_ANSW_USB_INT_CONNECT);
 
     // USB mode 1
     word retval = FS_setUSBmode(FS_MODE_HOST_1);
-    // Return on error
+    // return on error
     if (retval != FS_ANSW_RET_SUCCESS)
+    {
         return retval;
+    }
 
     // USB mode 2
     retval = FS_setUSBmode(FS_MODE_HOST_2);
-    // Return on error
+    // return on error
     if (retval != FS_ANSW_RET_SUCCESS)
+    {
         return retval;
+    }
 
-    // Need to check again for device connection after changing USB mode
+    // need to check again for device connection after changing USB mode
     while(FS_WaitGetStatus() != FS_ANSW_USB_INT_CONNECT);
 
-    // Connect to drive
+    // connect to drive
     FS_spiBeginTransfer();
     FS_spiTransfer(FS_CMD_DISK_CONNECT);
     FS_spiEndTransfer();
 
     retval = FS_WaitGetStatus();
-    // Return on error
+    // return on error
     if (retval != FS_ANSW_USB_INT_SUCCESS)
+    {
         return retval;
+    }
 
     FS_spiBeginTransfer();
     FS_spiTransfer(FS_CMD_DISK_MOUNT);
@@ -317,7 +310,6 @@ word FS_connectDrive()
 
     return FS_WaitGetStatus();
 }
-
 
 // Returns file size of currently opened file (32 bits)
 word FS_getFileSize()
@@ -334,9 +326,8 @@ word FS_getFileSize()
     return retval;
 }
 
-
 // Sets cursor to position s
-// Returns FS_ANSW_USB_INT_SUCCESS on success
+// returns FS_ANSW_USB_INT_SUCCESS on success
 word FS_setCursor(word s) 
 {
     FS_spiBeginTransfer();
@@ -350,16 +341,17 @@ word FS_setCursor(word s)
     return FS_WaitGetStatus();
 }
 
-
 // Reads s bytes into buf
-// If bytesToWord is true, four bytes will be stored in one address/word
-// Can read 65536 bytes per call
-// Returns FS_ANSW_USB_INT_SUCCESS on success
+// if bytesToWord is true, four bytes will be stored in one address/word
+// can read 65536 bytes per call
+// returns FS_ANSW_USB_INT_SUCCESS on success
 // TODO: this surely can be optimized for speed in some way! (hint: assembly)
 word FS_readFile(char* buf, word s, word bytesToWord) 
 {
     if (s == 0)
+    {
         return FS_ANSW_USB_INT_SUCCESS;
+    }
 
     FS_spiBeginTransfer();
     FS_spiTransfer(FS_CMD_BYTE_READ);
@@ -368,10 +360,11 @@ word FS_readFile(char* buf, word s, word bytesToWord)
     FS_spiEndTransfer();
 
     word retval = FS_WaitGetStatus();
-    // Return on error
+    // return on error
     if (retval != FS_ANSW_USB_INT_DISK_READ)
+    {
         return retval;
-
+    }
 
     word bytesRead = 0; 
     word wordsRead = 0;
@@ -385,7 +378,7 @@ word FS_readFile(char* buf, word s, word bytesToWord)
 
     while (doneReading == 0)
     {
-        // Read set of bytes (max 255)
+        // read set of bytes (max 255)
         FS_spiBeginTransfer();
         FS_spiTransfer(FS_CMD_RD_USB_DATA0);
         word readLen = FS_spiTransfer(0x00);
@@ -397,12 +390,11 @@ word FS_readFile(char* buf, word s, word bytesToWord)
         {
             readByte = FS_spiTransfer(0x00);
 
-            // Read 4 bytes into one word, from left to right
+            // read 4 bytes into one word, from left to right
             if (bytesToWord)
             {
                 readByte = readByte << currentByteShift;
                 buf[wordsRead] = buf[wordsRead] + readByte;
-
 
                 if (currentByteShift == 0)
                 {
@@ -414,7 +406,6 @@ word FS_readFile(char* buf, word s, word bytesToWord)
                 {
                     currentByteShift -= 8;
                 }
-
             }
             else
             {
@@ -431,14 +422,16 @@ word FS_readFile(char* buf, word s, word bytesToWord)
 
         retval = FS_WaitGetStatus();
         if (retval == FS_ANSW_USB_INT_SUCCESS)
+        {
             doneReading = 1;
+        }
         else if (retval == FS_ANSW_USB_INT_DISK_READ)
         {
             // read another block
         }
         else
         {
-            uprintln("E: Error while reading data");
+            GFX_PrintConsole("E: Error while reading data\n");
             return retval;
         }
     }
@@ -448,13 +441,15 @@ word FS_readFile(char* buf, word s, word bytesToWord)
 
 
 // Writes data d of size s
-// Can only write 65536 bytes at a time
+// can only write 65536 bytes at a time
 // returns FS_ANSW_USB_INT_SUCCESS on success
 // TODO: optimize for speed
 word FS_writeFile(char* d, word s) 
 {
     if (s == 0)
+    {
         return FS_ANSW_USB_INT_SUCCESS;
+    }
 
     FS_spiBeginTransfer();
     FS_spiTransfer(FS_CMD_BYTE_WRITE);
@@ -463,17 +458,18 @@ word FS_writeFile(char* d, word s)
     FS_spiEndTransfer();
 
     word retval = FS_WaitGetStatus();
-    // Return on error
+    // return on error
     if (retval != FS_ANSW_USB_INT_DISK_WRITE)
+    {
         return retval;
-
+    }
 
     word bytesWritten = 0;
     word doneWriting = 0;
 
     while (doneWriting == 0)
     {
-        // Write set of bytes (max 255)
+        // write set of bytes (max 255)
         FS_spiBeginTransfer();
         FS_spiTransfer(FS_CMD_WR_REQ_DATA);
         word wrLen = FS_spiTransfer(0x00);
@@ -487,17 +483,18 @@ word FS_writeFile(char* d, word s)
         FS_spiTransfer(FS_CMD_BYTE_WR_GO);
         FS_spiEndTransfer();
 
-
         retval = FS_WaitGetStatus();
         if (retval == FS_ANSW_USB_INT_SUCCESS)
+        {
             doneWriting = 1;
+        }
         else if (retval == FS_ANSW_USB_INT_DISK_WRITE)
         {
             // write another block
         }
         else
         {
-            uprintln("E: Error while writing data");
+            GFX_PrintConsole("E: Error while writing data\n");
             return retval;
         }
 
@@ -506,9 +503,8 @@ word FS_writeFile(char* d, word s)
     return retval;
 }
 
-
-// returns status of opening a file/directory
-// Usually the successful status codes are:
+// Returns status of opening a file/directory
+// usually the successful status codes are:
 //  FS_ANSW_USB_INT_SUCCESS || FS_ANSW_ERR_OPEN_DIR || FS_ANSW_USB_INT_DISK_READ
 word FS_open() 
 {
@@ -519,8 +515,7 @@ word FS_open()
     return FS_WaitGetStatus();
 }
 
-
-// returns FS_ANSW_USB_INT_SUCCESS on success
+// Returns FS_ANSW_USB_INT_SUCCESS on success
 word FS_delete() 
 {
     FS_spiBeginTransfer();
@@ -530,8 +525,7 @@ word FS_delete()
     return FS_WaitGetStatus();
 }
 
-
-// returns FS_ANSW_USB_INT_SUCCESS on success
+// Returns FS_ANSW_USB_INT_SUCCESS on success
 word FS_close() 
 {  
     FS_spiBeginTransfer();
@@ -542,8 +536,7 @@ word FS_close()
     return FS_WaitGetStatus();
 }
 
-
-// returns FS_ANSW_USB_INT_SUCCESS on success
+// Returns FS_ANSW_USB_INT_SUCCESS on success
 word FS_createDir() 
 {
     FS_spiBeginTransfer();
@@ -553,12 +546,11 @@ word FS_createDir()
     return FS_WaitGetStatus();
 }
 
-
 // Creates file (recreates if exists)
-// New files are 1 byte long
-// Have not found a way to set it to 0 bytes, 
-// since FS_CMD_SET_FILE_SIZE does not work
-// Automatically closes file
+// new files are 1 byte long
+// have not found a way to set it to 0 bytes, 
+//  since FS_CMD_SET_FILE_SIZE does not work
+// automatically closes file
 // returns FS_ANSW_USB_INT_SUCCESS on success
 word FS_createFile() 
 {
@@ -569,7 +561,9 @@ word FS_createFile()
     word retval = FS_WaitGetStatus();
     // Return on error
     if (retval != FS_ANSW_USB_INT_SUCCESS)
+    {
         return retval;
+    }
 
     // open and close file
     FS_open();
@@ -578,14 +572,11 @@ word FS_createFile()
     return FS_ANSW_USB_INT_SUCCESS;
 }
 
-
 // Sends single path f
-// No processing of f is done, it is directly sent
-// This means no error checking on file length!
+// no processing of f is done, it is directly sent
+// this means no error checking on file length!
 void FS_sendSinglePath(char* f) 
 {
-
-    // send buf
     FS_spiBeginTransfer();
     FS_spiTransfer(FS_CMD_SET_FILE_NAME);
     FS_sendString(f);      // send file name
@@ -593,11 +584,10 @@ void FS_sendSinglePath(char* f)
     FS_spiEndTransfer();
 }
 
-
 // Sends path f
-// Can be relative or absolute file or directory
+// can be relative or absolute file or directory
 // REQUIRES CAPITAL LETTERS and must conform the 8.3 filename standard
-// Function can handle folders with forward slashes
+// function can handle folders with forward slashes
 // returns FS_ANSW_USB_INT_SUCCESS on success
 word FS_sendFullPath(char* f) 
 {
@@ -607,7 +597,9 @@ word FS_sendFullPath(char* f)
     {
         f[i] = toUpper(f[i]);
         if (f[i] == '\\')
+        {
             f[i] = '/';
+        }
         i++;
     }
 
@@ -641,7 +633,9 @@ word FS_sendFullPath(char* f)
         {
             // return error on opening folders containing a single or double dot
             if ((bufi == 1 && buf[0] == '.') || (bufi == 2 && buf[0] == '.' && buf[1] == '.'))
+            {
                 return FS_ANSW_ERR_OPEN_DIR;
+            }
 
             // add null to end of buf
             buf[bufi] = 0;
@@ -655,16 +649,20 @@ word FS_sendFullPath(char* f)
             bufi = 0;
             // open folder
             word retval = FS_open();
-            // Return on if failure / folder not found
+            // return on if failure / folder not found
             if (retval != FS_ANSW_USB_INT_SUCCESS && retval != FS_ANSW_ERR_OPEN_DIR)
+            {
                 return retval;
+            }
         }
         else
         {
             buf[bufi] = f[i];
             bufi++;
             if (bufi > 13)
+            {
                 return FS_ERR_LONGFILENAME; // exit if folder/file name is too long
+            }
         }
         i++;
     }
@@ -679,11 +677,15 @@ word FS_sendFullPath(char* f)
     // add null to end of buf
     buf[bufi] = 0;
     if (bufi == 0)
+    {
         return FS_ANSW_USB_INT_SUCCESS; // exit if there is no filename after the folder
+    }
 
     // return error on opening folders containing a single or double dot
     if ((bufi == 1 && buf[0] == '.') || (bufi == 2 && buf[0] == '.' && buf[1] == '.'))
+    {
         return FS_ANSW_ERR_OPEN_DIR;
+    }
 
     // send buf (last part of string)
     FS_spiBeginTransfer();
@@ -695,18 +697,15 @@ word FS_sendFullPath(char* f)
     return FS_ANSW_USB_INT_SUCCESS;
 }
 
-
 // Parses and prints a string (useful for name and extension) after removing trailing spaces
-// Len should be <= 8 chars
-// Does not add a new line at the end.
-// Returns length of written string
+// len should be <= 8 chars
+// does not add a new line at the end.
+// returns length of written string
 word FS_parseFATstring(char* fatBuffer, word len, char* b, word* bufLen)
 {
-    //uprintlnDec(bufLen);
-    //uprintlnDec(*bufLen);
     if (len > 8)
     {
-        uprintln("FATstring: Len argument > 8");
+        GFX_PrintConsole("FATstring: Len argument > 8\n");
         return 0;
     }
 
@@ -725,7 +724,9 @@ word FS_parseFATstring(char* fatBuffer, word len, char* b, word* bufLen)
         if (!foundChar)
         {
             if (fatBuffer[len-1-i] == ' ')
+            {
                 nameBuf[len-1-i] = 0; // set null until a non-space char is found
+            }
             else
             {
                 foundChar = 1;
@@ -734,7 +735,9 @@ word FS_parseFATstring(char* fatBuffer, word len, char* b, word* bufLen)
             }
         }
         else
+        {
             nameBuf[len-1-i] = fatBuffer[len-1-i]; // copy char
+        }
     }
 
     // write to buffer
@@ -749,24 +752,27 @@ word FS_parseFATstring(char* fatBuffer, word len, char* b, word* bufLen)
     return retval;
 }
 
-
 // Parses and writes name.extension and filesize on one line
-// Ignores lines with '.' and ".." as filename
+// ignores lines with '.' and ".." as filename
 void FS_parseFATdata(word datalen, char* fatBuffer, char* b, word* bufLen)
 {
     if (datalen != 32)
     {
-        uprintln("Unexpected FAT table length");
+        GFX_PrintConsole("Unexpected FAT table length\n");
         return;
     }
 
     // ignore '.'
     if (memcmp(fatBuffer, ".          ", 11))
+    {
         return;
+    }
 
     // ignore ".."
     if (memcmp(fatBuffer, "..         ", 11))
+    {
         return;
+    }
 
     // parse filename
     word printLen = FS_parseFATstring(fatBuffer, 8, b, bufLen);
@@ -808,10 +814,7 @@ void FS_parseFATdata(word datalen, char* fatBuffer, char* b, word* bufLen)
     }
     b[*bufLen] = '\n';
     (*bufLen)++;
-
-    //uprintlnDec(*bufLen);
 }
-
 
 // Reads FAT data for single entry
 // FAT data is parsed by FS_parseFatData()
@@ -832,31 +835,37 @@ void FS_readFATdata(char* b, word* bufLen)
 
 // Lists directory of full path f
 // f needs to start with / and not end with /
-// Returns FS_ANSW_USB_INT_SUCCESS if successful
-// Writes parsed result to address b
-// Result is terminated with a \0
+// returns FS_ANSW_USB_INT_SUCCESS if successful
+// writes parsed result to address b
+// result is terminated with a \0
 word FS_listDir(char* f, char* b)
 {
     word bufLen = 0;
 
     word retval = FS_sendFullPath(f);
-    // Return on failure
+    // return on failure
     if (retval != FS_ANSW_USB_INT_SUCCESS)
+    {
         return retval;
+    }
 
     retval = FS_open();
-    // Return on failure
+    // return on failure
     if (retval != FS_ANSW_USB_INT_SUCCESS && retval != FS_ANSW_ERR_OPEN_DIR)
+    {
         return retval;
+    }
 
     FS_sendSinglePath("*");
 
     retval = FS_open();
-    // Return on failure
+    // return on failure
     if (retval != FS_ANSW_USB_INT_DISK_READ)
+    {
         return retval;
+    }
 
-    // Init length of output buffer
+    // init length of output buffer
     bufLen = 0;
 
     while (retval == FS_ANSW_USB_INT_DISK_READ)
@@ -868,7 +877,7 @@ word FS_listDir(char* f, char* b)
         retval = FS_WaitGetStatus();
     }
 
-    // Terminate buffer
+    // terminate buffer
     b[bufLen] = 0;
     bufLen++;
 
@@ -877,10 +886,10 @@ word FS_listDir(char* f, char* b)
 
 
 // Returns FS_ANSW_USB_INT_SUCCESS on successful change of dir
-// Will return error FS_ANSW_ERR_FILE_CLOSE if dir is a file
+// will return error FS_ANSW_ERR_FILE_CLOSE if dir is a file
 word FS_changeDir(char* f)
 {
-    // Special case for root, since FS_open() returns as if it opened a file
+    // special case for root, since FS_open() returns as if it opened a file
     if (f[0] == '/' && f[1] == 0)
     {
         FS_sendSinglePath("/");
@@ -889,54 +898,62 @@ word FS_changeDir(char* f)
     }
 
     word retval = FS_sendFullPath(f);
-    // Return on failure
+    // return on failure
     if (retval != FS_ANSW_USB_INT_SUCCESS)
+    {
         return retval;
+    }
 
     retval = FS_open();
     
-    // Return sucess on open dir
+    // return sucess on open dir
     if (retval == FS_ANSW_ERR_OPEN_DIR)
+    {
         return FS_ANSW_USB_INT_SUCCESS;
+    }
 
-    // Close and return on opening file
+    // close and return on opening file
     if (retval == FS_ANSW_USB_INT_SUCCESS)
     {
         FS_close();
         return FS_ANSW_ERR_FILE_CLOSE;
     }
     else // otherwise return error code
+    {
         return retval;
-
+    }
 }
 
-
 // Goes up a directory by removing the last directory from the global path
-// Does nothing if already at root
-// Assumes no trailing / in path
+// does nothing if already at root
+// assumes no trailing / in path
 void FS_goUpDirectory()
 {
-    // Do nothing if at root
+    // do nothing if at root
     if (SHELL_path[0] == '/' && SHELL_path[1] == 0)
+    {
         return;
+    }
 
     word i = 0;
     word lastSlash = 0;
 
-    // Loop through path
+    // loop through path
     while (SHELL_path[i] != 0)
     {
-        // Save location of lastest /
+        // save location of lastest /
         if (SHELL_path[i] == '/')
+        {
             lastSlash = i;
+        }
 
         i++;
     }
 
-    // Set location of last slash to end of string
+    // set location of last slash to end of string
     SHELL_path[lastSlash] = 0;
 
-    // Fix removal of root directory /
+    // rix removal of root directory /
     if (SHELL_path[0] != '/')
     {
         SHELL_path[0] = '/';
@@ -944,26 +961,31 @@ void FS_goUpDirectory()
     }
 }
 
-
 // Appends relative path f to current path
-// Reverts when invalid resulting path
-// Returns FS_ANSW_USB_INT_SUCCESS on success
+// reverts when invalid resulting path
+// returns FS_ANSW_USB_INT_SUCCESS on success
 word FS_setRelativePath(char* f)
 {
-    // Get length of currentPath
+    // get length of currentPath
     word currentPathLength = 0;
     while (SHELL_path[currentPathLength] != 0)
+    {
         currentPathLength++;
+    }
 
-    // Append current path with /
-    // Only when not at root
+    // append current path with /
+    //  only when not at root
     if (currentPathLength == 1)
+    {
         currentPathLength -= 1;
+    }
     else
+    {
         SHELL_path[currentPathLength] = '/';
+    }
 
 
-    // Append relative path
+    // append relative path
     word currentPathIndex = currentPathLength + 1;
     word relativePathIndex = 0;
     while (f[relativePathIndex] != 0)
@@ -973,64 +995,68 @@ word FS_setRelativePath(char* f)
         relativePathIndex++;
     }
 
-    // Terminate new current path
+    // terminate new current path
     SHELL_path[currentPathIndex] = 0;
 
-    // Test new path and revert if failure
+    // test new path and revert if failure
     word retval = FS_changeDir(SHELL_path);
     if (retval != FS_ANSW_USB_INT_SUCCESS)
     {
-        // In case of being at root path
+        // in case of being at root path
         if (currentPathLength == 0)
         {
             SHELL_path[0] = '/';
             SHELL_path[1] = 0;
         }
         else
+        {
             SHELL_path[currentPathLength] = 0; // set terminator back to original place
+        }
     }
     
     return retval;
 }
 
 // Changes current path based on f
-// If f is relative, then the path is added
-// If f is absolute, then the path will be replaced by f
-// If f is "..", then the last directory will be removed from f
-// If f is empty, then nothing will be done and FS_ANSW_USB_INT_SUCCESS is returned
+// if f is relative, then the path is added
+// if f is absolute, then the path will be replaced by f
+// if f is "..", then the last directory will be removed from f
+// if f is empty, then nothing will be done and FS_ANSW_USB_INT_SUCCESS is returned
 // TODO: remove trailing / if any
-// TODO: make sure that path will be < 256 characters
-// Returns FS_ANSW_USB_INT_SUCCESS for valid paths
+// TODO: make sure that path will be < max_pathlength characters
+// returns FS_ANSW_USB_INT_SUCCESS for valid paths
 word FS_changePath(char* f)
 {
     if (f[0] == 0)
+    {
         return FS_ANSW_USB_INT_SUCCESS;
+    }
 
-    // If f == "..", go up a directory
+    // if f == "..", go up a directory
     if (f[0] == '.' && f[1] == '.' && f[2] == 0)
     {
         FS_goUpDirectory();
         return FS_ANSW_USB_INT_SUCCESS;
     }
-    // If absolute path
+    // if absolute path
     else if (f[0] == '/')
     {
-        // If absolute path is valid
+        // if absolute path is valid
         word retval = FS_changeDir(f);
         if (retval == FS_ANSW_USB_INT_SUCCESS)
         {
-            // Copy f to SHELL_path
+            // copy f to SHELL_path
             strcpy(SHELL_path, f);
         }
         
         return retval;
     }
-    // If relative path
+    // if relative path
     else
+    {
         return FS_setRelativePath(f);
-
+    }
 }
-
 
 // Calculates full path given arg f.
 // f can be relative or absolute.
@@ -1040,14 +1066,18 @@ word FS_changePath(char* f)
 void FS_getFullPath(char* f)
 {
     if (f[0] == 0)
+    {
         return;
+    }
 
     // absolutee path
     if (f[0] == '/')
-        strcpy(SHELL_path, f); // Copy f to SHELL_path
+    {
+        strcpy(SHELL_path, f); // copy f to SHELL_path
+    }
     else
     {
-        strcat(SHELL_path, "/"); // Append / to SHELL_path
-        strcat(SHELL_path, f); // Append f to SHELL_path
+        strcat(SHELL_path, "/"); // append / to SHELL_path
+        strcat(SHELL_path, f); // append f to SHELL_path
     }
 }

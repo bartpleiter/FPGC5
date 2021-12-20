@@ -8,6 +8,12 @@
 */
 
 
+/* List of reserved stuff:
+- Timer2 is used for USB keyboard polling, even when a user program is running
+- Socket 7 is used for netHID
+*/
+
+
 /*
 * Defines (also might be used by included libraries below)
 */
