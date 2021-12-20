@@ -27,44 +27,47 @@ Features that I might want to implement in the future:
 
 
 ## Memory Map
-BDOS has its own layout of the 32MiB SDRAM, which you can see here. Note: addresses are 32 bit
+BDOS has its own layout of the 32MiB SDRAM, which you can see here. There really is no need for such big chunks of memory, but I have no other purpose for it for now.
+
+Note: addresses are 32 bit, so 0x100000 is 4MiB
 
 ``` text
 SDRAM
 $000000 +------------------------+
-        |                        | 
-        |    BDOS Program Code   | 
-        |                        | $0FFFFF
-$100000 +------------------------+ 
         |                        |
-        |    BDOS Heap Memory    |
+        |                        |
+        |         (8MiB)         |
+        |   BDOS Program Code    |
+        |                        |
+        |                        |
         |                        | $1FFFFF
 $200000 +------------------------+
-        |                        | 
+        |        (256KiB)        |
+        | Syscall Arg + Retval   | $20FFFF
+$210000 +------------------------+
+        |       (7.75MiB)        |
         |   TMP Output Buffer    |
         |           &            |
-        | Syscall Arg + Retval   |
-        |           &            |
         | Syscall Stack (at end) | $3FFFFF
-$400000 +------------------------+ 
-        |                        | 
-        |   User Program Memory  | 
+$400000 +------------------------+
+        |         (13MiB)        |
+        |   User Program Memory  |
         |           &            |
         |User Main Stack (at end)|
         |                        | $73FFFF
-$740000 +------------------------+ 
-        |                        | 
+$740000 +------------------------+
+        |         (1MiB)         |
         |BDOS Main Stack (at end)|
         |                        | $77FFFF
-$780000 +------------------------+ 
-        |                        | 
+$780000 +------------------------+
+        |         (1MiB)         |
         | User Int Stack (at end)|
         |                        | $7BFFFF
-$7C0000 +------------------------+ 
-        |                        | 
+$7C0000 +------------------------+
+        |         (1MiB)         |
         | BDOS Int Stack (at end)|
         |                        | $7FFFFF
-        +------------------------+ 
+        +------------------------+
 
 ```
 

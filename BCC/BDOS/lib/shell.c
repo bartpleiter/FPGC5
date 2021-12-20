@@ -372,7 +372,7 @@ void SHELL_runFile(char* arg, word useBin)
                     BDOS_Backup();
 
                     // Indicate that a user program is running
-                    UserprogramRunning = 1;
+                    BDOS_userprogramRunning = 1;
 
                     // jump to the program
                     asm(
@@ -416,7 +416,7 @@ void SHELL_runFile(char* arg, word useBin)
                         );
 
                     // Indicate that no user program is running anymore
-                    UserprogramRunning = 0;
+                    BDOS_userprogramRunning = 0;
 
                     BDOS_Restore();
                 

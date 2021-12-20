@@ -1,50 +1,68 @@
-// Bart's Drive Operating System(BDOS)
-/* TODO:
-- Reimplement (and optimize?!) using BCC
-- Implement more Syscalls (network?)
-- More shell functionality (folders, copy, move, etc.)
+/* Bart's Drive Operating System(BDOS)
+* A relatively simple OS that allows for some basic features including:
+* - Running a single user program with full hardware control
+* - Some system calls
+* - A basic shell
+* - Network loaders for sending data and controlling the FPGC
+* - HID fifo including USB keyboard driver
+*/
+
+
+/*
+* Defines (also might be used by included libraries below)
 */
 
 // As of writing, BCC assigns 4 memory addresses to ints, so we should use chars instead
 // However, this is confusing, so we typedef it to word, since that is what it basically is
 #define word char
 
+#define SYSCALL_RETVAL_ADDR 0x200000    // address for system call communication with user program
+#define TEMP_ADDR           0x210000    // address for (potentially) large temporary outputs/buffers
+#define RUN_ADDR            0x400000    // address of loaded user program
 
-// Defines (also might be used by included libraries below)
-
-// Address of loaded user program
-#define RUN_ADDR 0x400000
-
-// Backup of current path
-#define FS_PATH_MAX_LENGHT 256
-
-// Temp address for (potentially) large temporary outputs/buffers
-// eg: output of listDir or print chunks. 
-#define TEMP_ADDR 0x200000
-
-// Syscalls use the same tmp address for input and output
-#define SYSCALL_RETVAL_ADDR 0x200000
+#define FS_PATH_MAX_LENGHT  256         // max length of a path
 
 // Interrupt IDs for extended interrupt handler
-#define INTID_TIMER2 0x0
-#define INTID_TIMER3 0x1
-#define INTID_PS2 0x2
-#define INTID_UART1 0x3
-#define INTID_UART2 0x4
+#define INTID_TIMER2  0x0
+#define INTID_TIMER3  0x1
+#define INTID_PS2     0x2
+#define INTID_UART1   0x3
+#define INTID_UART2   0x4
 
+// System call IDs
+#define SYSCALL_FIFO_AVAILABLE  1
+#define SYSCALL_FIFO_READ       2
+#define SYSCALL_PRINT_C_CONSOLE 3
+#define SYSCALL_GET_ARGS        4 // get arguments for executed program
+#define SYSCALL_GET_PATH        5 // get OS path
+#define SYSCALL_GET_USB_KB_BUF  6 // get the 8 bytes of the USB keyboard buffer
+
+
+/*
+* Global vars (also might be used by included libraries below)
+*/
 
 // Flag that indicates whether a user program is running
-// Defined above the defines, so netloader and shell can also access it
-word UserprogramRunning = 0;
+word BDOS_userprogramRunning = 0;
+
+// Path variable and its backup variable
+char SHELL_path[FS_PATH_MAX_LENGHT];
+char SHELL_pathBackup[FS_PATH_MAX_LENGHT];
+
+
+/*
+* Function prototypes, so they can be called in all libraries below
+*/
 
 // These functions are used by some of the other libraries
 void BDOS_Backup();
 void BDOS_Restore();
 void SHELL_clearCommand();
 
-// Path variable and its backup variable
-char SHELL_path[FS_PATH_MAX_LENGHT];
-char SHELL_pathBackup[FS_PATH_MAX_LENGHT];
+
+/*
+* Included libraries
+*/
 
 // Data includes
 #include "data/ASCII_BW.c"
@@ -52,7 +70,6 @@ char SHELL_pathBackup[FS_PATH_MAX_LENGHT];
 #include "data/USBSCANCODES.c"
 
 // Code includes
-// Note that these directories are relative to the directory from this file
 #include "lib/stdlib.c"
 #include "lib/math.c"
 #include "lib/gfx.c"
@@ -65,6 +82,10 @@ char SHELL_pathBackup[FS_PATH_MAX_LENGHT];
 #include "lib/nethid.c"
 #include "lib/shell.c"
 
+
+/*
+* Functions
+*/
 
 // Initializes CH376 and mounts drive
 // returns 1 on success
@@ -86,20 +107,20 @@ word BDOS_Init_FS()
     return 1;
 }
 
+// Clears all VRAM
+//  and copies the default ASCII pattern table and palette table
+// also resets the cursor
 void BDOS_Reinit_VRAM()
 {
-    GFX_initVram(); // clear all VRAM
+    GFX_initVram();
     GFX_copyPaletteTable((word)DATA_PALETTE_DEFAULT);
     GFX_copyPatternTable((word)DATA_ASCII_DEFAULT);
-
     GFX_cursor = 0;
 }
 
-
-// Initialize networking
+// Initialize the W5500
 void BDOS_initNetwork()
 {
-    // Init W5500
     word ip_addr[4] = {192, 168, 0, 213};
 
     word gateway_addr[4] = {192, 168, 0, 1};
@@ -111,14 +132,16 @@ void BDOS_initNetwork()
     wiz_Init(ip_addr, gateway_addr, mac_addr, sub_mask);
 }
 
+// Backup important things before running a user program
 void BDOS_Backup()
 {
     // TODO look into what to backup
 }
 
+// Restores certain things when returning from a user program
 void BDOS_Restore()
 {
-    // Restore graphics (trying to keep text in window plane)
+    // restore graphics (trying to keep text in window plane)
     GFX_copyPaletteTable((word)DATA_PALETTE_DEFAULT);
     GFX_copyPatternTable((word)DATA_ASCII_DEFAULT);
     GFX_clearBGtileTable();
@@ -126,18 +149,18 @@ void BDOS_Restore()
     GFX_clearWindowpaletteTable();
     GFX_clearSprites();
 
-    // Restore netloader
+    // restore netloader
     NETLOADER_init(NETLOADER_SOCKET);
 }
 
-
+// Main BDOS code
 int main() 
 {
-    // indicate that no user program is running
-    UserprogramRunning = 0;
+    // all kinds of initialisations
 
-    // start with loading ASCII table and set palette
-    BDOS_Reinit_VRAM();
+    BDOS_userprogramRunning = 0; // indicate that no user program is running
+
+    BDOS_Reinit_VRAM(); // start with loading ASCII table and set palette
     
     GFX_PrintConsole("Starting BDOS\n"); // print welcome message
 
@@ -162,34 +185,29 @@ int main()
         return 0;
     GFX_PrintConsole("DONE\n");
 
-
-    // Init shell
+    // init shell
     SHELL_init();
 
-    // Main loop
+    // main loop
     while (1)
     {
-        // Block when downloading file
+        // when downloading file to storage
         if (NETLOADER_transferState == NETLOADER_STATE_USB_DATA)
         {
-            // New shell line
-            GFX_PrintcConsole('\n');
-
-            // clear buffer
-            SHELL_clearCommand();
-
-            // print shell prompt
-            SHELL_print_prompt();
+            GFX_PrintcConsole('\n');    // start on a new line
+            SHELL_clearCommand();       // clear command buffer
+            SHELL_print_prompt();       // print shell prompt
 
             GFX_PrintConsole("Downloading");
-            word loopCount = 0; // counter for animation
-            word smallLoopCount = 0; // to slow down the animation
+            word loopCount = 0;         // counter for animation
+            word smallLoopCount = 0;    // to slow down the animation
 
+            // loop while receiving data
             while (NETLOADER_transferState == NETLOADER_STATE_USB_DATA)
             {
-                NETLOADER_loop(NETLOADER_SOCKET);
+                NETLOADER_loop(NETLOADER_SOCKET); // update the netloader state
 
-                // indicate progress
+                // indicate progress animation
                 if (loopCount == 3 && smallLoopCount == 4)
                 {
                     GFX_PrintcConsole(0x8); // backspace
@@ -206,6 +224,7 @@ int main()
                     }
                 }
 
+                // update small loop count
                 if (smallLoopCount == 4)
                 {
                     smallLoopCount = 0;
@@ -216,13 +235,13 @@ int main()
                 }
             }
             
-            // remove the dots
+            // remove the animation after the netloader is done
             for (loopCount; loopCount > 0; loopCount--)
             {
                 GFX_PrintcConsole(0x8); // backspace
             }
 
-            // remove the loading text
+            // remove the "Downloading" text
             word i;
             for (i = 0; i < 11; i++)
             {
@@ -231,31 +250,24 @@ int main()
 
         }
 
-        SHELL_loop();
-        NETLOADER_loop(NETLOADER_SOCKET);
+        SHELL_loop();                       // update the shell state
+        NETLOADER_loop(NETLOADER_SOCKET);   // update the netloader state
 
-        // If we received a program, run it and print shell prompt afterwards
+        // check if netloader is done so it can execute the received binary
         if (NETLOADER_checkDone())
         {
+            // setup the shell again
             BDOS_Restore();
             SHELL_print_prompt();
         }
     }
 
-    return 'f';
+    return 1;
 }
 
 
 // System call handler
-/* Syscall table:
-0 - Nothing
-1 - HID_FifoAvailable
-2 - HID_FifoRead
-3 - GFX_PrintcConsole
-4 - Get arguments
-5 - Get path (backup)
-6 - Get USB keyboard buffer (8 words)
-*/
+// Returns at the same address it reads the command from
 void syscall()
 {
     word* p = (word*) SYSCALL_RETVAL_ADDR;
@@ -263,23 +275,23 @@ void syscall()
 
     switch(ID)
     {
-        case 1: // HID_FifoAvailable()
+        case SYSCALL_FIFO_AVAILABLE:
             p[0] = HID_FifoAvailable();
             break;
-        case 2: // HID_FifoRead()
+        case SYSCALL_FIFO_READ:
             p[0] = HID_FifoRead();
             break;
-        case 3: // GFX_PrintcConsole()
+        case SYSCALL_PRINT_C_CONSOLE:
             GFX_PrintcConsole(p[1]);
             p[0] = 0;
             break;
-        case 4: // Get arguments
+        case SYSCALL_GET_ARGS:
             p[0] = SHELL_command;
             break;
-        case 5: // Get path (backup)
+        case SYSCALL_GET_PATH:
             p[0] = SHELL_pathBackup;
             break;
-        case 6: // Get usb keyboard buffer
+        case SYSCALL_GET_USB_KB_BUF:
             p[0] = USBkeyboard_buffer_parsed;
             break;
         default:
@@ -288,16 +300,15 @@ void syscall()
     }
 }
 
-// timer1 interrupt handler
+// Timer1 interrupt handler
 void int1()
 {
-    
-    timer1Value = 1; // notify ending of timer1 (in BDOS)
+    timer1Value = 1; // notify ending of timer1
 
-    // Check if a user program is running
-    if (UserprogramRunning)
+    // check if a user program is running
+    if (BDOS_userprogramRunning)
     {
-        // Call int1() of user program
+        // call int1() of user program
         asm(
             "; backup registers\n"
             "push r1\n"
@@ -339,32 +350,32 @@ void int1()
             );
         return;
     }
-    else
+    else // code to only run when not running a user program
     {
         
     }
-    
 }
 
-// extended interrupt handler
+// Extended interrupt handler
+// use getIntID to get the id of the interrupt
 void int2()
 {
     int i = getIntID();
-    if (i == INTID_PS2)
+    switch(i)
     {
-        // handle PS2 interrupt
-        PS2_HandleInterrupt();
-    }
-    else if (i == INTID_TIMER2)
-    {
-        // handle USB keyboard interrupt
-        USBkeyboard_HandleInterrupt();
+        case INTID_PS2:
+            PS2_HandleInterrupt(); // handle PS2 interrupt
+            break;
+
+        case INTID_TIMER2:
+            USBkeyboard_HandleInterrupt(); // handle USB keyboard interrupt
+            break;
     }
 
-    // Check if a user program is running
-    if (UserprogramRunning)
+    // check if a user program is running
+    if (BDOS_userprogramRunning)
     {
-        // Call int2() of user program
+        // call int2() of user program
         asm(
             "; backup registers\n"
             "push r1\n"
@@ -406,22 +417,19 @@ void int2()
             );
         return;
     }
-    else
+    else // code to only run when not running a user program
     {
         
     }
-
-    
 }
 
-// UART0 interrupt handler
+// UART0 (TTYUSB) interrupt handler
 void int3()
 {
-
-    // Check if a user program is running
-    if (UserprogramRunning)
+    // check if a user program is running
+    if (BDOS_userprogramRunning)
     {
-        // Call int3() of user program
+        // call int3() of user program
         asm(
             "; backup registers\n"
             "push r1\n"
@@ -463,32 +471,30 @@ void int3()
             );
         return;
     }
-    else
+    else // code to only run when not running a user program
     {
         
     }
-
 }
 
 // GFX framedrawn interrupt handler
+// is called every frame, which is ~60 times per second
 void int4()
 {
-    // look for a network HID input
     if (NETHID_isInitialized == 1)
     {
         // check using CS if we are not interrupting any critical access to the W5500
         word* spi3ChipSelect = (word*) 0xC02732;
         if (*spi3ChipSelect == 1)
         {
-
-            NETHID_loop(NETHID_SOCKET);
+            NETHID_loop(NETHID_SOCKET); // look for an input sent to netHID
         }
     }
 
-    // Check if a user program is running
-    if (UserprogramRunning)
+    // check if a user program is running
+    if (BDOS_userprogramRunning)
     {
-        // Call int4() of user program
+        // call int4() of user program
         asm(
             "; backup registers\n"
             "push r1\n"
@@ -530,9 +536,8 @@ void int4()
             );
         return;
     }
-    else
+    else // code to only run when not running a user program
     {
         
     }
-
 }
