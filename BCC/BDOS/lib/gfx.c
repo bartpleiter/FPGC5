@@ -608,3 +608,25 @@ void GFX_PrintConsole(char* str)
         chr = *str;             // get character from address
     }
 }
+
+// Just for funny memory dumping
+void GFX_DumpcConsole(char c)
+{
+    // print character at cursor
+    word *v = (word *) GFX_WINDOW_PATTERN_ADDR;
+    *(v+GFX_cursor) = (word) c;
+    // increment cursor
+    GFX_cursor++;
+
+
+    // if we went offscreen, scroll screen up and set cursor to last line
+    if ((unsigned int) GFX_cursor >= 1000)
+    {
+        GFX_ScrollUp();
+        // set cursor to 960
+        GFX_cursor = 960;
+    }
+
+    // add cursor at end
+    //GFX_printCursor();
+}

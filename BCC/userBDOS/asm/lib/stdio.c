@@ -1,23 +1,13 @@
 /*
-* Stdio replacement library, modified from bcc
-* Specially made for ASM
+* Very simple stdio library to read from or write to a single file
+* implements a buffer for reading the input file
+* Specially made for ASM, so it is kept very simple:
+*  only one file can be open at the same time
 */
 
-// maximum number of files to open at the same time (+1 because we skip index 0)
-#define FOPEN_MAX_FILES 16
-#define FOPEN_FILENAME_LIMIT 32
 #define EOF -1
 
-#define OUTFILE_DATA_ADDR 0x500000
-
-#define OUTFILE_PASS1_ADDR 0x540000
-
-#define OUTFILE_PASS2_ADDR 0x580000
-
-char fopenList[FOPEN_MAX_FILES][FOPEN_FILENAME_LIMIT]; // filenames for each opened file
-word fopenCurrentlyOpen[FOPEN_MAX_FILES]; // which indexes are currently opened
-word fopenCursors[FOPEN_MAX_FILES]; // cursors of currently opened files
-word CH376CurrentlyOpened = 0; // index in fopenList which is currently opened on CH376
+#define FOPEN_FILENAME_LIMIT 32
 
 // Buffers for reading
 // Length of buffer always should be less than 65536, since this is the maximum FS_readFile can do in a single call
@@ -27,12 +17,10 @@ word inbufStartPos = 0; // where in the file the buffer starts
 word inbufCursor = 0; // where in the buffer we currently are working
 
 
-// fopen replacement
+// Opens file for reading
 // requires full paths
-// returns 0 on error
-// otherwise returns the index to the fopenList buffer
-// append is not an option for now
-word fopen(const char* fname)
+// returns 1 on success
+word fopenRead(const char* fname)
 {
     if (strlen(fname) >= FOPEN_FILENAME_LIMIT)
     {
@@ -46,139 +34,101 @@ word fopen(const char* fname)
         return 0;
     }
 
-    // conver to uppercase
-    strToUpper(fname);
+    FS_close(); // to be sure
 
-    
-    FS_close();
-    CH376CurrentlyOpened = 0;
+    // convert to uppercase
+    strToUpper(fname);
 
     // init read buffer
     inbufStartPos = 0; // start at 0
     inbufCursor = 0; // start at 0
 
-    word i = 1; // skip index 0
-    while (i < FOPEN_MAX_FILES)
-    {
-        if (fopenCurrentlyOpen[i] == 0)
-        {
-            // found a free spot
-            fopenCurrentlyOpen[i] = 1;
-            fopenCursors[i] = 0;
-            // write filename
-            strcpy(fopenList[i], fname);
-
-            return i; // return index
-        }
-        i++;
-    }
-
-    BDOS_PrintConsole("E: The maximum number of files are already opened. Forgot to close some files?\n");
-    return 0;
-}
-
-// returns EOF if file cannot be opened
-word fcanopen(word i)
-{
-    if (CH376CurrentlyOpened == i)
-    {
-        return 0;
-    }
-
-    FS_close();
-    CH376CurrentlyOpened = 0;
-
     // if the resulting path is correct (can be file or directory)
-    if (FS_sendFullPath(fopenList[i]) == FS_ANSW_USB_INT_SUCCESS)
+    if (FS_sendFullPath(fname) == FS_ANSW_USB_INT_SUCCESS)
     {
 
         // if we can successfully open the file (not directory)
         if (FS_open() == FS_ANSW_USB_INT_SUCCESS)
         {
-            FS_close();
-            return 0;
+            FS_setCursor(0); // set cursor to start
+            return 1;
         }
         else
         {
-            return EOF;
+            return 0;
         }
     }
     else
     {
-        return EOF;
+        return 0;
     }
 
-    return EOF;
+    return 0;
 }
 
-
-// closes file at index
-// also closes the file on CH376 if it is currently open there as well
-void fclose(word i)
+// Opens file for writing
+// requires full paths
+// returns 1 on success
+word fopenWrite(const char* fname)
 {
-    if (CH376CurrentlyOpened == i)
+    if (strlen(fname) >= FOPEN_FILENAME_LIMIT)
     {
-        FS_close(); // to be sure
-        CH376CurrentlyOpened = 0;
+        BDOS_PrintConsole("E: Path too large\n");
+        return 0;
     }
 
-    fopenCurrentlyOpen[i] = 0;
-    fopenList[i][0] = 0; // to be sure
+    if (fname[0] != '/')
+    {
+        BDOS_PrintConsole("E: Filename should be a full path\n");
+        return 0;
+    }
+
+    FS_close(); // to be sure
+
+    // convert to uppercase
+    strToUpper(fname);
+
+    // if current path is correct (can be file or directory)
+    if (FS_sendFullPath(fname) == FS_ANSW_USB_INT_SUCCESS)
+    {
+        // create the file
+        
+        if (FS_createFile() == FS_ANSW_USB_INT_SUCCESS)
+        {
+            //BDOS_PrintConsole("File created\n");
+            // open again and start at 0
+            FS_sendFullPath(fname);
+            FS_open();
+            FS_setCursor(0); // set cursor to start
+            return 1;
+        }
+        else
+        {
+            BDOS_PrintConsole("E: Could not create file\n");
+            return 0;
+        }
+    }
+    else
+    {
+        BDOS_PrintConsole("E: Invalid path\n");
+        return 0;
+    }
+
+    return 0;
+}
+
+// closes currently opened file
+void fclose()
+{
+
+    FS_close();
 }
 
 
 // returns the current char at cursor (EOF if end of file)
 // increments the cursor
-word fgetc(word i)
+word fgetc()
 {
-    // check if file is open
-    if (fopenCurrentlyOpen[i] == 0)
-    {
-        BDOS_PrintConsole("fgetc: File is not open\n");
-        return EOF;
-    }
-
-    // open on CH376 if not open already
-    if (CH376CurrentlyOpened != i)
-    {
-        // close last one first, unless there is no last
-        if (CH376CurrentlyOpened != 0)
-        {
-            //BDOS_PrintConsole("fgetc: Closed previous file\n");
-            FS_close();
-        }
-
-
-        // if the resulting path is correct (can be file or directory)
-        if (FS_sendFullPath(fopenList[i]) == FS_ANSW_USB_INT_SUCCESS)
-        {
-
-            // if we can successfully open the file (not directory)
-            if (FS_open() == FS_ANSW_USB_INT_SUCCESS)
-            {
-                CH376CurrentlyOpened = i;
-                // set cursor to last position
-                FS_setCursor(fopenCursors[i]);
-
-                // reset the buffer
-                inbufStartPos = fopenCursors[i];
-                inbufCursor = 0;
-
-                //BDOS_PrintConsole("fgetc: File opened on CH376\n");
-            }
-            else
-            {
-                BDOS_PrintConsole("E: Could not open file\n");
-                return EOF;
-            }
-        }
-        else
-        {
-            BDOS_PrintConsole("E: Invalid path\n");
-            return EOF;
-        }
-    }
-
     // workaround for missing compiler check for ALU constants > 11 bit
     word stdioBufLen = STDIO_FBUF_LEN;
 
@@ -208,9 +158,31 @@ word fgetc(word i)
     // return from the buffer, and increment
     char gotchar = inputBuffer[inbufCursor];
     inbufCursor++;
-    fopenCursors[i]++;
     // BDOS_PrintcConsole(gotchar); // useful for debugging
     return gotchar;
+}
+
+word fputs(char* outbufAddr)
+{
+    word bytesWritten = 0;
+
+    word outbufCursor = strlen(outbufAddr);
+
+    // loop until all bytes are sent
+    while (bytesWritten != outbufCursor)
+    {
+        word partToSend = outbufCursor - bytesWritten;
+        // send in parts of 0xFFFF
+        if (partToSend > 0xFFFF)
+            partToSend = 0xFFFF;
+
+        // write away
+        if (FS_writeFile((outbufAddr +bytesWritten), partToSend) != FS_ANSW_USB_INT_SUCCESS)
+            BDOS_PrintConsole("write error\n");
+
+        // Update the amount of bytes sent
+        bytesWritten += partToSend;
+    }
 }
 
 word printf(char* s)

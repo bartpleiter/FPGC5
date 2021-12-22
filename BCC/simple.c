@@ -1,13 +1,29 @@
 #define word char
 
-#include "lib/stdlib.c"
-#include "lib/sys.c"
-#include "lib/math.c"
+char* lmao[] = {"asdf", "d", "yeemta"};
+
+struct home_address{
+     int local_street;
+     char *town;
+     char *my_city;
+     char *my_country;
+   }addr;
 
 int main() 
 {
-    char* x = BDOS_GetPath();
-    BDOS_PrintlnConsole(x);
+    char* x = "hello";
+    int i = 0;
+    char yes[12];
+
+    struct struz{
+     int local_street;
+     char *town;
+     char *my_city;
+     char *my_country;
+   }adrsd[1];
+
+   adrsd[0].town = "yowaddup";
+
     return 1;
 }
 

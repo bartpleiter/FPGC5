@@ -187,6 +187,7 @@ void fclose(word i)
             // if we can successfully open the file (not directory)
             if (FS_open() == FS_ANSW_USB_INT_SUCCESS)
             {
+                FS_setCursor(0); // set cursor to start
                 word bytesWritten = 0;
                 word* outbufAddr = (word*) FOPEN_OUTFILE_ADDR;
 

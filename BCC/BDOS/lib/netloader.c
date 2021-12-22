@@ -287,7 +287,7 @@ word NETLOADER_loop(word s)
     {
         // Handle session when a connection is established
         NETLOADER_handleSession(s);
-        //delay(10);
+        delay(10); // TODO: find a fix for this!!!!!!!!! (maybe some IR register???)
     }
     else if (sxStatus == WIZNET_SOCK_LISTEN)
     {

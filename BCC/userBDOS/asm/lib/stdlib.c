@@ -282,6 +282,7 @@ void itoah(word n, char *s)
 /*
 Converts string into int.
 Assumes the string is valid.
+Unsigned only!
 */
 word strToInt(char* str)
 {
@@ -315,6 +316,47 @@ word strToInt(char* str)
     retval += toAdd;
 
     return retval;
+}
+
+/*
+Converts dec string into int.
+Assumes the string is valid.
+Can be signed.
+*/
+word decToInt(char* dec)
+{
+    if (dec[0] == '-')
+    {
+        // signed
+        return -strToInt((dec+1));
+    }
+    else
+    {
+        return strToInt(dec);
+    }
+
+    return 0;
+}
+
+/*
+Converts hex string into int.
+Assumes the string is valid.
+*/
+word hexToInt(char *hex) {
+    word val = 0;
+    hex += 2; // skip the 0x
+    while (*hex) 
+    {
+        // get current character then increment
+        char byte = *hex++; 
+        // transform hex character to the 4bit equivalent number, using the ascii table indexes
+        if (byte >= '0' && byte <= '9') byte = byte - '0';
+        else if (byte >= 'a' && byte <='f') byte = byte - 'a' + 10;
+        else if (byte >= 'A' && byte <='F') byte = byte - 'A' + 10;    
+        // shift 4 to make space for new digit, and add the 4 bits of the new digit 
+        val = (val << 4) | (byte & 0xF);
+    }
+    return val;
 }
 
 
