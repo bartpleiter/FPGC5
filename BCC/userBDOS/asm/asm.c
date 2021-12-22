@@ -37,6 +37,7 @@ char infilename[64];
 char *lineBuffer = (char*) LINEBUFFER_ADDR;
 
 word memCursor = 0; // cursor for readMemLine
+word globalLineCursor = 0; // to keep track of the line number for labels
 
 #define LABELLIST_SIZE 1024 // expecting a lot of labels! as of writing, BDOS has ~1000 TODO: 2048 when done
 #define LABEL_NAME_SIZE 32 // max length of a label (therefore of a function name)
@@ -291,7 +292,8 @@ void Pass1StoreDefine()
 // Create two lines with the same args:
 // loadLabelLow
 // loadLabelHigh
-void Pass1Addr2reg(char* outputAddr, char* outputCursor)
+// returns the number of lines added
+word Pass1Addr2reg(char* outputAddr, char* outputCursor)
 {
     word lineBufArgsLen = strlen(lineBuffer) - 9; // minus addr2len and space
     // copy name of instruction
@@ -313,11 +315,14 @@ void Pass1Addr2reg(char* outputAddr, char* outputCursor)
     // add a newline
     *(outputAddr + *outputCursor) = '\n';
     (*outputCursor)++;
+
+    return 2;
 }
 
 // Converts into load and loadhi
 // skips loadhi if the value fits in 32bits
-void Pass1Load32(char* outputAddr, char* outputCursor)
+// returns the number of lines added
+word Pass1Load32(char* outputAddr, char* outputCursor)
 {
     // get the destination register
     word linei = getArgPos(2); // linei is now at the start of the dst reg
@@ -383,7 +388,10 @@ void Pass1Load32(char* outputAddr, char* outputCursor)
         // add a newline
         *(outputAddr + *outputCursor) = '\n';
         (*outputCursor)++;
+        return 2;
     }
+
+    return 1;
 }
 
 // Creates a single .dw line using numBuf as value
@@ -402,8 +410,10 @@ void addSingleDwLine(char* outputAddr, char* outputCursor, char* numBuf)
 }
 
 // Puts each value after .dw on its own line with its own .dw prefix
-void Pass1Dw(char* outputAddr, char* outputCursor)
+// returns the number of lines added
+word Pass1Dw(char* outputAddr, char* outputCursor)
 {
+    word numberOfLinesAdded = 0;
     char numBuf[12]; // buffer to store each space separated number in
     word i = 0;
     word linei = 4; // index of linebuffer, start after .dw
@@ -415,6 +425,7 @@ void Pass1Dw(char* outputAddr, char* outputCursor)
         {
             numBuf[i] = 0; // terminate
             addSingleDwLine(outputAddr, outputCursor, numBuf); // process number
+            numberOfLinesAdded++;
             i = 0; // reset numBuf index
         }
         else
@@ -428,11 +439,15 @@ void Pass1Dw(char* outputAddr, char* outputCursor)
 
     numBuf[i] = 0; // terminate
     addSingleDwLine(outputAddr, outputCursor, numBuf); // process the final number
+    numberOfLinesAdded++;
+
+    return numberOfLinesAdded;
 }
 
 void Pass1Db(char* outputAddr, char* outputCursor)
 {
     BDOS_PrintConsole(".DB is not yet implemented!\n");
+    exit(1);
 }
 
 
@@ -456,21 +471,21 @@ void LinePass1(char* outputAddr, char* outputCursor)
         // set values to the labels (while loop, since multiple labels can point to the same addr)
         while(prevLinesWereLabels > 0)
         {
-            labelListLineNumber[labelListIndex - prevLinesWereLabels] = *outputCursor;
+            labelListLineNumber[labelListIndex - prevLinesWereLabels] = globalLineCursor;
             prevLinesWereLabels--;
         }
 
         if (memcmp(lineBuffer, "addr2reg ", 9))
         {
-            Pass1Addr2reg(outputAddr, outputCursor);
+            globalLineCursor += Pass1Addr2reg(outputAddr, outputCursor);
         }
         else if (memcmp(lineBuffer, "load32 ", 7))
         {
-            Pass1Load32(outputAddr, outputCursor);
+            globalLineCursor += Pass1Load32(outputAddr, outputCursor);
         }
         else if (memcmp(lineBuffer, ".dw ", 4))
         {
-            Pass1Dw(outputAddr, outputCursor);
+            globalLineCursor += Pass1Dw(outputAddr, outputCursor);
         }
         else if (memcmp(lineBuffer, ".db ", 4))
         {
@@ -485,10 +500,9 @@ void LinePass1(char* outputAddr, char* outputCursor)
             // add a newline
             *(outputAddr + *outputCursor) = '\n';
             (*outputCursor)++;
+            globalLineCursor++;
         }
-    }
-
-    
+    }    
 }
 
 void doPass1()
@@ -496,6 +510,7 @@ void doPass1()
     BDOS_PrintConsole("Doing pass 1\n");
 
     memCursor = 0; // reset cursor for readMemLine
+    globalLineCursor = 0; // keep track of the line number for the labels
 
     char* outfileCodeAddr = (char*) OUTFILE_CODE_ADDR; // read from
     char* outfilePass1Addr = (char*) OUTFILE_PASS1_ADDR; // write to
@@ -507,6 +522,15 @@ void doPass1()
     }
 
     outfilePass1Addr[*(&filePass1Cursor)] = 0; // terminate
+
+    word x;
+    for (x = 0; x < labelListIndex; x++)
+    {
+        BDOS_PrintConsole(labelListName[x]);
+        BDOS_PrintConsole(" : ");
+        printd(labelListLineNumber[x]);
+        BDOS_PrintConsole("\n");
+    }
 }
 
 void doPass2(char* outputAddr, char* outputCursor)
@@ -736,7 +760,7 @@ int main()
         {
             strcat(infilename, "/");
         }
-        strcat(infilename, "C/ASM/OUT.ASM");
+        strcat(infilename, "TEST.ASM");
     }
 
     // Make full path if it is not already
