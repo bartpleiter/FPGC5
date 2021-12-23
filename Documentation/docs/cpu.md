@@ -113,8 +113,8 @@ ADD       0011   A  +   B
 SUB       0100   A  -   B
 SHIFTL    0101   A  <<  B
 SHIFTR    0110   A  >>  B
-NOTA      0111   ~A
-MULT      1000   A  *   B (signed!)
+MULT      0111   A  *   B (signed!)
+NOTA      1000   ~A
 ```
 
 The remaining seven Opcodes are reserved for future operations.

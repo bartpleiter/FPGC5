@@ -2,11 +2,11 @@
 
 #define word char
 
-#include "lib/math.c"
-#include "lib/stdlib.c"
-#include "lib/sys.c"
-#include "lib/gfx.c"
-#include "data/TESTIMAGE.c"
+#include "LIB/MATH.C"
+#include "LIB/STDLIB.C"
+#include "LIB/SYS.C"
+#include "LIB/GFX.C"
+#include "DATA/TESTIMGD.C"
 
 #define DATA_OFFSET 3
 

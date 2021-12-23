@@ -113,15 +113,6 @@
 //BASIC READ AND WRITE FUNCTIONS
 //-------------------
 
-// Workaround for defines in ASM
-void W5500_asmDefines()
-{
-    asm(
-        "define W5500_SPI3_CS_ADDR = 0xC02732 ; address of SPI3_CS\n"
-        "define W5500_SPI3_ADDR = 0xC02731    ; address of SPI3\n"
-        );
-}
-
 // Sets SPI3_CS low
 void WizSpiBeginTransfer()
 {
@@ -130,7 +121,7 @@ void WizSpiBeginTransfer()
         "push r1\n"
         "push r2\n"
 
-        "load32 W5500_SPI3_CS_ADDR r2       ; r2 = W5500_SPI3_CS_ADDR\n"
+        "load32 0xC02732 r2       ; r2 = 0xC02732\n"
 
         "load 0 r1                          ; r1 = 0 (enable)\n"
         "write 0 r2 r1                      ; write to SPI3_CS\n"
@@ -149,7 +140,7 @@ void WizSpiEndTransfer()
         "push r1\n"
         "push r2\n"
 
-        "load32 W5500_SPI3_CS_ADDR r2       ; r2 = W5500_SPI3_CS_ADDR\n"
+        "load32 0xC02732 r2       ; r2 = 0xC02732\n"
 
         "load 1 r1                          ; r1 = 1 (disable)\n"
         "write 0 r2 r1                      ; write to SPI3_CS\n"
@@ -167,7 +158,7 @@ word WizSpiTransfer(word dataByte)
 {
     word retval = 0;
     asm(
-        "load32 W5500_SPI3_ADDR r2          ; r2 = W5500_SPI3_ADDR\n"
+        "load32 0xC02731 r2          ; r2 = 0xC02731\n"
         "write 0 r2 r4                      ; write r4 over SPI3\n"
         "read 0 r2 r2                       ; read return value\n"
         "write -4 r14 r2                    ; write to stack to return\n"

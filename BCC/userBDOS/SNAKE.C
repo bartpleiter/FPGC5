@@ -5,10 +5,10 @@
 
 #define word char
 
-#include "lib/math.c"
-#include "lib/stdlib.c"
-#include "lib/sys.c"
-#include "lib/gfx.c"
+#include "LIB/MATH.C"
+#include "LIB/STDLIB.C"
+#include "LIB/SYS.C"
+#include "LIB/GFX.C"
 
 #define START_DELAY 120
 #define STEP_DELAY 20

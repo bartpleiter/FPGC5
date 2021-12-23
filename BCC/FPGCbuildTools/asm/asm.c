@@ -14,8 +14,8 @@
 - everything after the last \n is ignored, should not be a problem because wrapper
 - does not support includes or other things that are not used when using BCC
 - does not support asm defines, because of performance reasons
-- also does not keep track of line numbers and does not check on errors that much
-    since this is not really needed when the input is from BCC
+- also does not keep track of line numbers for errors and does less checks for errors
+    since the input is from BCC and therefore has some kind of standard
 */
 
 #define word char
@@ -27,19 +27,21 @@
 #include "lib/fs.c"
 #include "lib/stdio.c"
 
+#define USERBDOS_OFFSET 0x400000 // applied offset to all labels
 
 #define OUTFILE_DATA_ADDR 0x500000
 #define OUTFILE_CODE_ADDR 0x540000
 #define OUTFILE_PASS1_ADDR 0x580000
+#define OUTFILE_PASS2_ADDR 0x600000
 
 #define LINEBUFFER_ADDR 0x4C0000
-char infilename[64];
+char infilename[96];
 char *lineBuffer = (char*) LINEBUFFER_ADDR;
 
 word memCursor = 0; // cursor for readMemLine
 word globalLineCursor = 0; // to keep track of the line number for labels
 
-#define LABELLIST_SIZE 1024 // expecting a lot of labels! as of writing, BDOS has ~1000 TODO: 2048 when done
+#define LABELLIST_SIZE 2048 // expecting a lot of labels! as of writing, BDOS has ~1000 TODO: 2048 when done
 #define LABEL_NAME_SIZE 32 // max length of a label (therefore of a function name)
 char labelListName[LABELLIST_SIZE][LABEL_NAME_SIZE];
 word labelListLineNumber[LABELLIST_SIZE]; // value should be the line number of the corresponding label name
@@ -164,8 +166,8 @@ word readMemLine(char* memAddr)
 }
 
 
-// Returns the poition of argi in linebuffer
-word getArgPos(word argi)
+// Fills bufOut with argi in linebuffer
+void getArgPos(word argi, char* bufOut)
 {
     word linei = 0;
     char c = 0;
@@ -184,13 +186,22 @@ word getArgPos(word argi)
         BDOS_PrintConsole("getArgPos error");
         exit(1);
     }
-
-    return linei;
+    // copy until space or \n
+    word i = 0;
+    c = lineBuffer[linei];
+    while (c != ' ' && c != 0)
+    {
+        bufOut[i] = c;
+        linei++;
+        i++;
+        c = lineBuffer[linei];
+    }
+    bufOut[i] = 0; // terminate
 }
 
 
 // parses the number at argument i in linebuffer
-// can be hex or decimal
+// can be hex or decimal or binary
 word getNumberAtArg(word argi)
 {
     word linei = 0;
@@ -213,7 +224,7 @@ word getNumberAtArg(word argi)
 
     // linei is now at the start of the number string
     // copy until space or \n
-    char strNumberBuf[12];
+    char strNumberBuf[36];
     word i = 0;
     c = lineBuffer[linei];
     while (c != ' ' && c != 0)
@@ -230,6 +241,11 @@ word getNumberAtArg(word argi)
     {
         // hex number
         valueToReturn = hexToInt(strNumberBuf);
+    }
+    else if (strNumberBuf[1] == 'b' || strNumberBuf[1] == 'B')
+    {
+        // binary number
+        valueToReturn = binToInt(strNumberBuf);
     }
     else
     {
@@ -275,8 +291,8 @@ void Pass1StoreLabel()
         labelStrLen++;
     }
 
-    // store label name
-    memcpy(labelListName[labelListIndex], lineBuffer, labelStrLen);
+    // store label name minus the :
+    memcpy(labelListName[labelListIndex], lineBuffer, labelStrLen-1);
     labelListIndex++;
     // labelListLineNumber will be set when the next instruction is found
 
@@ -325,19 +341,8 @@ word Pass1Addr2reg(char* outputAddr, char* outputCursor)
 word Pass1Load32(char* outputAddr, char* outputCursor)
 {
     // get the destination register
-    word linei = getArgPos(2); // linei is now at the start of the dst reg
-    // copy until space or \n
-    char dstRegBuf[12];
-    word i = 0;
-    char c = lineBuffer[linei];
-    while (c != ' ' && c != 0)
-    {
-        dstRegBuf[i] = c;
-        linei++;
-        i++;
-        c = lineBuffer[linei];
-    }
-    dstRegBuf[i] = 0; // terminate
+    char dstRegBuf[16];
+    getArgPos(2, dstRegBuf);
     word dstRegBufLen = strlen(dstRegBuf);
 
     // get and parse the value that is being loaded
@@ -349,7 +354,7 @@ word Pass1Load32(char* outputAddr, char* outputCursor)
     word highVal = (load32Value >> 16) & mask16Bit;
 
     // add lowval
-    char buf[10];
+    char buf[16];
     itoa(lowVal, buf);
     word buflen = strlen(buf);
     // copy name of instruction
@@ -414,7 +419,7 @@ void addSingleDwLine(char* outputAddr, char* outputCursor, char* numBuf)
 word Pass1Dw(char* outputAddr, char* outputCursor)
 {
     word numberOfLinesAdded = 0;
-    char numBuf[12]; // buffer to store each space separated number in
+    char numBuf[36]; // buffer to store each space separated number in
     word i = 0;
     word linei = 4; // index of linebuffer, start after .dw
 
@@ -516,6 +521,11 @@ void doPass1()
     char* outfilePass1Addr = (char*) OUTFILE_PASS1_ADDR; // write to
     word filePass1Cursor = 0;
 
+    // add userBDOS header instructions
+    memcpy(outfilePass1Addr, "jump Main\njump Int1\njump Int2\njump Int3\njump Int4\n", 50);
+    filePass1Cursor += 50;
+    globalLineCursor += 5;
+
     while (readMemLine(outfileCodeAddr) != EOF)
     {
         LinePass1(outfilePass1Addr, &filePass1Cursor);
@@ -523,6 +533,7 @@ void doPass1()
 
     outfilePass1Addr[*(&filePass1Cursor)] = 0; // terminate
 
+    /* debug the labels
     word x;
     for (x = 0; x < labelListIndex; x++)
     {
@@ -531,87 +542,109 @@ void doPass1()
         printd(labelListLineNumber[x]);
         BDOS_PrintConsole("\n");
     }
+    */
 }
 
-void doPass2(char* outputAddr, char* outputCursor)
+#include "pass2.c"
+
+void LinePass2(char* outputAddr, char* outputCursor)
 {
-    /*
     // Go through all possible instructions:
-    if (memcmp(lineBuffer, "halt ", 5))
-        processHalt(outputAddr, outputCursor);
+    if (memcmp(lineBuffer, "halt", 4))
+        pass2Halt(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "read ", 5))
-        processRead(outputAddr, outputCursor);
+        pass2Read(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "write ", 6))
-        processWrite(outputAddr, outputCursor);
+        pass2Write(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "copy ", 5))
-        processCopy(outputAddr, outputCursor);
+        pass2Copy(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "push ", 5))
-        processPush(outputAddr, outputCursor);
+        pass2Push(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "pop ", 4))
-        processPop(outputAddr, outputCursor);
+        pass2Pop(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "jump ", 5))
-        processJump(outputAddr, outputCursor);
+        pass2Jump(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "jumpo ", 6))
-        processJumpo(outputAddr, outputCursor);
+        pass2Jumpo(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "jumpr ", 6))
-        processJumpr(outputAddr, outputCursor);
-    else if (memcmp(lineBuffer, "jumpro ", 7))
-        processJumpro(outputAddr, outputCursor);
+        pass2Jumpr(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "load ", 5))
-        processLoad(outputAddr, outputCursor);
+        pass2Load(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "loadhi ", 7))
-        processLoadhi(outputAddr, outputCursor);
+        pass2Loadhi(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "beq ", 4))
-        processBeq(outputAddr, outputCursor);
+        pass2Beq(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "bne ", 4))
-        processBne(outputAddr, outputCursor);
+        pass2Bne(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "bgt ", 4))
-        processBgt(outputAddr, outputCursor);
+        pass2Bgt(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "bge ", 4))
-        processBge(outputAddr, outputCursor);
+        pass2Bge(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "bgts ", 5))
-        processBgts(outputAddr, outputCursor);
+        pass2Bgts(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "bges ", 5))
-        processBges(outputAddr, outputCursor);
+        pass2Bges(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "savpc ", 6))
-        processSavpc(outputAddr, outputCursor);
-    else if (memcmp(lineBuffer, "reti ", 5))
-        processReti(outputAddr, outputCursor);
+        pass2Savpc(outputAddr, outputCursor);
+    else if (memcmp(lineBuffer, "reti", 4))
+        pass2Reti(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "or ", 3))
-        processOr(outputAddr, outputCursor);
+        pass2Or(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "and ", 4))
-        processAnd(outputAddr, outputCursor);
+        pass2And(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "xor ", 4))
-        processXor(outputAddr, outputCursor);
+        pass2Xor(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "add ", 4))
-        processAdd(outputAddr, outputCursor);
+        pass2Add(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "sub ", 4))
-        processSub(outputAddr, outputCursor);
+        pass2Sub(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "shiftl ", 7))
-        processShiftl(outputAddr, outputCursor);
+        pass2Shiftl(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "shiftr ", 7))
-        processShiftr(outputAddr, outputCursor);
+        pass2Shiftr(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "mult ", 5))
-        processMult(outputAddr, outputCursor);
+        pass2Mult(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "not ", 4))
-        processNot(outputAddr, outputCursor);
-    else if (memcmp(lineBuffer, "addr2reg ", 9))
-        processAddr2reg(outputAddr, outputCursor);
-    else if (memcmp(lineBuffer, "load32 ", 7))
-        processLoad32(outputAddr, outputCursor);
-    else if (memcmp(lineBuffer, "nop ", 4))
-        processNop(outputAddr, outputCursor);
+        pass2Not(outputAddr, outputCursor);
+    else if (memcmp(lineBuffer, "loadLabelLow ", 13))
+        pass2LoadLabelLow(outputAddr, outputCursor);
+    else if (memcmp(lineBuffer, "loadLabelHigh ", 14))
+        pass2LoadLabelHigh(outputAddr, outputCursor);
+    else if (memcmp(lineBuffer, "nop", 3))
+        pass2Nop(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, ".dw ", 4))
-        processDw(outputAddr, outputCursor);
+        pass2Dw(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, ".dl ", 4))
-        processDl(outputAddr, outputCursor);
+        pass2Dl(outputAddr, outputCursor);
     else if (memcmp(lineBuffer, "readintid ", 10))
-        processReadintid(outputAddr, outputCursor);
+        pass2Readintid(outputAddr, outputCursor);
     else
     {
-        processLabel(outputAddr, outputCursor);
+        BDOS_PrintConsole("Unknown instruction!\n");
+        BDOS_PrintConsole(lineBuffer);
+        BDOS_PrintConsole("\n");
+        exit(1);
     }
-    */
+}
+
+
+// returns the length of the binary
+word doPass2()
+{
+    BDOS_PrintConsole("Doing pass 2\n");
+
+    memCursor = 0; // reset cursor for readMemLine
+
+    char* outfilePass1Addr = (char*) OUTFILE_PASS1_ADDR; // read from
+    char* outfilePass2Addr = (char*) OUTFILE_PASS2_ADDR; // write to
+    word filePass2Cursor = 0;
+
+    while (readMemLine(outfilePass1Addr) != EOF)
+    {
+        LinePass2(outfilePass2Addr, &filePass2Cursor);
+    }
+
+    return filePass2Cursor;
 }
 
 
@@ -741,16 +774,49 @@ int main()
 {
     BDOS_PrintConsole("B322 Assembler\n");
 
+    // output file
+
+    char outfilename[96];
+    BDOS_GetArgN(2, outfilename);
+
+    // Default to a.out
+    if (outfilename[0] == 0)
+    {
+        strcat(outfilename, BDOS_GetPath());
+        if (outfilename[strlen(outfilename)-1] != '/')
+        {
+            strcat(outfilename, "/");
+        }
+        strcat(outfilename, "A.OUT");
+    }
+
+    // Make full path if it is not already
+    if (outfilename[0] != '/')
+    {
+        char bothPath[96];
+        bothPath[0] = 0;
+        strcat(bothPath, BDOS_GetPath());
+        if (bothPath[strlen(bothPath)-1] != '/')
+        {
+            strcat(bothPath, "/");
+        }
+        strcat(bothPath, outfilename);
+        strcpy(outfilename, bothPath);
+    }
+
     // create output file, test if it can be created/opened
-    if (!fopenWrite("/ASM.OUT"))
+    if (!fopenWrite(outfilename))
     {
         BDOS_PrintConsole("Could not open outfile\n");
         return 0;
     }
     fclose();
 
-    //BDOS_GetArgN(1, infilename);
-    infilename[0] = 0;
+
+
+    // input file
+
+    BDOS_GetArgN(1, infilename);
 
     // Default to out.asm
     if (infilename[0] == 0)
@@ -760,13 +826,13 @@ int main()
         {
             strcat(infilename, "/");
         }
-        strcat(infilename, "TEST.ASM");
+        strcat(infilename, "OUT.ASM");
     }
 
     // Make full path if it is not already
     if (infilename[0] != '/')
     {
-        char bothPath[64];
+        char bothPath[96];
         bothPath[0] = 0;
         strcat(bothPath, BDOS_GetPath());
         if (bothPath[strlen(bothPath)-1] != '/')
@@ -790,7 +856,68 @@ int main()
 
     doPass1();
 
+    word pass2Length = doPass2();
+
     BDOS_PrintConsole("Writing to file\n");
+    
+
+    /* Print binary list
+    char* outfilePass2Addr = (char*) OUTFILE_PASS2_ADDR;
+    word i;
+    word j = 0;
+    word fullWord = 0;
+    for (i = 0; i < pass2Length; i++)
+    {
+        if (j == 3)
+        {
+            fullWord += outfilePass2Addr[i];
+            BDOS_PrintLnBinConsole(fullWord);
+            fullWord = 0;
+            j = 0;
+        }
+        else
+        {
+            fullWord += (outfilePass2Addr[i] << (24 - (8 * j)));
+            j++;
+        }
+    }
+    */
+
+    /*
+    // Binary list to file
+    if (!fopenWrite(outfilename))
+    {
+        BDOS_PrintConsole("Could not open outfile\n");
+        return 0;
+    }
+    char* outfilePass2Addr = (char*) OUTFILE_PASS2_ADDR;
+    word i;
+    word j = 0;
+    word fullWord = 0;
+    char tmpBuf[33];
+    for (i = 0; i < pass2Length; i++)
+    {
+        if (j == 3)
+        {
+            fullWord += outfilePass2Addr[i];
+            
+            itoab(fullWord, tmpBuf);
+            FS_writeFile(tmpBuf, strlen(tmpBuf));
+            FS_writeFile("\n", 1);
+            fullWord = 0;
+            j = 0;
+        }
+        else
+        {
+            fullWord += (outfilePass2Addr[i] << (24 - (8 * j)));
+            j++;
+        }
+    }
+    fclose();
+    */
+    
+
+    /* print pass 1 to file
     // write to output file
     if (!fopenWrite("/ASM.OUT"))
     {
@@ -800,8 +927,19 @@ int main()
     char* outfilePass1Addr = (char*) OUTFILE_PASS1_ADDR;
     fputs(outfilePass1Addr);
     fclose();
+    */
 
-
+    // write binary to file
+    // write to output file
+    if (!fopenWrite(outfilename))
+    {
+        BDOS_PrintConsole("Could not open outfile\n");
+        return 0;
+    }
+    char* outfilePass2Addr = (char*) OUTFILE_PASS2_ADDR;
+    fputData(outfilePass2Addr, pass2Length-1);
+    fclose();
+    
     return 0;
 }
 

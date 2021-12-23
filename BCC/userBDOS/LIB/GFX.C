@@ -14,20 +14,6 @@
 
 word GFX_cursor = 0;
 
-// Workaround to allow for defines in asm functions
-void GFX_asmDefines()
-{
-    asm(
-    "define GFX_PATTERN_TABLE_SIZE       = 1024      ; size of pattern table\n"
-    "define GFX_PALETTE_TABLE_SIZE       = 32        ; size of palette table\n"
-    "define GFX_WINDOW_TILES             = 1920      ; number of tiles in window plane\n"
-    "define GFX_BG_TILES                 = 2048      ; number of tiles in bg plane\n"
-    "define GFX_SPRITES                  = 64        ; number of sprites in spriteVRAM\n"
-    "define DATAOFFSET_TO_VOID           = 3         ; offset to assembly data when placed in void\n"
-    );
-}
-
-
 // Prints to screen in window plane, with color, data is accessed in words
 // INPUT:
 //   r4 = address of data to print
@@ -169,9 +155,9 @@ void GFX_copyPatternTable(word addr)
 
     "; loop variables\n"
     "load 0 r3                       ; r3 = loopvar\n"
-    "load GFX_PATTERN_TABLE_SIZE r5  ; r5 = loopmax\n"
+    "load 1024 r5  ; r5 = loopmax\n"
     "or r2 r0 r1                     ; r1 = vram addr with offset\n"
-    "add r4 DATAOFFSET_TO_VOID r6    ; r6 = ascii addr with offset\n"
+    "add r4 3 r6    ; r6 = ascii addr with offset\n"
 
     "; copy loop\n"
     "GFX_initPatternTableLoop:\n"
@@ -213,9 +199,9 @@ void GFX_copyPaletteTable(word addr)
 
     "; loop variables\n"
     "load 0 r3                       ; r3 = loopvar\n"
-    "load GFX_PALETTE_TABLE_SIZE r5  ; r5 = loopmax\n"
+    "load 32 r5  ; r5 = loopmax\n"
     "or r2 r0 r1                     ; r1 = vram addr with offset\n"
-    "add r4 DATAOFFSET_TO_VOID r6    ; r6 = palette addr with offset\n"
+    "add r4 3 r6    ; r6 = palette addr with offset\n"
 
     "; copy loop\n"
     "GFX_initPaletteTableLoop:\n"
@@ -253,7 +239,7 @@ void GFX_clearBGtileTable()
 
     "; loop variables\n"
     "load 0 r3                   ; r3 = loopvar\n"
-    "load GFX_BG_TILES r4        ; r4 = loopmax\n"
+    "load 2048 r4        ; r4 = loopmax\n"
     "or r1 r0 r5                 ; r5 = vram addr with offset\n"
 
     "; copy loop\n"
@@ -290,7 +276,7 @@ void GFX_clearBGpaletteTable()
 
     "; loop variables\n"
     "load 0 r3                   ; r3 = loopvar\n"
-    "load GFX_BG_TILES r4        ; r4 = loopmax\n"
+    "load 2048 r4        ; r4 = loopmax\n"
     "or r1 r0 r5                 ; r5 = vram addr with offset\n"
 
     "; copy loop\n"
@@ -327,7 +313,7 @@ void GFX_clearWindowtileTable()
 
     "; loop variables\n"
     "load 0 r3                   ; r3 = loopvar\n"
-    "load GFX_WINDOW_TILES r4    ; r4 = loopmax\n"
+    "load 1920 r4    ; r4 = loopmax\n"
     "or r1 r0 r5                 ; r5 = vram addr with offset\n"
 
     "; copy loop\n"
@@ -364,7 +350,7 @@ void GFX_clearWindowpaletteTable()
 
     "; loop variables\n"
     "load 0 r3                   ; r3 = loopvar\n"
-    "load GFX_WINDOW_TILES r4    ; r4 = loopmax\n"
+    "load 1920 r4    ; r4 = loopmax\n"
     "or r1 r0 r5                 ; r5 = vram addr with offset\n"
 
     "; copy loop\n"
@@ -401,7 +387,7 @@ void GFX_clearSprites()
 
     "; loop variables\n"
     "load 0 r3                   ; r3 = loopvar\n"
-    "load GFX_SPRITES r4         ; r4 = loopmax\n"
+    "load 64 r4         ; r4 = loopmax\n"
     "or r1 r0 r5                 ; r5 = vram addr with offset\n"
 
     "; copy loop\n"

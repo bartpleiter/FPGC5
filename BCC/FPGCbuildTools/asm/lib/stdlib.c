@@ -276,6 +276,21 @@ void itoah(word n, char *s)
 
     // end with terminator
     s[i] = 0;
+}
+
+
+/*
+Converts an number into a 32bit binary string
+*/
+void itoab(word n, char *s)
+{
+    word i;
+    for (i = 0; i < 32; i++)
+    {
+        s[31-i] = (n & 1) ? '1' : '0';
+        n = n >> 1;
+    }
+    s[32] = 0; // terminate
 } 
 
 
@@ -359,6 +374,35 @@ word hexToInt(char *hex) {
     return val;
 }
 
+// 0b1100101
+
+/*
+Converts binary string into int.
+Assumes the string is valid.
+*/
+word binToInt(char *binStr) {
+    binStr += 2; // skip the 0b
+
+    word retval = 0;
+
+    word binLength = strlen(binStr);
+    word i;
+    for (i = 0; i < binLength; i++)
+    {
+        char c = binStr[(binLength - 1) - i];
+        if (c == '1')
+        {
+            retval += 1 << i;
+        }
+        else if (c != '0')
+        {
+            BDOS_PrintConsole("Invalid binary number\n");
+            exit(1);
+        }
+    }
+
+    return retval;
+}
 
 /*
 Prints a single char c by writing it to UART_TX_ADDR

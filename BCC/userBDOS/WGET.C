@@ -3,11 +3,11 @@
 
 #define word char
 
-#include "lib/math.c"
-#include "lib/stdlib.c"
-#include "lib/sys.c"
-#include "lib/fs.c"
-#include "lib/wiz5500.c"
+#include "LIB/MATH.C"
+#include "LIB/STDLIB.C"
+#include "LIB/SYS.C"
+#include "LIB/FS.C"
+#include "LIB/WIZ5500.C"
 
 #define HEAP_LOCATION 0x500000
 

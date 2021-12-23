@@ -83,16 +83,6 @@
 #define FS_ATTR_DIRECTORY           0x10 
 #define FS_ATTR_ARCHIVE             0x20
 
-
-// Workaround for defines in ASM
-void FS_asmDefines()
-{
-    asm(
-        "define FS_SPI1_CS_ADDR = 0xC0272C ; address of SPI1_CS\n"
-        "define FS_SPI1_ADDR = 0xC0272B    ; address of SPI1\n"
-        );
-}
-
 // Sets SPI1_CS low
 void FS_spiBeginTransfer()
 {
@@ -101,7 +91,7 @@ void FS_spiBeginTransfer()
         "push r1\n"
         "push r2\n"
 
-        "load32 FS_SPI1_CS_ADDR r2          ; r2 = FS_SPI1_CS_ADDR\n"
+        "load32 0xC0272C r2          ; r2 = 0xC0272C\n"
 
         "load 0 r1                          ; r1 = 0 (enable)\n"
         "write 0 r2 r1                      ; write to SPI1_CS\n"
@@ -120,7 +110,7 @@ void FS_spiEndTransfer()
         "push r1\n"
         "push r2\n"
 
-        "load32 FS_SPI1_CS_ADDR r2          ; r2 = FS_SPI1_CS_ADDR\n"
+        "load32 0xC0272C r2          ; r2 = 0xC0272C\n"
 
         "load 1 r1                          ; r1 = 1 (disable)\n"
         "write 0 r2 r1                      ; write to SPI1_CS\n"
@@ -138,7 +128,7 @@ word FS_spiTransfer(word dataByte)
 {
     word retval = 0;
     asm(
-        "load32 FS_SPI1_ADDR r2             ; r2 = FS_SPI1_ADDR\n"
+        "load32 0xC0272B r2             ; r2 = 0xC0272B\n"
         "write 0 r2 r4                      ; write r4 over SPI1\n"
         "read 0 r2 r2                       ; read return value\n"
         "write -4 r14 r2                    ; write to stack to return\n"

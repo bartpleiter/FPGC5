@@ -185,6 +185,27 @@ word fputs(char* outbufAddr)
     }
 }
 
+word fputData(char* outbufAddr, word lenOfData)
+{
+    word bytesWritten = 0;
+
+    // loop until all bytes are sent
+    while (bytesWritten != lenOfData)
+    {
+        word partToSend = lenOfData - bytesWritten;
+        // send in parts of 0xFFFF
+        if (partToSend > 0xFFFF)
+            partToSend = 0xFFFF;
+
+        // write away
+        if (FS_writeFile((outbufAddr +bytesWritten), partToSend) != FS_ANSW_USB_INT_SUCCESS)
+            BDOS_PrintConsole("write error\n");
+
+        // Update the amount of bytes sent
+        bytesWritten += partToSend;
+    }
+}
+
 word printf(char* s)
 {
     BDOS_PrintConsole(s);

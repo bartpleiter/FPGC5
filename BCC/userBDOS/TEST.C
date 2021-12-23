@@ -1,8 +1,8 @@
 #define word char
 
-#include "lib/sys.c"
-#include "lib/math.c" 
-#include "lib/stdlib.c"
+#include "LIB/MATH.C"
+#include "LIB/STDLIB.C"
+#include "LIB/SYS.C"
 
 int main() 
 {
