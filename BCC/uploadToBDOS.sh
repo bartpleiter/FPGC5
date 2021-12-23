@@ -2,6 +2,19 @@
 
 # script for compiling a C program for BDOS, and upload it to the FPGC over the network, whithout running it
 
+if [ "$1" == "" ]
+then
+    echo "No program to compile given"
+    exit 1
+fi
+
+OUTFILE="file.out"
+
+if [ "$2" != "" ]
+then
+    OUTFILE=$2
+fi
+
 echo "Processing: $1"
 # compile and upload
 echo "Compiling C code to B332 ASM"
@@ -16,7 +29,7 @@ then
             # convert list to binary files and upload to FPGC
 
             # WSL1/linux version
-            (cd ../Programmer && bash compileROM.sh noPadding && cp code.bin $2 && echo "Uploading $2 to FPGC over Network" && python3 netUpload.py $2 && rm $2)
+            (cd ../Programmer && bash compileROM.sh noPadding && cp code.bin $OUTFILE && echo "Uploading $OUTFILE to FPGC over Network" && python3 netUpload.py $OUTFILE && rm $OUTFILE)
 
             # WSL2/windows version
             #(cd ../Programmer && bash compileROM.sh noPadding && cp code.bin $2 && echo "Uploading $2 to FPGC over Network" && python.exe netUpload.py $2 && rm $2)

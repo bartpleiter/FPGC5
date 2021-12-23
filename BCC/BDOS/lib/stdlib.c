@@ -308,7 +308,7 @@ Prints decimal integer over UART
 */
 void uprintDec(word i) 
 {
-    char buffer[11];
+    char buffer[20];
     itoa(i, buffer);
     uprint(buffer);
     uprintc('\n');
@@ -319,7 +319,7 @@ Prints hex integer over UART
 */
 void uprintHex(word i) 
 {
-    char buffer[11];
+    char buffer[16];
     itoah(i, buffer);
     uprint(buffer);
     uprintc('\n');
@@ -331,7 +331,7 @@ Prints decimal integer over UART, with newline
 */
 void uprintlnDec(word i) 
 {
-    char buffer[11];
+    char buffer[20];
     itoa(i, buffer);
     uprint(buffer);
     uprintc('\n');
@@ -342,7 +342,7 @@ Prints hex integer over UART, with newline
 */
 void uprintlnHex(word i) 
 {
-    char buffer[11];
+    char buffer[16];
     itoah(i, buffer);
     uprint(buffer);
     uprintc('\n');

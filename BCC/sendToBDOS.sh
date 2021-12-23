@@ -2,6 +2,12 @@
 
 # script for compiling a C program for BDOS, and send it to the FPGC over the network
 
+if [ "$1" == "" ]
+then
+    echo "No program to compile given"
+    exit 1
+fi
+
 echo "Processing: $1"
 # compile and send
 echo "Compiling C code to B332 ASM"

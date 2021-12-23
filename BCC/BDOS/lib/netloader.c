@@ -11,16 +11,6 @@
 // Socket to listen to (0-7)
 #define NETLOADER_SOCKET 0
 
-// States of network loader
-#define NETLOADER_STATE_INIT 0
-#define NETLOADER_STATE_DATA 1
-#define NETLOADER_STATE_DONE 2
-#define NETLOADER_STATE_USB 3
-#define NETLOADER_STATE_USB_DATA 4
-
-// State of network loader
-word NETLOADER_transferState = NETLOADER_STATE_INIT;
-
 // Checks if p starts with cmd
 // Returns 1 if true, 0 otherwise
 word NETLOADER_frameCompare(char* p, char* cmd)
@@ -69,197 +59,336 @@ void NETLOADER_appendBufferToRunAddress(char* b, word len)
     }
 }
 
-
-// Handle session for network loader on socket s
-void NETLOADER_handleSession(word s)
+word NETLOADER_getContentLength(char* rbuf, word rsize)
 {
-    // Size of received data
-    // Double check to reduce error rate
-    word rsize = 0;
-    word rsizeValidate = 0;
-    do {
-        rsize = wizGetSockReg16(s, WIZNET_SnRX_RSR);
-        if (rsize != 0)
-        {
-            // twice on purpose
-            rsizeValidate = wizGetSockReg16(s, WIZNET_SnRX_RSR);
-            rsizeValidate = wizGetSockReg16(s, WIZNET_SnRX_RSR);
-        }
-    } 
-    while (rsize != rsizeValidate);
-
-    if (rsize == 0)
+    word contentLengthStr[32];
+    word i = 5; // content length always at 5
+    char c = rbuf[i];
+    while (i < rsize && c != ':')
     {
-        // ignore, probably no data yet
-        return;
+        contentLengthStr[i-5] = c;
+        i++;
+        c = rbuf[i];
+    }
+    contentLengthStr[i-5] = 0; // terminate
+
+    return strToInt(contentLengthStr);
+}
+
+void NETLOADER_getFileName(char* rbuf, word rsize, char* fileNameStr)
+{
+    word i = 0;
+    
+    char c = rbuf[i];
+    while (i < rsize && c != ':')
+    {
+        i++;
+        c = rbuf[i];
     }
 
-    // Receive frame
-    char* rbuf = (char *) TEMP_ADDR;
-    wizReadRecvData(s, rbuf, rsize);
-    rbuf[rsize] = 0; //terminate
-
-    // Keep track if we received an unexpected frame
-    word frameError = 0;
-
-    // If no file transfer has started yet, check for "NEW" frame, or "USB" frame
-    if (NETLOADER_transferState == NETLOADER_STATE_INIT)
+    i++; // skip the :
+    word x = 0;
+    c = rbuf[i];
+    while (i <rsize && c != '\n')
     {
-        // Check on initialisation frame
-        if (NETLOADER_frameCompare(rbuf, "NEW\n"))
-        {
-            NETLOADER_transferState = NETLOADER_STATE_DATA; // set state to receive data
+        fileNameStr[x] = c;
+        i++;
+        x++;
+        c = rbuf[i];
+    }
 
-            // Reset position counters
-            NETLOADER_wordPosition = 0;
-            NETLOADER_currentByteShift = 24;
+    fileNameStr[x] = 0; // terminate
+}
 
-            // Clear first address of run addr
-            char* dst = (char*) RUN_ADDR;
-            dst[0] = 0;
-        }
-        else
+word NETLOADER_getContentStart(char* rbuf, word rsize)
+{
+    word i = 5; // content length always at 5
+    char c = rbuf[i];
+    while (i < rsize && c != '\n')
+    {
+        i++;
+        c = rbuf[i];
+    }
+
+    return (i+1);
+}
+
+void NETLOADER_runProgramFromMemory()
+{
+    BDOS_Backup();
+
+    // indicate that a user program is running
+    BDOS_userprogramRunning = 1;
+
+    // jump to the program
+    asm(
+        "; backup registers\n"
+        "push r1\n"
+        "push r2\n"
+        "push r3\n"
+        "push r4\n"
+        "push r5\n"
+        "push r6\n"
+        "push r7\n"
+        "push r8\n"
+        "push r9\n"
+        "push r10\n"
+        "push r11\n"
+        "push r12\n"
+        "push r13\n"
+        "push r14\n"
+        "push r15\n"
+
+        "savpc r1\n"
+        "push r1\n"
+        "jump 0x400000\n"
+
+        "; restore registers\n"
+        "pop r15\n"
+        "pop r14\n"
+        "pop r13\n"
+        "pop r12\n"
+        "pop r11\n"
+        "pop r10\n"
+        "pop r9\n"
+        "pop r8\n"
+        "pop r7\n"
+        "pop r6\n"
+        "pop r5\n"
+        "pop r4\n"
+        "pop r3\n"
+        "pop r2\n"
+        "pop r1\n"
+        );
+
+    // indicate that no user program is running anymore
+    BDOS_userprogramRunning = 0;
+
+    // clear the shell
+    SHELL_clearCommand();
+
+    // setup the shell again
+    BDOS_Restore();
+    SHELL_print_prompt();
+}
+
+word NETLOADER_percentageDone(word remaining, word full)
+{
+  word x = remaining * 100;
+  return 100 - MATH_divU(x, full);
+}
+
+
+void NETLOADER_handleSession(word s)
+{
+    word firstResponse = 1;
+    word contentLengthOrig = 0;
+    word contentLength = 0;
+    word currentProgress = 0;
+
+    word downloadToFile = 0; // whether we need to download to a file instead
+    char fileNameStr[32];
+
+    word loopCount = 0; // counter for animation
+
+    while (wizGetSockReg8(s, WIZNET_SnSR) == WIZNET_SOCK_ESTABLISHED)
+    {
+        word rsize = wizGetSockReg16(s, WIZNET_SnRX_RSR);
+        if (rsize != 0)
         {
-            if (NETLOADER_frameCompare(rbuf, "USB\n"))
+            char* rbuf = (char *) TEMP_ADDR;
+            wizReadRecvData(s, rbuf, rsize);
+            if (firstResponse)
             {
-                NETLOADER_transferState = NETLOADER_STATE_USB_DATA; // set state
+                GFX_PrintConsole("\n");
 
-                frameError = 1;
-
-                // TODO: error handling for all if cases
-
-                // sanity check current path
-                if (FS_sendFullPath(SHELL_path) == FS_ANSW_USB_INT_SUCCESS)
+                // save to and run from memory
+                if (rbuf[0] == 'E' && rbuf[1] == 'X' && rbuf[2] == 'E' && rbuf[3] == 'C')
                 {
-                    word retval = FS_open();
-                    // check that we can open the path
-                    if (retval == FS_ANSW_USB_INT_SUCCESS || retval == FS_ANSW_ERR_OPEN_DIR)
-                    {
-                        // check length of filename
-                        if (strlen(rbuf + 4) <= 12)
-                        {
-                            // uppercase filename
-                            strToUpper(rbuf + 4);
-                            // send filename
-                            FS_sendSinglePath(rbuf + 4);
+                    GFX_PrintConsole("Receiving program\n");
+                    downloadToFile = 0;
 
-                            // create the file
-                            if (FS_createFile() == FS_ANSW_USB_INT_SUCCESS)
+                    // reset position counters
+                    NETLOADER_wordPosition = 0;
+                    NETLOADER_currentByteShift = 24;
+
+                    // clear first address of run addr
+                    char* dst = (char*) RUN_ADDR;
+                    dst[0] = 0;
+                }
+                // save to file
+                else if (rbuf[0] == 'D' && rbuf[1] == 'O' && rbuf[2] == 'W' && rbuf[3] == 'N')
+                {
+                    GFX_PrintConsole("Receiving file\n");
+                    downloadToFile = 1;
+
+                    // get the filename
+                    NETLOADER_getFileName(rbuf, rsize, fileNameStr);
+
+                    word failedToCreateFile = 1;
+                    // sanity check current path
+                    if (FS_sendFullPath(SHELL_path) == FS_ANSW_USB_INT_SUCCESS)
+                    {
+                        word retval = FS_open();
+                        // check that we can open the path
+                        if (retval == FS_ANSW_USB_INT_SUCCESS || retval == FS_ANSW_ERR_OPEN_DIR)
+                        {
+                            // check length of filename
+                            if (strlen(fileNameStr) <= 12)
                             {
-                                // open the path again
-                                FS_sendFullPath(SHELL_path);
-                                FS_open();
-                                // send filename again
-                                FS_sendSinglePath(rbuf + 4);
-                                // open the newly created file
-                                if (FS_open() == FS_ANSW_USB_INT_SUCCESS)
+                                // uppercase filename
+                                strToUpper(fileNameStr);
+                                // send filename
+                                FS_sendSinglePath(fileNameStr);
+
+                                // create the file
+                                if (FS_createFile() == FS_ANSW_USB_INT_SUCCESS)
                                 {
-                                    // set cursor to start
-                                    if (FS_setCursor(0) == FS_ANSW_USB_INT_SUCCESS)
+                                    // open the path again
+                                    FS_sendFullPath(SHELL_path);
+                                    FS_open();
+                                    // send filename again
+                                    FS_sendSinglePath(fileNameStr);
+                                    // open the newly created file
+                                    if (FS_open() == FS_ANSW_USB_INT_SUCCESS)
                                     {
-                                        frameError = 0;
+                                        // set cursor to start
+                                        if (FS_setCursor(0) == FS_ANSW_USB_INT_SUCCESS)
+                                        {
+                                            failedToCreateFile = 0;
+                                        }
                                     }
                                 }
                             }
                         }
                     }
+                    if (failedToCreateFile)
+                    {
+                        FS_close();
+                        wizWriteDataFromMemory(s, "ERR!", 4);
+                        wizCmd(s, WIZNET_CR_DISCON);
+                        GFX_PrintConsole("E: Could not create file\n");
+                        // clear the shell
+                        SHELL_clearCommand();
+                        SHELL_print_prompt();
+                        return;
+                    }
+                }
+                // unknown command
+                else
+                {
+                    // unsupported command
+                    wizWriteDataFromMemory(s, "ERR!", 4);
+                    wizCmd(s, WIZNET_CR_DISCON);
+                    GFX_PrintConsole("E: Unknown netloader cmd\n");
+                    // clear the shell
+                    SHELL_clearCommand();
+                    SHELL_print_prompt();
+                    return;
                 }
 
-                
+                word dataStart = NETLOADER_getContentStart(rbuf, rsize);
+                contentLength = NETLOADER_getContentLength(rbuf, rsize);
+                contentLengthOrig = contentLength;
+
+                contentLength -= (rsize - dataStart);
+
+                if (downloadToFile)
+                {
+                    FS_writeFile(rbuf+dataStart, rsize - dataStart);
+                }
+                else
+                {
+                    NETLOADER_appendBufferToRunAddress(rbuf+dataStart, rsize - dataStart);
+                }
+
+
+                firstResponse = 0;
+
+                // all data downloaded
+                if (contentLength == 0)
+                {
+                    wizWriteDataFromMemory(s, "THX!", 4);
+                    wizCmd(s, WIZNET_CR_DISCON);
+
+                    // remove the dots
+                    for (loopCount; loopCount > 0; loopCount--)
+                    {
+                        GFX_PrintcConsole(0x8); // backspace
+                    }
+
+                    if (downloadToFile)
+                    {
+                        FS_close();
+                        // clear the shell
+                        SHELL_clearCommand();
+                        SHELL_print_prompt();
+                    }
+                    else
+                    {
+                        NETLOADER_runProgramFromMemory();
+                    }
+                    return;
+                }
             }
+            // not the first response
             else
             {
-                frameError = 2;
+
+                // indicate progress
+                if (loopCount == 3)
+                {
+                    GFX_PrintcConsole(0x8); // backspace
+                    GFX_PrintcConsole(0x8); // backspace
+                    GFX_PrintcConsole(0x8); // backspace
+                    loopCount = 0;
+                }
+                else
+                {
+                    GFX_PrintcConsole('.');
+                    loopCount++;
+                }
+
+                contentLength -= rsize;
+
+                if (downloadToFile)
+                {
+                    FS_writeFile(rbuf, rsize);
+                }
+                else
+                {
+                    NETLOADER_appendBufferToRunAddress(rbuf, rsize);
+                }
+
+
+                // all data downloaded
+                if (contentLength == 0)
+                {
+                    wizWriteDataFromMemory(s, "THX!", 4);
+                    wizCmd(s, WIZNET_CR_DISCON);
+
+                    // remove the dots
+                    for (loopCount; loopCount > 0; loopCount--)
+                    {
+                        GFX_PrintcConsole(0x8); // backspace
+                    }
+
+                    if (downloadToFile)
+                    {
+                        FS_close();
+                        // clear the shell
+                        SHELL_clearCommand();
+                        SHELL_print_prompt();
+                    }
+                    else
+                    {
+                        NETLOADER_runProgramFromMemory();
+                    }
+                    return;
+                }
             }
         }
     }
-    // If we are in a data receiver state
-    else if (NETLOADER_transferState == NETLOADER_STATE_DATA)
-    {
-        // Check on data frame
-        if (NETLOADER_frameCompare(rbuf, "DAT\n"))
-        {
-            // Copy data after "DAT\n" to RUN_ADDR
-            NETLOADER_appendBufferToRunAddress(rbuf + 4, rsize - 4);
-        }
-        // Check on finish frame
-        else if (NETLOADER_frameCompare(rbuf, "END\n"))
-        {
-            // Note length of file
-            //NETLOADER_dataLen = NETLOADER_dataCursor;
-
-            // Terminate file
-            //char* dst = (char*) RUN_ADDR;
-            //*(dst + NETLOADER_dataLen) = 0;
-            
-            // Set state to done
-            NETLOADER_transferState = NETLOADER_STATE_DONE;
-        }
-        else
-        {
-            frameError = 3;
-        }
-    }
-
-    // If we are downloading to file
-    else if (NETLOADER_transferState == NETLOADER_STATE_USB_DATA)
-    {
-        // Check on data frame
-        if (NETLOADER_frameCompare(rbuf, "DAT\n"))
-        {
-            // write buffer to opened file
-            if (FS_writeFile(rbuf + 4, rsize - 4) != FS_ANSW_USB_INT_SUCCESS)
-            {
-                frameError = 4;
-            }
-        }
-        // Check on finish frame
-        else if (NETLOADER_frameCompare(rbuf, "END\n"))
-        {
-            // close file, no need to check for errors
-            FS_close();
-            
-            // Set state to init, since no action is needed
-            NETLOADER_transferState = NETLOADER_STATE_INIT;
-        }
-        else
-        {
-            frameError = 5;
-        }
-    }
-    else
-    {
-        frameError = 6;
-    }
-
-
-    // If we did not expect the frame we just received
-    // Error report and go back to init state
-    if (frameError != 0)
-    {
-        /* useful for debugging the error
-        uprint("frameError: ");
-        uprintlnDec(frameError);
-
-        uprint("rsize: ");
-        uprintlnDec(rsize);
-
-        uprint("rbuf: ");
-        uprintln(rbuf);
-        */
-
-        // notify error
-        char* retTxt = "ERROR";
-        wizWriteDataFromMemory(s, retTxt, 5);
-        NETLOADER_transferState = NETLOADER_STATE_INIT;
-    }
-    else
-    {
-        // notify success
-        char* retTxt = "DONE";
-        wizWriteDataFromMemory(s, retTxt, 4);
-    }
-
 }
 
 
@@ -287,7 +416,6 @@ word NETLOADER_loop(word s)
     {
         // Handle session when a connection is established
         NETLOADER_handleSession(s);
-        delay(10); // TODO: find a fix for this!!!!!!!!! (maybe some IR register???)
     }
     else if (sxStatus == WIZNET_SOCK_LISTEN)
     {
@@ -301,10 +429,6 @@ word NETLOADER_loop(word s)
     }
     else
     {
-        /*
-        uprintln("Got unknown status:");
-        uprintlnHex(sxStatus);
-        */
         // In other cases, reset the socket
         wizInitSocketTCP(s, NETLOADER_PORT);
     }
@@ -312,74 +436,3 @@ word NETLOADER_loop(word s)
     return 0;
 }
 
-
-// Check if netloader is done so we can execute the received binary
-// Returns 1 if executed program. Else 0
-word NETLOADER_checkDone()
-{
-    // Check if we successfully received a file
-    if (NETLOADER_transferState == NETLOADER_STATE_DONE)
-    {
-        // Go back to init state (only useful for debug print instead of running the file)
-        NETLOADER_transferState = NETLOADER_STATE_INIT;
-        // Print file
-        //char* p = (char*) RUN_ADDR;
-        //GFX_PrintConsole(p);
-
-        BDOS_Backup();
-
-        // Indicate that a user program is running
-        BDOS_userprogramRunning = 1;
-
-        // jump to the program
-        asm(
-            "; backup registers\n"
-            "push r1\n"
-            "push r2\n"
-            "push r3\n"
-            "push r4\n"
-            "push r5\n"
-            "push r6\n"
-            "push r7\n"
-            "push r8\n"
-            "push r9\n"
-            "push r10\n"
-            "push r11\n"
-            "push r12\n"
-            "push r13\n"
-            "push r14\n"
-            "push r15\n"
-
-            "savpc r1\n"
-            "push r1\n"
-            "jump 0x400000\n"
-
-            "; restore registers\n"
-            "pop r15\n"
-            "pop r14\n"
-            "pop r13\n"
-            "pop r12\n"
-            "pop r11\n"
-            "pop r10\n"
-            "pop r9\n"
-            "pop r8\n"
-            "pop r7\n"
-            "pop r6\n"
-            "pop r5\n"
-            "pop r4\n"
-            "pop r3\n"
-            "pop r2\n"
-            "pop r1\n"
-            );
-
-        // Indicate that no user program is running anymore
-        BDOS_userprogramRunning = 0;
-
-        // Clear the shell
-        SHELL_clearCommand();
-        
-        return 1;
-    }
-
-    return 0;
-}

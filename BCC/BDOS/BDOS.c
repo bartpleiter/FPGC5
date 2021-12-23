@@ -197,75 +197,8 @@ int main()
     // main loop
     while (1)
     {
-        // when downloading file to storage
-        if (NETLOADER_transferState == NETLOADER_STATE_USB_DATA)
-        {
-            GFX_PrintcConsole('\n');    // start on a new line
-            SHELL_clearCommand();       // clear command buffer
-            SHELL_print_prompt();       // print shell prompt
-
-            GFX_PrintConsole("Downloading");
-            word loopCount = 0;         // counter for animation
-            word smallLoopCount = 0;    // to slow down the animation
-
-            // loop while receiving data
-            while (NETLOADER_transferState == NETLOADER_STATE_USB_DATA)
-            {
-                NETLOADER_loop(NETLOADER_SOCKET); // update the netloader state
-
-                // indicate progress animation
-                if (loopCount == 3 && smallLoopCount == 4)
-                {
-                    GFX_PrintcConsole(0x8); // backspace
-                    GFX_PrintcConsole(0x8); // backspace
-                    GFX_PrintcConsole(0x8); // backspace
-                    loopCount = 0;
-                }
-                else
-                {
-                    if (smallLoopCount == 4)
-                    {
-                        GFX_PrintcConsole('.');
-                        loopCount++;
-                    }
-                }
-
-                // update small loop count
-                if (smallLoopCount == 4)
-                {
-                    smallLoopCount = 0;
-                }
-                else
-                {
-                    smallLoopCount++;
-                }
-            }
-            
-            // remove the animation after the netloader is done
-            for (loopCount; loopCount > 0; loopCount--)
-            {
-                GFX_PrintcConsole(0x8); // backspace
-            }
-
-            // remove the "Downloading" text
-            word i;
-            for (i = 0; i < 11; i++)
-            {
-                GFX_PrintcConsole(0x8); // backspace
-            }
-
-        }
-
         SHELL_loop();                       // update the shell state
         NETLOADER_loop(NETLOADER_SOCKET);   // update the netloader state
-
-        // check if netloader is done so it can execute the received binary
-        if (NETLOADER_checkDone())
-        {
-            // setup the shell again
-            BDOS_Restore();
-            SHELL_print_prompt();
-        }
     }
 
     return 1;

@@ -12,76 +12,57 @@ filename = "code.bin" # default file to send
 if len(sys.argv) >= 2:
     filename = sys.argv[1]
 
-outname = filename # name of the file on FPGC
+outFilename = filename # name of the file on FPGC
 
 # TODO: check on valid 8.3 filename
 
 if len(sys.argv) >= 3:
-    outname = sys.argv[2]
+    outFilename = sys.argv[2]
 
 with open(filename, "rb") as f:
     binfile = f.read()
 
-for attempt in range(10):
-    if attempt != 0:
-        sleep(1)
+downloadToFile = True
 
-    # init connection
-    s = socket.socket()
-    port = 3220
+# init connection
+s = socket.socket()
+port = 3220
 
-    try:
-        s.connect(("192.168.0.213", port))
-    
+try:
+    s.connect(("192.168.0.213", port))
 
 
-        # notify write USB operation
-        bdata = b"USB\n"
-        # add path to frame
-        bdata = bdata + outname.encode('utf-8') + b"\0"
-        s.send(bdata)
-        rcv = s.recv(1024)
+    bdata = ""
+    if downloadToFile:
+        bdata += "DOWN "
+    else:
+        bdata += "EXEC "
 
-        if rcv != b'DONE':
-            print("Got wrong response:")
-            print(rcv)
-            continue
+    bdata += str(len(binfile)) + ":"
 
-        print("Sending file")
+    if downloadToFile:
+        bdata += outFilename
 
-        # send data of file in chunks
-        chunk_size = 1024
-        for i in range(0, len(binfile), chunk_size):
-            chunk = b"DAT\n"
-            chunk += binfile[i:i+chunk_size]
-            s.send(chunk)
-            print(".", end='', flush=True)
-            rcv = s.recv(1024) # wait until processed
-            if rcv != b'DONE':
-                print("Got wrong response:")
-                print(rcv)
-                s.close()
-                continue
+    bdata += "\n"
 
-        print() # print new line
+    bdata = bdata.encode()
+    bdata = bdata + binfile
+    s.send(bdata)
+    rcv = s.recv(1024)
 
-        # notify done
-        bdata = b"END\n"
-        s.send(bdata)
-        rcv = s.recv(1024)
+    if rcv != b'THX!':
+        print("Got wrong response:")
+        print(rcv)
 
-        if rcv != b'DONE':
-            print("Got wrong response:")
-            print(rcv)
-            s.close()
-            continue
+except:
+    print("Could not connect")
 
-    except:
-        print("Could not connect")
-        continue
 
+if downloadToFile:
     print("File sent")
+else:
+    print("Program sent")
 
-    # close socket when done
-    s.close()
-    exit(0)
+# close socket when done
+s.close()
+exit(0)
