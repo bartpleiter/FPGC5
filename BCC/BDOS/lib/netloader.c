@@ -178,7 +178,6 @@ word NETLOADER_percentageDone(word remaining, word full)
   return 100 - MATH_divU(x, full);
 }
 
-
 void NETLOADER_handleSession(word s)
 {
     word firstResponse = 1;
@@ -189,7 +188,8 @@ void NETLOADER_handleSession(word s)
     word downloadToFile = 0; // whether we need to download to a file instead
     char fileNameStr[32];
 
-    word loopCount = 0; // counter for animation
+    char dbuf[10]; // percentage done for progress indication
+    dbuf[0] = 0; // terminate
 
     while (wizGetSockReg8(s, WIZNET_SnSR) == WIZNET_SOCK_ESTABLISHED)
     {
@@ -311,12 +311,6 @@ void NETLOADER_handleSession(word s)
                     wizWriteDataFromMemory(s, "THX!", 4);
                     wizCmd(s, WIZNET_CR_DISCON);
 
-                    // remove the dots
-                    for (loopCount; loopCount > 0; loopCount--)
-                    {
-                        GFX_PrintcConsole(0x8); // backspace
-                    }
-
                     if (downloadToFile)
                     {
                         FS_close();
@@ -336,18 +330,22 @@ void NETLOADER_handleSession(word s)
             {
 
                 // indicate progress
-                if (loopCount == 3)
+                // remove previous percentage
+                word i = strlen(dbuf);
+                while (i > 0)
                 {
                     GFX_PrintcConsole(0x8); // backspace
-                    GFX_PrintcConsole(0x8); // backspace
-                    GFX_PrintcConsole(0x8); // backspace
-                    loopCount = 0;
+                    i--;
                 }
-                else
+                if (strlen(dbuf) != 0)
                 {
-                    GFX_PrintcConsole('.');
-                    loopCount++;
+                    GFX_PrintcConsole(0x8); // backspace
                 }
+
+                itoa(NETLOADER_percentageDone(contentLength, contentLengthOrig), dbuf);
+                GFX_PrintConsole(dbuf);
+                GFX_PrintcConsole('%');
+
 
                 contentLength -= rsize;
 
@@ -360,18 +358,20 @@ void NETLOADER_handleSession(word s)
                     NETLOADER_appendBufferToRunAddress(rbuf, rsize);
                 }
 
-
                 // all data downloaded
                 if (contentLength == 0)
                 {
                     wizWriteDataFromMemory(s, "THX!", 4);
                     wizCmd(s, WIZNET_CR_DISCON);
 
-                    // remove the dots
-                    for (loopCount; loopCount > 0; loopCount--)
+                    // remove progress prints
+                    word i = strlen(dbuf);
+                    while (i > 0)
                     {
                         GFX_PrintcConsole(0x8); // backspace
+                        i--;
                     }
+                    GFX_PrintcConsole(0x8); // backspace
 
                     if (downloadToFile)
                     {
