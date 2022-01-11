@@ -36,6 +36,39 @@ void memcpy(word* dest, word* src, word n)
     }
 }
 
+char* memmove(char* dest, const char* src, word n)
+{
+  char* from = src;
+  char* to = dest;
+
+  if (from == to || n == 0)
+    return dest;
+  if (to > from && to-from < (word)n)
+  {
+    /* to overlaps with from */
+    /*  <from......>         */
+    /*         <to........>  */
+    /* copy in reverse, to avoid overwriting from */
+    word i;
+    for(i=n-1; i>=0; i--)
+      to[i] = from[i];
+    return dest;
+  }
+  if (from > to && from-to < (word)n)
+  {
+    /* to overlaps with from */
+    /*        <from......>   */
+    /*  <to........>         */
+    /* copy forwards, to avoid overwriting from */
+    word i;
+    for(i=0; i<n; i++)
+      to[i] = from[i];
+    return dest;
+  }
+  memcpy(dest, src, n);
+  return dest;
+}
+
 /*
 Compares n words between a and b
 Returns 1 if similar, 0 otherwise
@@ -170,8 +203,6 @@ void itoa(word n, char *s)
 
 
 
-
-
 /*
 Recursive helper function for itoa
 Eventually returns the number of digits in n
@@ -259,6 +290,33 @@ word strToInt(char* str)
     retval += toAdd;
 
     return retval;
+}
+
+
+// isalpha
+word isalpha(char c)
+{
+  if (c >= 'A' && c <= 'Z')
+    return 2;
+  if (c >= 'a' && c <= 'z')
+    return 1;
+  return 0;
+}
+
+// isdigit
+word isdigit(char c)
+{
+  if (c >= '0' && c <= '9')
+    return 1;
+  return 0;
+}
+
+// isalnum
+word isalnum(char c)
+{
+  if (isdigit(c) || isalpha(c))
+    return 1;
+  return 0;
 }
 
 

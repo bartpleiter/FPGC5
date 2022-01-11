@@ -62,7 +62,9 @@
 #define ARROW_UP    258
 #define ARROW_DOWN  259
 
-char infilename[96] = "/C/SRC/TEST.C";  // input filename to edit the contents of
+char infilename[96] = "/C/SRC/COLORS.C";  // input filename to edit the contents of
+
+char headerText[SCREEN_WIDTH];
 
 // Buffer for file contents in memory
 char (*mem)[MAX_LINE_WIDTH] = (char (*)[MAX_LINE_WIDTH]) FILE_MEMORY_ADDR; // 2d array containing all lines of the input file
@@ -224,6 +226,8 @@ void printWindow()
     GFX_clearWindowtileTable();
     GFX_clearWindowpaletteTable();
 
+    printHeader();
+
     char* vramWindowpattern = (char*) 0xC01420;
     word vramPaletteOffset = 2048;
 
@@ -257,19 +261,26 @@ void printWindow()
     }
 }
 
+// Remove cursor from screen (bg plane)
+void clearCursor()
+{
+    word vramCursorOffset = GFX_BackgroundPosFromXY(userCursorX, userCursorY+1);
+    char* vramBackgroundpalette = (char*) 0xC00C20;
+    *(vramBackgroundpalette + vramCursorOffset) = 0;
+}
+
 // Print the cursor on screen (using background plane)
 void printCursor()
 {
-    GFX_printWindowColored();
+    word vramCursorOffset = GFX_BackgroundPosFromXY(userCursorX, userCursorY+1);
+    char* vramBackgroundpalette = (char*) 0xC00C20;
+    *(vramBackgroundpalette + vramCursorOffset) = PALETTE_CURSOR;
 }
 
 // Print the header on screen (using window plane)
 void printHeader()
 {
-    word vramCursorOffset = GFX_WindowPosFromXY(userCursorX, userCursorY+1);
-    char* vramBackgroundpalette = (char*) 0xC00C20;
-
-    *(vramBackgroundpalette + vramCursorOffset) = PALETTE_CURSOR;
+    GFX_printWindowColored(headerText, SCREEN_WIDTH, 0, PALETTE_HEADER);
 }
 
 void setPalettes()
@@ -278,11 +289,125 @@ void setPalettes()
     paletteAddress[PALETTE_CURSOR] = 0x7 << 24;
     paletteAddress[PALETTE_NEWLINE] = 12;
     paletteAddress[PALETTE_EOF] = 224;
-    paletteAddress[PALETTE_HEADER] = 0xFF << 24;
+    paletteAddress[PALETTE_HEADER] = (0x51 << 24) + 0xDA;
 }
+
+// Make sure the cursor stays left from the newline
+void fixCursorToNewline()
+{
+    word xpos = userCursorX+windowXscroll;
+    word ypos = userCursorY+windowYscroll;
+
+    word newLinePos = 0;
+    while (mem[ypos][newLinePos] != '\n' && mem[ypos][newLinePos] != EOF)
+    {
+        newLinePos++;
+        if (newLinePos == MAX_LINE_WIDTH)
+        {
+            BDOS_PrintConsole("E: could not find newline\n");
+            exit();
+        }
+    }
+
+    clearCursor();
+
+    word appliedScolling = 0;
+    while (xpos > newLinePos)
+    {
+        if (userCursorX > 0)
+        {
+            userCursorX--;
+        }
+        else
+        {
+            if (windowXscroll > 0)
+            {
+                windowXscroll--;
+                appliedScolling = 1;
+            }
+            else
+            {
+                BDOS_PrintConsole("E: scroll left limit reached\n");
+                exit();
+            }
+        }
+        xpos = userCursorX+windowXscroll;
+    }
+
+    if (appliedScolling)
+    {
+        printWindow();
+    }
+}
+
+
+// Move the cursor to the newline character of the previous line
+void gotoEndOfPrevLine()
+{
+    userCursorX = 0;
+    windowXscroll = 0;
+
+    clearCursor();
+
+    word appliedScolling = 0;
+
+    if (userCursorY > 0)
+    {
+        userCursorY--;
+    }
+    else
+    {
+        if (windowYscroll > 0)
+        {
+            windowYscroll--;
+            appliedScolling = 1;
+        }
+        else
+        {
+            // don't need to do anything when on the first line
+            return;
+        }
+    }
+
+    word xpos = 0;
+    word ypos = userCursorY+windowYscroll;
+    while (mem[ypos][xpos] != '\n' && mem[ypos][xpos] != EOF)
+    {
+        if (userCursorX < SCREEN_WIDTH-1)
+        {
+            userCursorX++;
+        }
+        else
+        {
+            if (windowXscroll < MAX_LINE_WIDTH-SCREEN_WIDTH)
+            {
+                windowXscroll++;
+                appliedScolling = 1;
+            }
+        }
+
+        xpos = userCursorX + windowXscroll;
+
+        if (xpos == MAX_LINE_WIDTH)
+        {
+            BDOS_PrintConsole("E: could not find newline\n");
+            exit();
+        }
+    }
+
+    if (appliedScolling)
+    {
+        printWindow();
+    }
+
+    printCursor();
+}
+
 
 void moveCursorDown()
 {
+    clearCursor();
+
     if (userCursorY < SCREEN_HEIGHT-2)
     {
         userCursorY++;
@@ -295,12 +420,14 @@ void moveCursorDown()
             printWindow();
         }
     }
-
+    fixCursorToNewline();
     printCursor();
 }
 
 void moveCursorUp()
 {
+    clearCursor();
+
     if (userCursorY > 0)
     {
         userCursorY--;
@@ -313,12 +440,14 @@ void moveCursorUp()
             printWindow();
         }
     }
-
+    fixCursorToNewline();
     printCursor();
 }
 
 void moveCursorLeft()
 {
+    clearCursor();
+
     if (userCursorX > 0)
     {
         userCursorX--;
@@ -330,27 +459,141 @@ void moveCursorLeft()
             windowXscroll--;
             printWindow();
         }
+        else
+        {
+            // move to previous line
+            windowXscroll = MAX_LINE_WIDTH - SCREEN_WIDTH;
+            userCursorX = SCREEN_WIDTH - 1;
+            gotoEndOfPrevLine();
+        }
     }
-
+    fixCursorToNewline();
     printCursor();
 }
 
 void moveCursorRight()
 {
-    if (userCursorX < SCREEN_WIDTH-1)
+    clearCursor();
+
+    word xpos = userCursorX + windowXscroll;
+    if (mem[userCursorY+windowYscroll][xpos] == '\n')
     {
-        userCursorX++;
-    }
-    else
-    {
-        if (windowXscroll < MAX_LINE_WIDTH-SCREEN_WIDTH)
+        // if we are at the end of the line, move to next line
+        word appliedScolling = windowXscroll;
+        windowXscroll = 0;
+        userCursorX = 0;
+        moveCursorDown();
+        if (appliedScolling)
         {
-            windowXscroll++;
             printWindow();
         }
     }
+    else
+    {
+        if (userCursorX < SCREEN_WIDTH-1)
+        {
+            userCursorX++;
+        }
+        else
+        {
+            if (windowXscroll < MAX_LINE_WIDTH-SCREEN_WIDTH)
+            {
+                windowXscroll++;
+                printWindow();
+            }
+        }
 
+    }
     printCursor();
+}
+
+
+void removeCurrentLine()
+{
+    // TODO
+    word i = 0;
+    for (i = 0; i < MAX_LINE_WIDTH; i++)
+    {
+        mem[userCursorY+windowYscroll][i] = 0;
+    }
+    if (userCursorY+windowYscroll == currentLine)
+    {
+        mem[userCursorY+windowYscroll][0] = EOF;
+    }
+    else
+    {
+        mem[userCursorY+windowYscroll][0] = '\n';
+    }
+}
+
+// Insert character c at cursor
+void insertCharacter(char c)
+{
+    word xpos = userCursorX+windowXscroll;
+    word ypos = userCursorY+windowYscroll;
+    memmove(&mem[ypos][xpos+1], &mem[ypos][xpos], MAX_LINE_WIDTH-(xpos+1));
+    mem[ypos][xpos] = c;
+    printWindow();
+    moveCursorRight();
+}
+
+// Remove character at cursor
+void removeCharacter()
+{
+    word xpos = userCursorX+windowXscroll;
+    word ypos = userCursorY+windowYscroll;
+    if (xpos > 0)
+    {
+        memmove(&mem[ypos][xpos-1], &mem[ypos][xpos], MAX_LINE_WIDTH-(xpos-1));
+        mem[ypos][MAX_LINE_WIDTH-1] = 0; // remove new char at right of line
+        printWindow();
+        moveCursorLeft();
+    }
+    else
+    {
+        if (ypos > 0)
+        {
+            // append current line to previous line at newline
+            word newLinePos = 0;
+            while (mem[ypos-1][newLinePos] != '\n')
+            {
+                newLinePos++;
+                if (newLinePos == MAX_LINE_WIDTH)
+                {
+                    BDOS_PrintConsole("E: could not find newline\n");
+                    exit();
+                }
+            }
+            // copy to overwrite the newline
+            memcpy(&mem[ypos-1][newLinePos], &mem[ypos][0], MAX_LINE_WIDTH-(newLinePos));
+
+            // check if resulting line has a newline, else add to end
+            newLinePos = 0;
+            while (mem[ypos-1][newLinePos] != '\n')
+            {
+                newLinePos++;
+                if (newLinePos == MAX_LINE_WIDTH)
+                {
+                    if (ypos == currentLine)
+                    {
+                        mem[ypos-1][MAX_LINE_WIDTH-1] = EOF;
+                    }
+                    else
+                    {
+                        mem[ypos-1][MAX_LINE_WIDTH-1] = '\n';
+                    }
+                    
+                }
+            }
+
+            // remove the current line
+            removeCurrentLine();
+
+            printWindow();
+            moveCursorLeft();
+        }
+       
+    }
 }
 
 
@@ -399,6 +642,8 @@ int main()
 
     readInputFile();
 
+    strcpy(headerText, infilename);
+
     // init gfx
     GFX_clearWindowtileTable();
     GFX_clearWindowpaletteTable();
@@ -430,6 +675,13 @@ int main()
                     break;
                 case ARROW_UP:
                     moveCursorUp();
+                    break;
+                case 0x8: // backspace
+                    removeCharacter();
+                    break;
+                default:
+                    // default to inserting the character as text
+                    insertCharacter(c);
                     break;
             }
         }
