@@ -58,6 +58,11 @@ word* syscall(word ID)
     return p;
 }
 
+// quit the user program and return to BDOS in a somewhat controlled way
+void exit()
+{
+    asm("jump Return_BDOS\n");
+}
 
 word HID_FifoAvailable()
 {

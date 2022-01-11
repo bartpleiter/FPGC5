@@ -523,7 +523,7 @@ void GFX_PrintcConsole(char c)
         *(v+GFX_cursor) = 0;
 
         // get next line number
-        word nl = MATH_div(GFX_cursor, 40) + 1;
+        word nl = MATH_divU(GFX_cursor, 40) + 1;
         // multiply by 40 to get the correct line
         GFX_cursor = nl * 40;
     }
