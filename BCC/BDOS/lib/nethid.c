@@ -46,6 +46,9 @@ void NETHID_handleSession(word s)
     wizReadRecvData(s, NETHID_rxBuf, rsize);
     NETHID_rxBuf[rsize] = 0; //terminate
 
+    // echo data back to confirm receive
+    wizWriteDataFromMemory(s, NETHID_rxBuf, rsize);
+
     // loop through the received data
     word isEscaped = 0;
     word ignoreThis = 0;

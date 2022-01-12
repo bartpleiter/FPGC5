@@ -19,44 +19,49 @@ downloadToFile = False
 outFilename = "out.abc"
 
 # init connection
-s = socket.socket()
 port = 3220
 
-try:
-    s.connect(("192.168.0.213", port))
+for idx, attempt in enumerate(range(10)):
+    try:
+        s = socket.socket()
+        s.connect(("192.168.0.213", port))
 
+        bdata = ""
+        if downloadToFile:
+            bdata += "DOWN "
+        else:
+            bdata += "EXEC "
 
-    bdata = ""
-    if downloadToFile:
-        bdata += "DOWN "
+        bdata += str(len(binfile)) + ":"
+
+        if downloadToFile:
+            bdata += outFilename
+
+        bdata += "\n"
+
+        bdata = bdata.encode()
+        bdata = bdata + binfile
+        s.send(bdata)
+        rcv = s.recv(1024)
+
+        if rcv != b'THX!':
+            print("Got wrong response:")
+            print(rcv)
+
+        s.close()
+
+    except Exception as e:
+        s.close()
+        #print(e)
+        sleep(0.5)
     else:
-        bdata += "EXEC "
+        break
 
-    bdata += str(len(binfile)) + ":"
-
-    if downloadToFile:
-        bdata += outFilename
-
-    bdata += "\n"
-
-    bdata = bdata.encode()
-    bdata = bdata + binfile
-    s.send(bdata)
-    rcv = s.recv(1024)
-
-    if rcv != b'THX!':
-        print("Got wrong response:")
-        print(rcv)
-
-except:
-    print("Could not connect")
+    if idx == 9:
+        print("ERROR: could not send", outFilename)
 
 
 if downloadToFile:
     print("File sent")
 else:
     print("Program sent")
-
-# close socket when done
-s.close()
-exit(0)
