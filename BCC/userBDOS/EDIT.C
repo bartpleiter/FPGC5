@@ -62,7 +62,7 @@
 #define ARROW_UP    258
 #define ARROW_DOWN  259
 
-char infilename[96] = "/C/SRC/COLORS.C";  // input filename to edit the contents of
+char infilename[96];  // input filename to edit the contents of
 
 char headerText[SCREEN_WIDTH];
 
@@ -76,7 +76,7 @@ char (*mem)[MAX_LINE_WIDTH] = (char (*)[MAX_LINE_WIDTH]) FILE_MEMORY_ADDR; // 2d
 char inputBuffer[FBUF_LEN];
 word inbufStartPos = 0; // where in the file the buffer starts
 word inbufCursor = 0; // where in the buffer we currently are working
-word currentLine = 0;
+word lastLineNumber = 0;
 
 // Cursors
 word windowYscroll = 0; // vertical line offset for drawing window
@@ -128,6 +128,112 @@ word fopenRead()
     return 0;
 }
 
+// opens file for writing by recreating it
+// should not be called before fopenRead, therefore exits on error
+word fopenWrite()
+{
+    if (infilename[0] != '/')
+    {
+        BDOS_PrintConsole("E: Filename should be a full path\n");
+        exit();
+    }
+
+    FS_close(); // to be sure
+
+    // convert to uppercase
+    strToUpper(infilename);
+
+    // if current path is correct (can be file or directory)
+    if (FS_sendFullPath(infilename) == FS_ANSW_USB_INT_SUCCESS)
+    {
+        // create the file
+        
+        if (FS_createFile() == FS_ANSW_USB_INT_SUCCESS)
+        {
+            //BDOS_PrintConsole("File created\n");
+            // open again and start at 0
+            FS_sendFullPath(infilename);
+            FS_open();
+            FS_setCursor(0); // set cursor to start
+            return 1;
+        }
+        else
+        {
+            BDOS_PrintConsole("E: Could not create file\n");
+            exit();
+        }
+    }
+    else
+    {
+        BDOS_PrintConsole("E: Invalid path\n");
+        exit();
+    }
+
+    exit();
+    return 0;
+}
+
+// Writes data of given length to opened file
+void fputData(char* datBuf, word lenOfData)
+{
+    if (lenOfData == 0)
+    {
+        return;
+    }
+
+    word bytesWritten = 0;
+
+    // loop until all bytes are sent
+    while (bytesWritten != lenOfData)
+    {
+        word partToSend = lenOfData - bytesWritten;
+        // send in parts of 0xFFFF
+        if (partToSend > 0xFFFF)
+            partToSend = 0xFFFF;
+
+        // write away
+        if (FS_writeFile((datBuf +bytesWritten), partToSend) != FS_ANSW_USB_INT_SUCCESS)
+            BDOS_PrintConsole("write error\n");
+
+        // Update the amount of bytes sent
+        bytesWritten += partToSend;
+    }
+}
+
+// Write mem to file
+void writeMemToFile()
+{
+    fopenWrite(); // open file for writing
+
+    word y;
+    for (y = 0; y <= lastLineNumber; y++)
+    {
+        word lineEndPos = 0;
+        while (mem[y][lineEndPos] != '\n' && mem[y][lineEndPos] != EOF)
+        {
+            lineEndPos++;
+            if (lineEndPos == MAX_LINE_WIDTH)
+            {
+                BDOS_PrintConsole("E: could not find end of line\n");
+                FS_close();
+                exit();
+            }
+        }
+
+        if (mem[y][lineEndPos] == EOF)
+        {
+            fputData(mem[y], lineEndPos);
+            FS_close();
+            return;
+        }
+
+        lineEndPos++; // include the newline token
+        fputData(mem[y], lineEndPos);
+    }
+    FS_close();
+}
+
+
 // returns the current char at cursor within the opened file (EOF if end of file)
 // increments the cursor
 word fgetc()
@@ -177,13 +283,13 @@ word readFileLine()
     // stop on EOF or newline or max line width reached
     while (c != EOF && c != '\n' && currentChar < (MAX_LINE_WIDTH-1))
     {
-        mem[currentLine][currentChar] = c;
+        mem[lastLineNumber][currentChar] = c;
         currentChar++;
         cprev = c;
         c = fgetc();
     }
 
-    mem[currentLine][currentChar] = c; // add EOF or \n
+    mem[lastLineNumber][currentChar] = c; // add EOF or \n
 
     // append line with zeros
     while (currentChar < (MAX_LINE_WIDTH-1))
@@ -194,7 +300,7 @@ word readFileLine()
         {
             fillerChar = EOF;
         }
-        mem[currentLine][currentChar] = fillerChar;
+        mem[lastLineNumber][currentChar] = fillerChar;
     }
 
     return c;
@@ -205,14 +311,14 @@ void readInputFile()
 {
     while (readFileLine() != EOF)
     {
-        if (currentLine >= MAX_LINES)
+        if (lastLineNumber >= MAX_LINES)
         {
             BDOS_PrintConsole("E: File too large\n");
             exit();
         }
         else
         {
-            currentLine++;
+            lastLineNumber++;
         }
     }
 
@@ -341,13 +447,67 @@ void fixCursorToNewline()
 }
 
 
+// Move the cursor to targetPos of the previous line, from the left
+// Assumes targetPos is valid and ypos is not 0
+// Does not print window at the end, caller should do that
+void gotoPosOfPrevLine(word targetPos)
+{
+    clearCursor();
+
+    userCursorX = 0;
+    windowXscroll = 0;
+
+    if (userCursorY > 0)
+    {
+        userCursorY--;
+    }
+    else
+    {
+        if (windowYscroll > 0)
+        {
+            windowYscroll--;
+        }
+        else
+        {
+            BDOS_PrintConsole("E: could not move up a line\n");
+            exit();
+        }
+    }
+
+    word xpos = 0;
+    word ypos = userCursorY+windowYscroll;
+    while (xpos != targetPos)
+    {
+        if (userCursorX < SCREEN_WIDTH-1)
+        {
+            userCursorX++;
+        }
+        else
+        {
+            if (windowXscroll < MAX_LINE_WIDTH-SCREEN_WIDTH)
+            {
+                windowXscroll++;
+            }
+        }
+
+        xpos = userCursorX + windowXscroll;
+
+        if (xpos == MAX_LINE_WIDTH)
+        {
+            BDOS_PrintConsole("E: target out of bounds\n");
+            exit();
+        }
+    }
+
+    printCursor();
+}
+
+
 // Move the cursor to the newline character of the previous line
 void gotoEndOfPrevLine()
 {
     userCursorX = 0;
     windowXscroll = 0;
-
-    clearCursor();
 
     word appliedScolling = 0;
 
@@ -399,13 +559,26 @@ void gotoEndOfPrevLine()
     {
         printWindow();
     }
-
-    printCursor();
 }
 
 
 void moveCursorDown()
 {
+    // skip if current line contains EOF
+    word ypos = userCursorY+windowYscroll;
+    word i;
+    for (i = 0; i < MAX_LINE_WIDTH; i++)
+    {
+        if (mem[ypos][i] == '\n')
+        {
+            break;
+        }
+        if (mem[ypos][i] == EOF)
+        {
+            return;
+        }
+    }
+
     clearCursor();
 
     if (userCursorY < SCREEN_HEIGHT-2)
@@ -414,7 +587,7 @@ void moveCursorDown()
     }
     else
     {
-        if (windowYscroll < currentLine-(SCREEN_HEIGHT-2))
+        if (windowYscroll < lastLineNumber-(SCREEN_HEIGHT-2))
         {
             windowYscroll++;
             printWindow();
@@ -473,9 +646,15 @@ void moveCursorLeft()
 
 void moveCursorRight()
 {
+    word xpos = userCursorX + windowXscroll;
+    if (mem[userCursorY+windowYscroll][xpos] == EOF)
+    {
+        // do nothing at EOF
+        return;
+    }
+
     clearCursor();
 
-    word xpos = userCursorX + windowXscroll;
     if (mem[userCursorY+windowYscroll][xpos] == '\n')
     {
         // if we are at the end of the line, move to next line
@@ -510,20 +689,60 @@ void moveCursorRight()
 
 void removeCurrentLine()
 {
-    // TODO
-    word i = 0;
-    for (i = 0; i < MAX_LINE_WIDTH; i++)
+    word ypos = userCursorY+windowYscroll;
+
+    // move all lines below ypos up by one, starting at beginning
+    word i;
+    for (i = ypos+1; i <= lastLineNumber; i++)
     {
-        mem[userCursorY+windowYscroll][i] = 0;
+        memcpy(mem[i-1], mem[i], MAX_LINE_WIDTH);
     }
-    if (userCursorY+windowYscroll == currentLine)
+    lastLineNumber--;
+}
+
+void insertNewLine()
+{
+    word ypos = userCursorY+windowYscroll;
+
+    if (lastLineNumber == MAX_LINES-1)
     {
-        mem[userCursorY+windowYscroll][0] = EOF;
+        // ignore if we reached the memory limit
+        return;
     }
-    else
+
+    clearCursor();
+
+    // move all lines below ypos down by one, starting at the end
+    word i;
+    for (i = lastLineNumber; i > ypos; i--)
     {
-        mem[userCursorY+windowYscroll][0] = '\n';
+        memcpy(mem[i+1], mem[i], MAX_LINE_WIDTH);
     }
+    lastLineNumber++;
+
+    // move everything right from cursor to new line
+    // this should include the newline/EOF automatically
+    word newLineTmpCursor = 0;
+    word xpos = userCursorX+windowXscroll;
+    while(xpos < MAX_LINE_WIDTH)
+    {
+        mem[ypos+1][newLineTmpCursor] = mem[ypos][xpos];
+        mem[ypos][xpos] = 0;
+        newLineTmpCursor++;
+        xpos++;
+    }
+
+    // insert newline character at current line
+    xpos = userCursorX+windowXscroll;
+    mem[ypos][xpos] = '\n';
+
+    // move the cursor down to the start of the new line
+    windowXscroll = 0;
+    userCursorX = 0;
+    moveCursorDown();
+    printWindow(); // always needed in case of a new line
+
+    printCursor();
 }
 
 // Insert character c at cursor
@@ -554,6 +773,7 @@ void removeCharacter()
         if (ypos > 0)
         {
             // append current line to previous line at newline
+            word prevLinePasteLocation = 0;
             word newLinePos = 0;
             while (mem[ypos-1][newLinePos] != '\n')
             {
@@ -566,15 +786,16 @@ void removeCharacter()
             }
             // copy to overwrite the newline
             memcpy(&mem[ypos-1][newLinePos], &mem[ypos][0], MAX_LINE_WIDTH-(newLinePos));
+            prevLinePasteLocation = newLinePos;
 
-            // check if resulting line has a newline, else add to end
+            // check if resulting line has a newline or EOF, else add to end
             newLinePos = 0;
-            while (mem[ypos-1][newLinePos] != '\n')
+            while (mem[ypos-1][newLinePos] != '\n' && mem[ypos-1][newLinePos] != EOF && newLinePos < MAX_LINE_WIDTH)
             {
                 newLinePos++;
                 if (newLinePos == MAX_LINE_WIDTH)
                 {
-                    if (ypos == currentLine)
+                    if (ypos == lastLineNumber)
                     {
                         mem[ypos-1][MAX_LINE_WIDTH-1] = EOF;
                     }
@@ -589,22 +810,28 @@ void removeCharacter()
             // remove the current line
             removeCurrentLine();
 
+            // move cursor to the place we pasted the line
+            gotoPosOfPrevLine(prevLinePasteLocation);
+
+            // update the view
             printWindow();
-            moveCursorLeft();
         }
-       
     }
+}
+
+void addEditHeader()
+{
+    headerText[29] = 'Y';
+    headerText[30] = ':';
+    itoa(userCursorY+windowYscroll, &headerText[31]);
+    headerText[35] = 'X';
+    headerText[36] = ':';
+    itoa(userCursorX+windowXscroll, &headerText[37]);
 }
 
 
 int main() 
 {
-
-    
-
-    // TODO: Static infilename for now, remove when done
-
-    /*
     // input file
     BDOS_GetArgN(1, infilename);
 
@@ -628,7 +855,6 @@ int main()
         strcat(bothPath, infilename);
         strcpy(infilename, bothPath);
     }
-    */
 
     // Open the input file
     BDOS_PrintConsole(infilename);
@@ -650,6 +876,7 @@ int main()
     GFX_clearBGtileTable();
     GFX_clearBGpaletteTable();
     setPalettes();
+    addEditHeader();
     printWindow();
     printCursor();
 
@@ -662,7 +889,18 @@ int main()
             switch (c)
             {
                 case 27: // escape
-                    return 'q';
+                    memcpy(&headerText[25], "Type y to save", 14);
+                    printHeader();
+
+                    // wait for user input
+                    while (HID_FifoAvailable() == 0);
+
+                    if (HID_FifoRead() == 'y')
+                    {
+                        writeMemToFile();
+                    }
+
+                    return 'q'; // exit
                     break;
                 case ARROW_LEFT:
                     moveCursorLeft();
@@ -679,11 +917,20 @@ int main()
                 case 0x8: // backspace
                     removeCharacter();
                     break;
+                case '\n':
+                    insertNewLine();
+                    break;
+                case '\t':
+                    insertCharacter(' ');
+                    insertCharacter(' ');
+                    break;
                 default:
                     // default to inserting the character as text
                     insertCharacter(c);
                     break;
             }
+            addEditHeader();
+            printHeader();
         }
 
     }
