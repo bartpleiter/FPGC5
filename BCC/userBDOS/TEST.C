@@ -7,26 +7,26 @@
 int main() 
 {
 
-    BDOS_PrintConsole("Running user program\n");
+  BDOS_PrintConsole("Running user program\n");
 
-    while (1)
+  while (1)
+  {
+    if (HID_FifoAvailable())
     {
-        if (HID_FifoAvailable())
-        {
-            word c = HID_FifoRead();
-            if (c == 27) // escape
-            {
-                return 'q';
-            }
-            if (c < 255)
-            {
-                BDOS_PrintcConsole(c);
-            }
-        }
-
+      word c = HID_FifoRead();
+      if (c == 27) // escape
+      {
+        return 'q';
+      }
+      if (c < 255)
+      {
+        BDOS_PrintcConsole(c);
+      }
     }
 
-    return 'q';
+  }
+
+  return 'q';
 }
 
 // timer1 interrupt handler

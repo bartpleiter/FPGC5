@@ -12,36 +12,36 @@
 
 void testTiles()
 {
-    asm(".dw 0 1 2 3\n");
+  asm(".dw 0 1 2 3\n");
 }
 
 int main() 
 {
-    GFX_initVram(); // clear all VRAM
-    GFX_copyPaletteTable((word)DATA_PALETTE_COLOR);
-    GFX_copyPatternTable((word)DATA_PATTERN_COLOR);
+  GFX_initVram(); // clear all VRAM
+  GFX_copyPaletteTable((word)DATA_PALETTE_COLOR);
+  GFX_copyPatternTable((word)DATA_PATTERN_COLOR);
 
-    word y = 0;
-    word c = 1;
+  word y = 0;
+  word c = 1;
 
-    word x;
-    for (x = 0; x < 5; x++)
+  word x;
+  for (x = 0; x < 5; x++)
+  {
+    GFX_printWindowColored(((word)testTiles) + DATA_OFFSET, 4, GFX_WindowPosFromXY(x*4, y), x + 1);
+    GFX_printBGColored(((word)testTiles) + DATA_OFFSET, 4, GFX_BackgroundPosFromXY(x*4, y+2), x + 1);
+  }
+
+  // Any key to quit
+  while (1)
+  {
+    if (HID_FifoAvailable())
     {
-        GFX_printWindowColored(((word)testTiles) + DATA_OFFSET, 4, GFX_WindowPosFromXY(x*4, y), x + 1);
-        GFX_printBGColored(((word)testTiles) + DATA_OFFSET, 4, GFX_BackgroundPosFromXY(x*4, y+2), x + 1);
+      word c = HID_FifoRead();
+      return 'q';
     }
+  }
 
-    // Any key to quit
-    while (1)
-    {
-        if (HID_FifoAvailable())
-        {
-            word c = HID_FifoRead();
-            return 'q';
-        }
-    }
-
-    return 'q';
+  return 'q';
 }
 
 // timer1 interrupt handler

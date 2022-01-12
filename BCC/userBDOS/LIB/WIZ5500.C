@@ -116,39 +116,39 @@
 // Sets SPI3_CS low
 void WizSpiBeginTransfer()
 {
-    asm(
-        "; backup regs\n"
-        "push r1\n"
-        "push r2\n"
+  asm(
+      "; backup regs\n"
+      "push r1\n"
+      "push r2\n"
 
-        "load32 0xC02732 r2       ; r2 = 0xC02732\n"
+      "load32 0xC02732 r2       ; r2 = 0xC02732\n"
 
-        "load 0 r1                          ; r1 = 0 (enable)\n"
-        "write 0 r2 r1                      ; write to SPI3_CS\n"
+      "load 0 r1                          ; r1 = 0 (enable)\n"
+      "write 0 r2 r1                      ; write to SPI3_CS\n"
 
-        "; restore regs\n"
-        "pop r2\n"
-        "pop r1\n"
-        );
+      "; restore regs\n"
+      "pop r2\n"
+      "pop r1\n"
+      );
 }
 
 // Sets SPI3_CS high
 void WizSpiEndTransfer()
 {
-    asm(
-        "; backup regs\n"
-        "push r1\n"
-        "push r2\n"
+  asm(
+      "; backup regs\n"
+      "push r1\n"
+      "push r2\n"
 
-        "load32 0xC02732 r2       ; r2 = 0xC02732\n"
+      "load32 0xC02732 r2       ; r2 = 0xC02732\n"
 
-        "load 1 r1                          ; r1 = 1 (disable)\n"
-        "write 0 r2 r1                      ; write to SPI3_CS\n"
+      "load 1 r1                          ; r1 = 1 (disable)\n"
+      "write 0 r2 r1                      ; write to SPI3_CS\n"
 
-        "; restore regs\n"
-        "pop r2\n"
-        "pop r1\n"
-        );
+      "; restore regs\n"
+      "pop r2\n"
+      "pop r1\n"
+      );
 }
 
 // write dataByte and return read value
@@ -156,15 +156,15 @@ void WizSpiEndTransfer()
 // Writes byte over SPI3 to W5500
 word WizSpiTransfer(word dataByte)
 {
-    word retval = 0;
-    asm(
-        "load32 0xC02731 r2          ; r2 = 0xC02731\n"
-        "write 0 r2 r4                      ; write r4 over SPI3\n"
-        "read 0 r2 r2                       ; read return value\n"
-        "write -4 r14 r2                    ; write to stack to return\n"
-        );
+  word retval = 0;
+  asm(
+      "load32 0xC02731 r2          ; r2 = 0xC02731\n"
+      "write 0 r2 r4                      ; write r4 over SPI3\n"
+      "read 0 r2 r2                       ; read return value\n"
+      "write -4 r14 r2                    ; write to stack to return\n"
+      );
 
-    return retval;
+  return retval;
 }
 
 

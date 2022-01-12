@@ -29,11 +29,11 @@ Copies n words from src to dest
 */
 void memcpy(word* dest, word* src, word n)
 {
-    word i;
-    for (i = 0; i < n; i++)
-    {
-        dest[i] = src[i];
-    }
+  word i;
+  for (i = 0; i < n; i++)
+  {
+    dest[i] = src[i];
+  }
 }
 
 char* memmove(char* dest, const char* src, word n)
@@ -75,33 +75,33 @@ Returns 1 if similar, 0 otherwise
 */
 word memcmp(word* a, word* b, word n)
 {
-    word i;
-    for (i = 0; i < n; i++)
+  word i;
+  for (i = 0; i < n; i++)
+  {
+    if (a[i] != b[i])
     {
-        if (a[i] != b[i])
-        {
-            return 0;
-        }
+      return 0;
     }
+  }
 
-    return 1;
+  return 1;
 }
 
 
 // Returns length of string
 word strlen(char* str)
 {
-    word retval = 0;
-    char chr = *str;            // first character of str
+  word retval = 0;
+  char chr = *str;      // first character of str
 
-    while (chr != 0)            // continue until null value
-    {
-        retval += 1;
-        str++;                  // go to next character address
-        chr = *str;             // get character from address
-    }
+  while (chr != 0)      // continue until null value
+  {
+    retval += 1;
+    str++;          // go to next character address
+    chr = *str;       // get character from address
+  }
 
-    return retval;
+  return retval;
 }
 
 
@@ -111,18 +111,18 @@ Returns number of characters copied
 */
 word strcpy(char* dest, char* src)
 {
-    // write to buffer
-    word i = 0;
-    while (src[i] != 0)
-    {
-        dest[i] = src[i];
-        i++;
-    }
+  // write to buffer
+  word i = 0;
+  while (src[i] != 0)
+  {
+    dest[i] = src[i];
+    i++;
+  }
 
-    // terminate
-    dest[i] = 0;
+  // terminate
+  dest[i] = 0;
 
-    return i;
+  return i;
 }
 
 
@@ -132,13 +132,13 @@ Returns number of characters appended
 */
 word strcat(char* dest, char* src)
 {
-    // move to end of destination
-    word endOfDest = 0;
-    while (dest[endOfDest] != 0)
-        endOfDest++;
+  // move to end of destination
+  word endOfDest = 0;
+  while (dest[endOfDest] != 0)
+    endOfDest++;
 
-    // copy to end of destination
-    return strcpy(dest+endOfDest, src);
+  // copy to end of destination
+  return strcpy(dest+endOfDest, src);
 }
 
 
@@ -148,21 +148,21 @@ Returns 1 if similar, 0 otherwise
 */
 word strcmp(char* a, char* b)
 {
-    if (strlen(a) != strlen(b))
-        return 0;
+  if (strlen(a) != strlen(b))
+    return 0;
 
 
-    word i = 0;
-    while (a[i] != 0)
+  word i = 0;
+  while (a[i] != 0)
+  {
+    if (a[i] != b[i])
     {
-        if (a[i] != b[i])
-        {
-            return 0;
-        }
-        i++;
+      return 0;
     }
+    i++;
+  }
 
-    return 1;
+  return 1;
 }
 
 
@@ -173,16 +173,16 @@ s is the output buffer
 */
 word itoar(word n, char *s)
 {
-    word digit = MATH_modU(n, 10);
-    word i = 0;
+  word digit = MATH_modU(n, 10);
+  word i = 0;
 
-    n = MATH_divU(n,10);
-    if ((unsigned int) n > 0)
-        i += itoar(n, s);
+  n = MATH_divU(n,10);
+  if ((unsigned int) n > 0)
+    i += itoar(n, s);
 
-    s[i++] = digit + '0';
+  s[i++] = digit + '0';
 
-    return i;
+  return i;
 }
 
 
@@ -194,11 +194,11 @@ Uses recursion, division and mod to compute.
 */
 void itoa(word n, char *s)
 {
-    // compute and fill the buffer
-    word i = itoar(n, s);
+  // compute and fill the buffer
+  word i = itoar(n, s);
 
-    // end with terminator
-    s[i] = 0;
+  // end with terminator
+  s[i] = 0;
 } 
 
 
@@ -210,25 +210,25 @@ s is the output buffer
 */
 word itoahr(word n, char *s)
 {
-    word digit = MATH_modU(n, 16);
-    word i = 0;
+  word digit = MATH_modU(n, 16);
+  word i = 0;
 
-    n = MATH_divU(n,16);
-    if ((unsigned int) n > 0)
-        i += itoahr(n, s);
+  n = MATH_divU(n,16);
+  if ((unsigned int) n > 0)
+    i += itoahr(n, s);
 
-    char c;
-    if (digit > 9)
-    {
-        c = digit + 'A' - 10;
-    }
-    else
-    {
-        c = digit + '0';
-    }
-    s[i++] = c;
+  char c;
+  if (digit > 9)
+  {
+    c = digit + 'A' - 10;
+  }
+  else
+  {
+    c = digit + '0';
+  }
+  s[i++] = c;
 
-    return i;
+  return i;
 }
 
 
@@ -241,55 +241,16 @@ Uses recursion, division and mod to compute.
 */
 void itoah(word n, char *s)
 {
-    // add prefix
-    s[0] = '0';
-    s[1] = 'x';
-    s+=2;
+  // add prefix
+  s[0] = '0';
+  s[1] = 'x';
+  s+=2;
 
-    // compute and fill the buffer
-    word i = itoahr(n, s);
+  // compute and fill the buffer
+  word i = itoahr(n, s);
 
-    // end with terminator
-    s[i] = 0;
-} 
-
-
-/*
-Converts string into int.
-Assumes the string is valid.
-*/
-word strToInt(char* str)
-{
-    word retval = 0;
-    word multiplier = 1;
-    word i = 0;
-    while (str[i] != 0)
-    {
-        i++;
-    }
-    if (i == 0)
-        return 0;
-
-    i--;
-
-    while (i > 0)
-    {
-        // Return 0 if not a digit
-        if (str[i] < '0' || str[i] > '9')
-            return 0;
-        
-        word currentDigit = str[i] - '0';
-        word toAdd = multiplier * currentDigit;
-        retval += toAdd;
-        multiplier = multiplier * 10;
-        i--;
-    }
-
-    word currentDigit = str[i] - '0';
-    word toAdd = multiplier * currentDigit;
-    retval += toAdd;
-
-    return retval;
+  // end with terminator
+  s[i] = 0;
 }
 
 
@@ -321,12 +282,51 @@ word isalnum(char c)
 
 
 /*
+Converts string into int.
+Assumes the string is valid.
+*/
+word strToInt(char* str)
+{
+  word retval = 0;
+  word multiplier = 1;
+  word i = 0;
+  while (str[i] != 0)
+  {
+    i++;
+  }
+  if (i == 0)
+    return 0;
+
+  i--;
+
+  while (i > 0)
+  {
+    // Return 0 if not a digit
+    if (str[i] < '0' || str[i] > '9')
+      return 0;
+    
+    word currentDigit = str[i] - '0';
+    word toAdd = multiplier * currentDigit;
+    retval += toAdd;
+    multiplier = multiplier * 10;
+    i--;
+  }
+
+  word currentDigit = str[i] - '0';
+  word toAdd = multiplier * currentDigit;
+  retval += toAdd;
+
+  return retval;
+}
+
+
+/*
 Prints a single char c by writing it to UART_TX_ADDR
 */
 void uprintc(char c) 
 {
-    word *p = (word *)UART_TX_ADDR; // address of UART TX
-    *p = (word)c;                   // write char over UART
+  word *p = (word *)UART_TX_ADDR; // address of UART TX
+  *p = (word)c;           // write char over UART
 }
 
 
@@ -338,15 +338,15 @@ Does not send a newline afterwards.
 */
 void uprint(char* str) 
 {
-    word *p = (word *)UART_TX_ADDR; // address of UART TX
-    char chr = *str;                // first character of str
+  word *p = (word *)UART_TX_ADDR; // address of UART TX
+  char chr = *str;        // first character of str
 
-    while (chr != 0)                // continue until null value
-    {
-        *p = (word)chr;             // write char over UART
-        str++;                      // go to next character address
-        chr = *str;                 // get character from address
-    }
+  while (chr != 0)        // continue until null value
+  {
+    *p = (word)chr;       // write char over UART
+    str++;            // go to next character address
+    chr = *str;         // get character from address
+  }
 }
 
 
@@ -356,8 +356,8 @@ except it sends a newline afterwards.
 */
 void uprintln(char* str) 
 {
-    uprint(str);
-    uprintc('\n');
+  uprint(str);
+  uprintc('\n');
 }
 
 
@@ -366,10 +366,10 @@ Prints decimal integer over UART
 */
 void uprintDec(word i) 
 {
-    char buffer[11];
-    itoa(i, buffer);
-    uprint(buffer);
-    uprintc('\n');
+  char buffer[11];
+  itoa(i, buffer);
+  uprint(buffer);
+  uprintc('\n');
 }
 
 /*
@@ -377,10 +377,10 @@ Prints hex integer over UART
 */
 void uprintHex(word i) 
 {
-    char buffer[11];
-    itoah(i, buffer);
-    uprint(buffer);
-    uprintc('\n');
+  char buffer[11];
+  itoah(i, buffer);
+  uprint(buffer);
+  uprintc('\n');
 }
 
 
@@ -389,10 +389,10 @@ Prints decimal integer over UART, with newline
 */
 void uprintlnDec(word i) 
 {
-    char buffer[11];
-    itoa(i, buffer);
-    uprint(buffer);
-    uprintc('\n');
+  char buffer[11];
+  itoa(i, buffer);
+  uprint(buffer);
+  uprintc('\n');
 }
 
 /*
@@ -400,10 +400,10 @@ Prints hex integer over UART, with newline
 */
 void uprintlnHex(word i) 
 {
-    char buffer[11];
-    itoah(i, buffer);
-    uprint(buffer);
-    uprintc('\n');
+  char buffer[11];
+  itoah(i, buffer);
+  uprint(buffer);
+  uprintc('\n');
 }
 
 
@@ -411,37 +411,37 @@ void uprintlnHex(word i)
 // blocking.
 // requires int1() to set timer1Value to 1:
 /*
-    timer1Value = 1; // notify ending of timer1
+  timer1Value = 1; // notify ending of timer1
 */
 void delay(word ms)
 {
 
-    // clear result
-    timer1Value = 0;
+  // clear result
+  timer1Value = 0;
 
-    // set timer
-    word *p = (word *) TIMER1_VAL;
-    *p = ms;
-    // start timer
-    word *q = (word *) TIMER1_CTRL;
-    *q = 1;
+  // set timer
+  word *p = (word *) TIMER1_VAL;
+  *p = ms;
+  // start timer
+  word *q = (word *) TIMER1_CTRL;
+  *q = 1;
 
-    // wait until timer done
-    while (timer1Value == 0);
+  // wait until timer done
+  while (timer1Value == 0);
 }
 
 
 // Returns interrupt ID by using the readintid asm instruction
 word getIntID()
 {
-    word retval = 0;
+  word retval = 0;
 
-    asm(
-        "readintid r2    ;reads interrupt id to r2\n"
-        "write -4 r14 r2 ;write to stack to return\n"
-        );
+  asm(
+    "readintid r2  ;reads interrupt id to r2\n"
+    "write -4 r14 r2 ;write to stack to return\n"
+    );
 
-    return retval;
+  return retval;
 }
 
 
@@ -449,24 +449,24 @@ word getIntID()
 // Converts char c to uppercase if possible
 char toUpper(char c)
 {
-    if (c>96 && c<123) 
-        c = c ^ 0x20;
+  if (c>96 && c<123) 
+    c = c ^ 0x20;
 
-    return c;
+  return c;
 }
 
 
 // Converts string str to uppercase if possible
 void strToUpper(char* str) 
 {
-    char chr = *str;            // first character of str
+  char chr = *str;      // first character of str
 
-    while (chr != 0)            // continue until null value
-    {
-        *str = toUpper(chr);    // uppercase char
-        str++;                  // go to next character address
-        chr = *str;             // get character from address
-    }
+  while (chr != 0)      // continue until null value
+  {
+    *str = toUpper(chr);  // uppercase char
+    str++;          // go to next character address
+    chr = *str;       // get character from address
+  }
 }
 
 
@@ -477,15 +477,15 @@ Values are printed over UART
 */
 void hexdump(char* addr, word len)
 {
-    char buf[16];
-    word i;
-    for (i = 0; i < len; i++)
-    {
-        // newline every 8 words
-        if (i != 0 && MATH_modU(i, 8) == 0)
-            uprintc('\n');
-        itoah(addr[i], buf);
-        uprint(buf);
-        uprintc(' ');
-    }
+  char buf[16];
+  word i;
+  for (i = 0; i < len; i++)
+  {
+    // newline every 8 words
+    if (i != 0 && MATH_modU(i, 8) == 0)
+      uprintc('\n');
+    itoah(addr[i], buf);
+    uprint(buf);
+    uprintc(' ');
+  }
 }

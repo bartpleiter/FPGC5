@@ -23,65 +23,65 @@ word CH376CurrentlyOpened = 0; // index in fopenList which is currently opened o
 // append is not an option for now
 word fopen(const char* fname, const word write)
 {
-    if (strlen(fname) >= FOPEN_FILENAME_LIMIT)
+  if (strlen(fname) >= FOPEN_FILENAME_LIMIT)
+  {
+    BDOS_PrintConsole("E: Path too large\n");
+    return 0;
+  }
+
+  if (fname[0] != '/')
+  {
+    BDOS_PrintConsole("E: Filename should be a full path\n");
+    return 0;
+  }
+
+  // conver to uppercase
+  strToUpper(fname);
+
+  // if write, create the file
+  if (write)
+  {
+    FS_close(); // to be sure
+    CH376CurrentlyOpened = 0;
+
+    // if current path is correct (can be file or directory)
+    if (FS_sendFullPath(fname) == FS_ANSW_USB_INT_SUCCESS)
     {
-        BDOS_PrintConsole("E: Path too large\n");
+      // create the file
+      
+      if (FS_createFile() == FS_ANSW_USB_INT_SUCCESS)
+      {
+        //BDOS_PrintConsole("File created\n");
+      }
+      else
+      {
+        BDOS_PrintConsole("E: Could not create file\n");
         return 0;
+      }
     }
-
-    if (fname[0] != '/')
+    else
     {
-        BDOS_PrintConsole("E: Filename should be a full path\n");
-        return 0;
+      BDOS_PrintConsole("E: Invalid path\n");
+      return 0;
     }
+  }
 
-    // conver to uppercase
-    strToUpper(fname);
-
-    // if write, create the file
-    if (write)
+  word i = 1; // skip index 0
+  while (i < FOPEN_MAX_FILES)
+  {
+    if (fopenCurrentlyOpen[i] == 0)
     {
-        FS_close(); // to be sure
-        CH376CurrentlyOpened = 0;
-
-        // if current path is correct (can be file or directory)
-        if (FS_sendFullPath(fname) == FS_ANSW_USB_INT_SUCCESS)
-        {
-            // create the file
-            
-            if (FS_createFile() == FS_ANSW_USB_INT_SUCCESS)
-            {
-                //BDOS_PrintConsole("File created\n");
-            }
-            else
-            {
-                BDOS_PrintConsole("E: Could not create file\n");
-                return 0;
-            }
-        }
-        else
-        {
-            BDOS_PrintConsole("E: Invalid path\n");
-            return 0;
-        }
+      // found a free spot
+      fopenCurrentlyOpen[i] = 1;
+      fopenCursors[i] = 0;
+      // write filename
+      strcpy(fopenList[i], fname);
+      return i; // return index
     }
-
-    word i = 1; // skip index 0
-    while (i < FOPEN_MAX_FILES)
-    {
-        if (fopenCurrentlyOpen[i] == 0)
-        {
-            // found a free spot
-            fopenCurrentlyOpen[i] = 1;
-            fopenCursors[i] = 0;
-            // write filename
-            strcpy(fopenList[i], fname);
-            return i; // return index
-        }
-        i++;
-    }
-        BDOS_PrintConsole("E: The maximum number of files are already opened. Forgot to close some files?\n");
-        return 0;
+    i++;
+  }
+    BDOS_PrintConsole("E: The maximum number of files are already opened. Forgot to close some files?\n");
+    return 0;
 }
 
 
@@ -89,13 +89,13 @@ word fopen(const char* fname, const word write)
 // also closes the file on CH376 if it is currently open there as well
 void fclose(word i)
 {
-    if (CH376CurrentlyOpened == i)
-    {
-        FS_close(); // to be sure
-        CH376CurrentlyOpened = 0;
-    }
-    fopenCurrentlyOpen[i] = 0;
-    fopenList[i][0] = 0; // to be sure
+  if (CH376CurrentlyOpened == i)
+  {
+    FS_close(); // to be sure
+    CH376CurrentlyOpened = 0;
+  }
+  fopenCurrentlyOpen[i] = 0;
+  fopenList[i][0] = 0; // to be sure
 }
 
 
@@ -103,61 +103,61 @@ void fclose(word i)
 // increments the cursor
 word fgetc(word i)
 {
-    // check if file is open
-    if (fopenCurrentlyOpen[i] == 0)
+  // check if file is open
+  if (fopenCurrentlyOpen[i] == 0)
+  {
+    BDOS_PrintConsole("fgetc: File is not open\n");
+    return EOF;
+  }
+
+  // open on CH376 if not open already
+  if (CH376CurrentlyOpened != i)
+  {
+    // close last one first, unless there is no last
+    if (CH376CurrentlyOpened != 0)
     {
-        BDOS_PrintConsole("fgetc: File is not open\n");
+      //BDOS_PrintConsole("fgetc: Closed previous file\n");
+      FS_close();
+    }
+
+
+    // if the resulting path is correct (can be file or directory)
+    if (FS_sendFullPath(fopenList[i]) == FS_ANSW_USB_INT_SUCCESS)
+    {
+
+      // if we can successfully open the file (not directory)
+      if (FS_open() == FS_ANSW_USB_INT_SUCCESS)
+      {
+        CH376CurrentlyOpened = i;
+        // set cursor to last position
+        FS_setCursor(fopenCursors[i]);
+        //BDOS_PrintConsole("fgetc: File opened on CH376\n");
+      }
+      else
+      {
+        BDOS_PrintConsole("E: Could not open file\n");
         return EOF;
+      }
     }
-
-    // open on CH376 if not open already
-    if (CH376CurrentlyOpened != i)
+    else
     {
-        // close last one first, unless there is no last
-        if (CH376CurrentlyOpened != 0)
-        {
-            //BDOS_PrintConsole("fgetc: Closed previous file\n");
-            FS_close();
-        }
-
-
-        // if the resulting path is correct (can be file or directory)
-        if (FS_sendFullPath(fopenList[i]) == FS_ANSW_USB_INT_SUCCESS)
-        {
-
-            // if we can successfully open the file (not directory)
-            if (FS_open() == FS_ANSW_USB_INT_SUCCESS)
-            {
-                CH376CurrentlyOpened = i;
-                // set cursor to last position
-                FS_setCursor(fopenCursors[i]);
-                //BDOS_PrintConsole("fgetc: File opened on CH376\n");
-            }
-            else
-            {
-                BDOS_PrintConsole("E: Could not open file\n");
-                return EOF;
-            }
-        }
-        else
-        {
-            BDOS_PrintConsole("E: Invalid path\n");
-            return EOF;
-        }
+      BDOS_PrintConsole("E: Invalid path\n");
+      return EOF;
     }
+  }
 
-    // read char and increment cursor locally
-    char gotchar = 0;
-    word retval = FS_readFile(&gotchar, 1, 0);
-    if (retval != FS_ANSW_USB_INT_SUCCESS)
-    {
-        // assume EOF
-        return EOF;
-    }
+  // read char and increment cursor locally
+  char gotchar = 0;
+  word retval = FS_readFile(&gotchar, 1, 0);
+  if (retval != FS_ANSW_USB_INT_SUCCESS)
+  {
+    // assume EOF
+    return EOF;
+  }
 
-    fopenCursors[i]++;
+  fopenCursors[i]++;
 
-    return gotchar;
+  return gotchar;
 }
 
 
@@ -167,94 +167,94 @@ word fgetc(word i)
 // otherwise returns 1
 word fputs(word i, char* s)
 {
-    // check if file is open
-    if (fopenCurrentlyOpen[i] == 0)
+  // check if file is open
+  if (fopenCurrentlyOpen[i] == 0)
+  {
+    BDOS_PrintConsole("fputs: File is not open\n");
+    return EOF;
+  }
+
+  // open on CH376 if not open already
+  if (CH376CurrentlyOpened != i)
+  {
+    // close last one first, unless there is no last
+    if (CH376CurrentlyOpened != 0)
     {
-        BDOS_PrintConsole("fputs: File is not open\n");
+      //BDOS_PrintConsole("fputs: Closed previous file\n");
+      FS_close();
+    }
+
+
+    // if the resulting path is correct (can be file or directory)
+    if (FS_sendFullPath(fopenList[i]) == FS_ANSW_USB_INT_SUCCESS)
+    {
+
+      // if we can successfully open the file (not directory)
+      if (FS_open() == FS_ANSW_USB_INT_SUCCESS)
+      {
+        CH376CurrentlyOpened = i;
+        // set cursor to last position
+        FS_setCursor(fopenCursors[i]);
+        //BDOS_PrintConsole("fputs: File opened on CH376\n");
+      }
+      else
+      {
+        BDOS_PrintConsole("E: Could not open file\n");
         return EOF;
+      }
     }
-
-    // open on CH376 if not open already
-    if (CH376CurrentlyOpened != i)
+    else
     {
-        // close last one first, unless there is no last
-        if (CH376CurrentlyOpened != 0)
-        {
-            //BDOS_PrintConsole("fputs: Closed previous file\n");
-            FS_close();
-        }
-
-
-        // if the resulting path is correct (can be file or directory)
-        if (FS_sendFullPath(fopenList[i]) == FS_ANSW_USB_INT_SUCCESS)
-        {
-
-            // if we can successfully open the file (not directory)
-            if (FS_open() == FS_ANSW_USB_INT_SUCCESS)
-            {
-                CH376CurrentlyOpened = i;
-                // set cursor to last position
-                FS_setCursor(fopenCursors[i]);
-                //BDOS_PrintConsole("fputs: File opened on CH376\n");
-            }
-            else
-            {
-                BDOS_PrintConsole("E: Could not open file\n");
-                return EOF;
-            }
-        }
-        else
-        {
-            BDOS_PrintConsole("E: Invalid path\n");
-            return EOF;
-        }
+      BDOS_PrintConsole("E: Invalid path\n");
+      return EOF;
     }
+  }
 
-    // write string and increment cursor locally
-    word slen = strlen(s);
-    word retval = FS_writeFile(s, slen);
-    if (retval != FS_ANSW_USB_INT_SUCCESS)
-    {
-        // assume EOF
-        return EOF;
-    }
+  // write string and increment cursor locally
+  word slen = strlen(s);
+  word retval = FS_writeFile(s, slen);
+  if (retval != FS_ANSW_USB_INT_SUCCESS)
+  {
+    // assume EOF
+    return EOF;
+  }
 
-    fopenCursors[i] += slen;
+  fopenCursors[i] += slen;
 
-    return 1;
+  return 1;
 }
 
 
 // fputs, but a single char
 word fputc(word i, char c)
 {
-    char* s = "0";
-    s[0] = c;
-    return fputs(i, s);
+  char* s = "0";
+  s[0] = c;
+  return fputs(i, s);
 }
 
 word printf(char* s)
 {
-    //TODO: do escape character handling
+  //TODO: do escape character handling
 
-    BDOS_PrintConsole(s);
+  BDOS_PrintConsole(s);
 }
 
 word printd(word d)
 {
-    if (d < 0)
-    {
-        BDOS_PrintcConsole('-');
-        BDOS_PrintDecConsole(-d);
-    }
-    else
-    {
-        BDOS_PrintDecConsole(d);
-    }
-    
+  if (d < 0)
+  {
+    BDOS_PrintcConsole('-');
+    BDOS_PrintDecConsole(-d);
+  }
+  else
+  {
+    BDOS_PrintDecConsole(d);
+  }
+  
 }
 
 void exit(word i)
 {
-    asm("jump Return_BDOS\n");
+  asm("jump Return_BDOS\n");
 }
