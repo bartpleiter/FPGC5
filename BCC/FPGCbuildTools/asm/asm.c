@@ -20,6 +20,8 @@
 
 #define word char
 
+#define STDIO_FBUF_ADDR 0x440000
+
 #include "lib/math.c"
 #include "lib/sys.c"
 #include "lib/stdlib.c"

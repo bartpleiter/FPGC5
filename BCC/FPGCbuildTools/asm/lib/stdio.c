@@ -12,7 +12,7 @@
 // Buffers for reading
 // Length of buffer always should be less than 65536, since this is the maximum FS_readFile can do in a single call
 #define STDIO_FBUF_LEN 4096
-char inputBuffer[STDIO_FBUF_LEN];
+char *inputBuffer = (char*) STDIO_FBUF_ADDR; //inputBuffer[STDIO_FBUF_LEN];
 word inbufStartPos = 0; // where in the file the buffer starts
 word inbufCursor = 0; // where in the buffer we currently are working
 
