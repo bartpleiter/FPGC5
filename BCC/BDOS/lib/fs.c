@@ -784,6 +784,22 @@ void FS_parseFATdata(word datalen, char* fatBuffer, char* b, word* bufLen)
         (*bufLen)++;
         printLen += FS_parseFATstring(fatBuffer+8, 3, b, bufLen) + 1;
     }
+
+    // check if dir
+    word attributes = fatBuffer[11];
+    word isDir = 0;
+    if (attributes & 0x10)
+    {
+        isDir = 1;
+    }
+
+    // stop if dir
+    if (isDir)
+    {
+        b[*bufLen] = '\n';
+        (*bufLen)++;
+        return;
+    }
     
     // append with spaces until 16th char
     while (printLen < 16)
@@ -838,6 +854,8 @@ void FS_readFATdata(char* b, word* bufLen)
 // returns FS_ANSW_USB_INT_SUCCESS if successful
 // writes parsed result to address b
 // result is terminated with a \0
+// TODO: use two 2d arrays for dirs and files,
+//  then sort afterwards and write to buffer b
 word FS_listDir(char* f, char* b)
 {
     word bufLen = 0;

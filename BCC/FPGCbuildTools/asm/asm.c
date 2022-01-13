@@ -22,7 +22,6 @@
 
 #include "lib/math.c"
 #include "lib/sys.c"
-#include "lib/gfx.c"
 #include "lib/stdlib.c"
 #include "lib/fs.c"
 #include "lib/stdio.c"
@@ -34,6 +33,9 @@
 #define OUTFILE_PASS1_ADDR 0x580000
 #define OUTFILE_PASS2_ADDR 0x600000
 
+#define LABELLISTLINENR_ADDR 0x65F000
+#define LABELLIST_ADDR 0x660000
+
 #define LINEBUFFER_ADDR 0x4C0000
 char infilename[96];
 char *lineBuffer = (char*) LINEBUFFER_ADDR;
@@ -43,8 +45,13 @@ word globalLineCursor = 0; // to keep track of the line number for labels
 
 #define LABELLIST_SIZE 2048 // expecting a lot of labels! as of writing, BDOS has ~1000 TODO: 2048 when done
 #define LABEL_NAME_SIZE 32 // max length of a label (therefore of a function name)
-char labelListName[LABELLIST_SIZE][LABEL_NAME_SIZE];
-word labelListLineNumber[LABELLIST_SIZE]; // value should be the line number of the corresponding label name
+
+char (*labelListName)[LABEL_NAME_SIZE] = (char (*)[LABEL_NAME_SIZE]) LABELLIST_ADDR; // 2d array containing all lines of the input file
+//char labelListName[LABELLIST_SIZE][LABEL_NAME_SIZE]; // old version, makes binary too large
+
+word* labelListLineNumber = (word*) LABELLISTLINENR_ADDR;
+//word labelListLineNumber[LABELLIST_SIZE]; // value should be the line number of the corresponding label name
+
 word labelListIndex = 0; // current index in the label list
 word prevLinesWereLabels = 0; // allows the current line to know how many labels are pointing to it
 
@@ -293,6 +300,9 @@ void Pass1StoreLabel()
 
     // store label name minus the :
     memcpy(labelListName[labelListIndex], lineBuffer, labelStrLen-1);
+    // terminate
+    labelListName[labelListIndex][labelStrLen-1] = 0;
+
     labelListIndex++;
     // labelListLineNumber will be set when the next instruction is found
 
@@ -533,16 +543,6 @@ void doPass1()
 
     outfilePass1Addr[*(&filePass1Cursor)] = 0; // terminate
 
-    /* debug the labels
-    word x;
-    for (x = 0; x < labelListIndex; x++)
-    {
-        BDOS_PrintConsole(labelListName[x]);
-        BDOS_PrintConsole(" : ");
-        printd(labelListLineNumber[x]);
-        BDOS_PrintConsole("\n");
-    }
-    */
 }
 
 #include "pass2.c"
@@ -859,78 +859,8 @@ int main()
     word pass2Length = doPass2();
 
     BDOS_PrintConsole("Writing to file\n");
-    
 
-    /* Print binary list
-    char* outfilePass2Addr = (char*) OUTFILE_PASS2_ADDR;
-    word i;
-    word j = 0;
-    word fullWord = 0;
-    for (i = 0; i < pass2Length; i++)
-    {
-        if (j == 3)
-        {
-            fullWord += outfilePass2Addr[i];
-            BDOS_PrintLnBinConsole(fullWord);
-            fullWord = 0;
-            j = 0;
-        }
-        else
-        {
-            fullWord += (outfilePass2Addr[i] << (24 - (8 * j)));
-            j++;
-        }
-    }
-    */
-
-    /*
-    // Binary list to file
-    if (!fopenWrite(outfilename))
-    {
-        BDOS_PrintConsole("Could not open outfile\n");
-        return 0;
-    }
-    char* outfilePass2Addr = (char*) OUTFILE_PASS2_ADDR;
-    word i;
-    word j = 0;
-    word fullWord = 0;
-    char tmpBuf[33];
-    for (i = 0; i < pass2Length; i++)
-    {
-        if (j == 3)
-        {
-            fullWord += outfilePass2Addr[i];
-            
-            itoab(fullWord, tmpBuf);
-            FS_writeFile(tmpBuf, strlen(tmpBuf));
-            FS_writeFile("\n", 1);
-            fullWord = 0;
-            j = 0;
-        }
-        else
-        {
-            fullWord += (outfilePass2Addr[i] << (24 - (8 * j)));
-            j++;
-        }
-    }
-    fclose();
-    */
-    
-
-    /* print pass 1 to file
-    // write to output file
-    if (!fopenWrite("/ASM.OUT"))
-    {
-        BDOS_PrintConsole("Could not open outfile\n");
-        return 0;
-    }
-    char* outfilePass1Addr = (char*) OUTFILE_PASS1_ADDR;
-    fputs(outfilePass1Addr);
-    fclose();
-    */
-
-    // write binary to file
-    // write to output file
+    // write binary to output file
     if (!fopenWrite(outfilename))
     {
         BDOS_PrintConsole("Could not open outfile\n");

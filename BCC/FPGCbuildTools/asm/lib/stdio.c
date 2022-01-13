@@ -162,29 +162,6 @@ word fgetc()
     return gotchar;
 }
 
-word fputs(char* outbufAddr)
-{
-    word bytesWritten = 0;
-
-    word outbufCursor = strlen(outbufAddr);
-
-    // loop until all bytes are sent
-    while (bytesWritten != outbufCursor)
-    {
-        word partToSend = outbufCursor - bytesWritten;
-        // send in parts of 0xFFFF
-        if (partToSend > 0xFFFF)
-            partToSend = 0xFFFF;
-
-        // write away
-        if (FS_writeFile((outbufAddr +bytesWritten), partToSend) != FS_ANSW_USB_INT_SUCCESS)
-            BDOS_PrintConsole("write error\n");
-
-        // Update the amount of bytes sent
-        bytesWritten += partToSend;
-    }
-}
-
 word fputData(char* outbufAddr, word lenOfData)
 {
     word bytesWritten = 0;
@@ -206,23 +183,45 @@ word fputData(char* outbufAddr, word lenOfData)
     }
 }
 
-word printf(char* s)
+
+/*
+Prints a single char c by writing it to UART_TX_ADDR
+*/
+void uprintc(char c) 
 {
-    BDOS_PrintConsole(s);
+  word *p = (word *)UART_TX_ADDR; // address of UART TX
+  *p = (word)c;           // write char over UART
 }
 
-word printd(word d)
+
+/*
+Sends each character from str over UART
+by writing them to UART_TX_ADDR
+until a 0 value is found.
+Does not send a newline afterwards.
+*/
+void uprint(char* str) 
 {
-    if (d < 0)
-    {
-        BDOS_PrintcConsole('-');
-        BDOS_PrintDecConsole(-d);
-    }
-    else
-    {
-        BDOS_PrintDecConsole(d);
-    }
-    
+  word *p = (word *)UART_TX_ADDR; // address of UART TX
+  char chr = *str;        // first character of str
+
+  while (chr != 0)        // continue until null value
+  {
+    *p = (word)chr;       // write char over UART
+    str++;            // go to next character address
+    chr = *str;         // get character from address
+  }
+}
+
+
+/*
+Same as uprint(char* str),
+except it sends a newline afterwards.
+*/
+void uprintln(char* str) 
+{
+  uprint(str);
+  uprintc('\n');
 }
 
 void exit(word i)

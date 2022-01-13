@@ -59,20 +59,6 @@ word* syscall(word ID)
 }
 
 
-word HID_FifoAvailable()
-{
-    char* p = syscall(1);
-    return p[0];
-}
-
-
-word HID_FifoRead()
-{
-    char* p = syscall(2);
-    return p[0];
-}
-
-
 void BDOS_PrintcConsole(char c)
 {
     char* p = (char*) SYSCALL_RETVAL_ADDR;
@@ -92,36 +78,6 @@ void BDOS_PrintConsole(char* str)
         str++;                  // go to next character address
         chr = *str;             // get character from address
     }
-}
-
-void BDOS_PrintlnConsole(char* str)
-{
-    BDOS_PrintConsole(str);
-    BDOS_PrintcConsole('\n');
-}
-
-void BDOS_PrintDecConsole(word i)
-{
-    char buffer[11];
-    itoa(i, buffer);
-    BDOS_PrintConsole(buffer);
-}
-
-
-void BDOS_PrintHexConsole(word i)
-{
-    char buffer[11];
-    itoah(i, buffer);
-    BDOS_PrintConsole(buffer);
-}
-
-
-void BDOS_PrintLnBinConsole(word i)
-{   
-    char buffer[33];
-    itoab(i, buffer);
-    BDOS_PrintConsole(buffer);
-    BDOS_PrintcConsole('\n');
 }
 
 
