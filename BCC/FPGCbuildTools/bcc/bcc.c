@@ -49,8 +49,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Making most functions static helps with code optimization,
 // use that to further reduce compiler's code size on RetroBSD.
-#define STATIC
-
 #define word char
 
 #define NO_EXTRAS
@@ -83,10 +81,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EXIT_FAILURE 1
 
 
+#define MACROTABLE_ADDR 0x440000
+#define IDENTTABLE_ADDR 0x450000
+#define SYNSTACK0_ADDR 0x460000
+#define SYNSTACK1_ADDR 0x470000
+#define INPUTBUFFER_ADDR 0x480000
+#define FILENAMES_ADDR 0x490000
 
 #include "lib/math.c"
 #include "lib/sys.c"
-#include "lib/gfx.c"
+//#include "lib/gfx.c"
 #include "lib/stdlib.c"
 #include "lib/fs.c"
 #include "lib/stdio.c"
@@ -251,159 +255,94 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 // all public prototypes
-STATIC
 unsigned truncUint(unsigned);
-STATIC
 word truncInt(word);
 
-STATIC
 word GetToken(void);
-STATIC
 char* GetTokenName(word token);
 
 
-STATIC
 void DumpMacroTable(void);
 
 
-STATIC
 word AddIdent(char* name);
-STATIC
 word FindIdent(char* name);
 
-STATIC
 void DumpIdentTable(void);
 
-STATIC
 char* lab2str(char* p, word n);
 
-STATIC
 void GenInit(void);
-STATIC
 void GenFin(void);
-STATIC
 void GenInitFinalize(void);
-STATIC
 void GenStartCommentLine(void);
-STATIC
 void GenWordAlignment(word bss);
-STATIC
 void GenLabel(char* Label, word Static);
-STATIC
 void GenNumLabel(word Label);
-STATIC
 void GenZeroData(unsigned Size, word bss);
-STATIC
 void GenIntData(word Size, word Val);
-STATIC
 void GenStartAsciiString(void);
-STATIC
 void GenAddrData(word Size, char* Label, word ofs);
 
-STATIC
 void GenJumpUncond(word Label);
-STATIC
 void GenJumpIfZero(word Label);
-STATIC
 void GenJumpIfNotZero(word Label);
-STATIC
 void GenJumpIfEqual(word val, word Label);
 
-STATIC
 void GenFxnProlog(void);
-STATIC
 void GenFxnEpilog(void);
 void GenIsrProlog(void);
 void GenIsrEpilog(void);
 
-STATIC
 word GenMaxLocalsSize(void);
 
-STATIC
 void GenDumpChar(word ch);
-STATIC
 void GenExpr(void);
 
-STATIC
 void PushSyntax(word t);
-STATIC
 void PushSyntax2(word t, word v);
 
 
-STATIC
 void DumpSynDecls(void);
 
 
-STATIC
 void push2(word v, word v2);
-STATIC
 void ins2(word pos, word v, word v2);
-STATIC
 void ins(word pos, word v);
-STATIC
 void del(word pos, word cnt);
 
-STATIC
 word TokenStartsDeclaration(word t, word params);
-STATIC
 word ParseDecl(word tok, unsigned structInfo[4], word cast, word label);
 
-STATIC
 void ShiftChar(void);
-STATIC
 word puts2(char*);
-STATIC
 word printf2(char*);
 
-STATIC
 void error(char* strToPrint);
-STATIC
 void warning(char* strToPrint);
-STATIC
 void errorFile(char* n);
-STATIC
 void errorFileName(void);
-STATIC
 void errorInternal(word n);
-STATIC
 void errorChrStr(void);
-STATIC
 void errorStrLen(void);
-STATIC
 void errorUnexpectedToken(word tok);
-STATIC
 void errorDirective(void);
-STATIC
 void errorCtrlOutOfScope(void);
-STATIC
 void errorDecl(void);
-STATIC
 void errorVarSize(void);
-STATIC
 void errorInit(void);
-STATIC
 void errorUnexpectedVoid(void);
-STATIC
 void errorOpType(void);
-STATIC
 void errorNotLvalue(void);
-STATIC
 void errorNotConst(void);
-STATIC
 void errorLongExpr(void);
 
-STATIC
 word FindSymbol(char* s);
-STATIC
 word SymType(word SynPtr);
-STATIC
 word FindTaggedDecl(char* s, word start, word* CurScope);
-STATIC
 word GetDeclSize(word SyntaxPtr, word SizeForDeref);
 
-STATIC
 word ParseExpr(word tok, word* GotUnary, word* ExprTypeSynPtr, word* ConstExpr, word* ConstVal, word option, word option2);
-STATIC
 word GetFxnInfo(word ExprTypeSynPtr, word* MinParams, word* MaxParams, word* ReturnExprTypeSynPtr, word* FirstParamSynPtr);
 
 // all data
@@ -439,7 +378,7 @@ word CharQueueLen = 0;
     exlen char:     length of what the identifier expands into (<= 127)
     ex char[exlen]: what the identifier expands into (ASCII)
 */
-char MacroTable[MAX_MACRO_TABLE_LEN];
+char *MacroTable = (char*) MACROTABLE_ADDR; //[MAX_MACRO_TABLE_LEN];
 word MacroTableLen = 0;
 
 /*
@@ -447,7 +386,7 @@ word MacroTableLen = 0;
     id char[idlen]: string (ASCIIZ)
     idlen char:     string length (<= 127)
 */
-char IdentTable[MAX_IDENT_TABLE_LEN];
+char *IdentTable = (char*) IDENTTABLE_ADDR; //[MAX_IDENT_TABLE_LEN];
 word IdentTableLen = 0;
 word DummyIdent; // corresponds to empty string
 
@@ -465,7 +404,11 @@ word CasesCnt = 0;
 
 // Data structures to support #include
 word FileCnt = 0;
-char FileNames[MAX_INCLUDES][MAX_FILE_NAME_LEN + 1];
+
+char (*FileNames)[MAX_FILE_NAME_LEN + 1] = (char (*)[MAX_FILE_NAME_LEN + 1]) FILENAMES_ADDR;
+//char FileNames[MAX_INCLUDES][MAX_FILE_NAME_LEN + 1];
+
+
 word Files[MAX_INCLUDES]; // FILE
 word OutFile; // FILE
 char CharQueues[MAX_INCLUDES][3];
@@ -514,15 +457,15 @@ char** CurHeaderFooter;
 
 word CharIsSigned = 1;
 word SizeOfWord = 2; // in chars (char can be a multiple of octets); ints and pointers are of word size
-word SizeOfWideChar = 2; // in chars/bytes, 2 or 4
-word WideCharIsSigned = 0; // 0 or 1
-word WideCharType1;
-word WideCharType2; // (un)signed counterpart of WideCharType1
+//word SizeOfWideChar = 2; // in chars/bytes, 2 or 4
+//word WideCharIsSigned = 0; // 0 or 1
+//word WideCharType1;
+//word WideCharType2; // (un)signed counterpart of WideCharType1
 
 // TBD??? implement a function to allocate N labels with overflow checks
 word LabelCnt = 1; // label counter for jumps
 word StructCpyLabel = 0; // label of the function to copy structures/unions
-word StructPushLabel = 0; // label of the function to push structures/unions onto the stack
+//word StructPushLabel = 0; // label of the function to push structures/unions onto the stack
 
 // call stack (from higher to lower addresses):
 //   arg n
@@ -548,8 +491,8 @@ word IsMain; // if inside main()
 word ParseLevel = 0; // Parse level/scope (file:0, fxn:1+)
 word ParamLevel = 0; // 1+ if parsing params, 0 otherwise
 
-unsigned char SyntaxStack0[SYNTAX_STACK_MAX];
-word SyntaxStack1[SYNTAX_STACK_MAX];
+unsigned char *SyntaxStack0 = (unsigned char*) SYNSTACK0_ADDR; //[SYNTAX_STACK_MAX];
+word *SyntaxStack1 = (word*) SYNSTACK1_ADDR; //[SYNTAX_STACK_MAX];
 word SyntaxStackCnt;
 
 
@@ -559,7 +502,6 @@ word SyntaxStackCnt;
 
 // all code
 
-STATIC
 unsigned truncUint(unsigned n)
 {
   // Truncate n to SizeOfWord * 8 bits
@@ -570,7 +512,6 @@ unsigned truncUint(unsigned n)
   return n;
 }
 
-STATIC
 word truncInt(word n)
 {
   // Truncate n to SizeOfWord * 8 bits and then sign-extend it
@@ -590,7 +531,6 @@ word truncInt(word n)
 
 // prep.c code
 
-STATIC
 word FindMacro(char* name)
 {
   word i;
@@ -607,7 +547,6 @@ word FindMacro(char* name)
   return -1;
 }
 
-STATIC
 word UndefineMacro(char* name)
 {
   word i;
@@ -634,7 +573,6 @@ word UndefineMacro(char* name)
   return 0;
 }
 
-STATIC
 void AddMacroIdent(char* name)
 {
   word l = strlen(name);
@@ -656,7 +594,6 @@ void AddMacroIdent(char* name)
   MacroTable[MacroTableLen] = 0; // exlen
 }
 
-STATIC
 void AddMacroExpansionChar(char e)
 {
   if (e == '\0')
@@ -680,17 +617,7 @@ void AddMacroExpansionChar(char e)
   MacroTable[MacroTableLen]++;
 }
 
-STATIC
-void DefineMacro(char* name, char* expansion)
-{
-  AddMacroIdent(name);
-  do
-  {
-    AddMacroExpansionChar(*expansion);
-  } while (*expansion++ != '\0');
-}
 
-STATIC
 void DumpMacroTable(void)
 {
   word i, j;
@@ -718,7 +645,6 @@ void DumpMacroTable(void)
   GenStartCommentLine(); //TODO: printf2("Bytes used: %d/%d\n\n", MacroTableLen, MAX_MACRO_TABLE_LEN);
 }
 
-STATIC
 word FindIdent(char* name)
 {
   word i;
@@ -731,7 +657,6 @@ word FindIdent(char* name)
   return -1;
 }
 
-STATIC
 word AddIdent(char* name)
 {
   word i, len;
@@ -755,7 +680,6 @@ word AddIdent(char* name)
   return i;
 }
 
-STATIC
 word AddNumericIdent(word n)
 {
   char s[1 + (2 + CHAR_BIT * sizeof n) / 3];
@@ -765,7 +689,6 @@ word AddNumericIdent(word n)
   return AddIdent(p);
 }
 
-STATIC
 word AddGotoLabel(char* name, word label)
 {
   word i;
@@ -791,7 +714,6 @@ word AddGotoLabel(char* name, word label)
   return gotoLabels[gotoLabCnt++][1];
 }
 
-STATIC
 void UndoNonLabelIdents(word len)
 {
   word i;
@@ -808,7 +730,6 @@ void UndoNonLabelIdents(word len)
     }
 }
 
-STATIC
 void AddCase(word val, word label)
 {
   if (CasesCnt >= MAX_CASES)
@@ -818,7 +739,6 @@ void AddCase(word val, word label)
   Cases[CasesCnt++][1] = label;
 }
 
-STATIC
 void DumpIdentTable(void)
 {
   word i;
@@ -857,7 +777,6 @@ unsigned char rwtk[] =
   tokIntr
 };
 
-STATIC
 word GetTokenByWord(char* wrd)
 {
   unsigned i;
@@ -915,7 +834,6 @@ char* tks[] =
   "<NumCharWide>", "<LitStrWide>"
 };
 
-STATIC
 char* GetTokenName(word token)
 {
   unsigned i;
@@ -937,7 +855,6 @@ char* GetTokenName(word token)
   return "";
 }
 
-STATIC
 word GetNextChar(void)
 {
   word ch = EOF;
@@ -960,7 +877,6 @@ word GetNextChar(void)
   return ch;
 }
 
-STATIC
 void ShiftChar(void)
 {
   if (CharQueueLen)
@@ -977,7 +893,6 @@ void ShiftChar(void)
   }
 }
 
-STATIC
 void ShiftCharN(word n)
 {
   while (n-- > 0)
@@ -987,7 +902,6 @@ void ShiftCharN(word n)
   }
 }
 
-STATIC
 void IncludeFile(word quot)
 {
   word nlen = strlen(TokenValueString);
@@ -1092,7 +1006,6 @@ void IncludeFile(word quot)
   ShiftChar();
 }
 
-STATIC
 word EndOfFiles(void)
 {
   // if there are no including files, we're done
@@ -1108,7 +1021,6 @@ word EndOfFiles(void)
   return 0;
 }
 
-STATIC
 void SkipSpace(word SkipNewLines)
 {
   char* p = CharQueue;
@@ -1179,7 +1091,6 @@ void SkipSpace(word SkipNewLines)
   } // endof while (*p != '\0')
 }
 
-STATIC
 void SkipLine(void)
 {
   char* p = CharQueue;
@@ -1203,7 +1114,6 @@ void SkipLine(void)
   }
 }
 
-STATIC
 void GetIdent(void)
 {
   char* p = CharQueue;
@@ -1230,7 +1140,6 @@ void GetIdent(void)
   }
 }
 
-STATIC
 unsigned GetCharValue(word wide)
 {
   char* p = CharQueue;
@@ -1325,7 +1234,6 @@ lerr:
   return ch;
 }
 
-STATIC
 void GetString(char terminator, word wide, word option)
 {
   char* p = CharQueue;
@@ -1386,7 +1294,6 @@ void GetString(char terminator, word wide, word option)
   SkipSpace(option != '#');
 }
 
-STATIC
 void pushPrep(word NoSkip)
 {
   if (PrepSp >= PREP_STACK_SIZE)
@@ -1396,7 +1303,6 @@ void pushPrep(word NoSkip)
   PrepDontSkipTokens &= NoSkip;
 }
 
-STATIC
 word popPrep(void)
 {
   if (PrepSp <= 0)
@@ -1406,7 +1312,6 @@ word popPrep(void)
 }
 
 
-STATIC
 word GetNumber(void)
 {
   char* p = CharQueue;
@@ -1519,7 +1424,6 @@ word GetNumber(void)
   return tokNumUint;
 }
 
-STATIC
 word GetTokenInner(void)
 {
   char* p = CharQueue;
@@ -1639,7 +1543,6 @@ word GetTokenInner(void)
 }
 
 
-STATIC
 void Reserve4Expansion(char* name, word len)
 {
   if (MAX_CHAR_QUEUE_LEN - CharQueueLen < len + 1)
@@ -1659,7 +1562,6 @@ void Reserve4Expansion(char* name, word len)
 
 // TBD??? implement file I/O for input source code and output code (use fxn ptrs/wrappers to make librarization possible)
 // DONE: support string literals
-STATIC
 word GetToken(void)
 {
   char* p = CharQueue;
@@ -1982,7 +1884,6 @@ word GetToken(void)
   return tokEof;
 }
 
-STATIC
 void errorRedecl(char* s)
 {
   printf("Invalid or unsupported redeclaration of ");
@@ -1998,7 +1899,6 @@ void errorRedecl(char* s)
 
 // expr.c code
 
-STATIC
 void push2(word v, word v2)
 {
   if (sp >= STACK_SIZE)
@@ -2008,13 +1908,11 @@ void push2(word v, word v2)
   stack[sp++][1] = v2;
 }
 
-STATIC
 void push(word v)
 {
   push2(v, 0);
 }
 
-STATIC
 word stacktop()
 {
   if (sp == 0)
@@ -2023,7 +1921,6 @@ word stacktop()
   return stack[sp - 1][0];
 }
 
-STATIC
 word pop2(word* v2)
 {
   word v = stacktop();
@@ -2032,13 +1929,6 @@ word pop2(word* v2)
   return v;
 }
 
-word pop()
-{
-  word v2;
-  return pop2(&v2);
-}
-
-STATIC
 void ins2(word pos, word v, word v2)
 {
   if (sp >= STACK_SIZE)
@@ -2050,13 +1940,11 @@ void ins2(word pos, word v, word v2)
   sp++;
 }
 
-STATIC
 void ins(word pos, word v)
 {
   ins2(pos, v, 0);
 }
 
-STATIC
 void del(word pos, word cnt)
 {
   memmove(stack[pos],
@@ -2066,7 +1954,6 @@ void del(word pos, word cnt)
 }
 
 
-STATIC
 void pushop2(word v, word v2)
 {
   if (opsp >= OPERATOR_STACK_SIZE)
@@ -2076,13 +1963,11 @@ void pushop2(word v, word v2)
   opstack[opsp++][1] = v2;
 }
 
-STATIC
 void pushop(word v)
 {
   pushop2(v, 0);
 }
 
-STATIC
 word opstacktop()
 {
   if (opsp == 0)
@@ -2091,7 +1976,6 @@ word opstacktop()
   return opstack[opsp - 1][0];
 }
 
-STATIC
 word popop2(word* v2)
 {
   word v = opstacktop();
@@ -2100,14 +1984,12 @@ word popop2(word* v2)
   return v;
 }
 
-STATIC
 word popop()
 {
   word v2;
   return popop2(&v2);
 }
 
-STATIC
 word isop(word tok)
 {
   static unsigned char toks[] =
@@ -2141,13 +2023,11 @@ word isop(word tok)
   return 0;
 }
 
-STATIC
 word isunary(word tok)
 {
   return (tok == '!') | (tok == '~') | (tok == tokInc) | (tok == tokDec) | (tok == tokSizeof);
 }
 
-STATIC
 word preced(word tok)
 {
   switch (tok)
@@ -2175,7 +2055,6 @@ word preced(word tok)
   return 0;
 }
 
-STATIC
 word precedGEQ(word lfttok, word rhttok)
 {
   // DONE: rethink the comma operator as it could be implemented similarly
@@ -2191,10 +2070,8 @@ word precedGEQ(word lfttok, word rhttok)
   return pl >= pr;
 }
 
-STATIC
 word expr(word tok, word* gotUnary, word commaSeparator);
 
-STATIC
 char* lab2str(char* p, word n)
 {
   do
@@ -2206,7 +2083,6 @@ char* lab2str(char* p, word n)
   return p;
 }
 
-STATIC
 word exprUnary(word tok, word* gotUnary, word commaSeparator, word argOfSizeOf)
 {
   static word sizeofLevel = 0;
@@ -2504,7 +2380,6 @@ word exprUnary(word tok, word* gotUnary, word commaSeparator, word argOfSizeOf)
   return tok;
 }
 
-STATIC
 word expr(word tok, word* gotUnary, word commaSeparator)
 {
   *gotUnary = 0;
@@ -2601,7 +2476,6 @@ word expr(word tok, word* gotUnary, word commaSeparator)
   return tok;
 }
 
-STATIC
 word isAnyPtr(word ExprTypeSynPtr)
 {
   if (ExprTypeSynPtr < 0)
@@ -2616,7 +2490,6 @@ word isAnyPtr(word ExprTypeSynPtr)
   return 0;
 }
 
-STATIC
 word derefAnyPtr(word ExprTypeSynPtr)
 {
   if (ExprTypeSynPtr < 0)
@@ -2634,7 +2507,6 @@ word derefAnyPtr(word ExprTypeSynPtr)
   return -1;
 }
 
-STATIC
 void decayArray(word* ExprTypeSynPtr, word arithmetic)
 {
   // Dacay arrays to pointers to their first elements
@@ -2667,7 +2539,6 @@ void decayArray(word* ExprTypeSynPtr, word arithmetic)
   }
 }
 
-STATIC
 void lvalueCheck(word ExprTypeSynPtr, word pos)
 {
   if (ExprTypeSynPtr >= 0 &&
@@ -2690,7 +2561,6 @@ void lvalueCheck(word ExprTypeSynPtr, word pos)
     errorNotLvalue();
 }
 
-STATIC
 void nonVoidTypeCheck(word ExprTypeSynPtr)
 {
   if (ExprTypeSynPtr >= 0 && SyntaxStack0[ExprTypeSynPtr] == tokVoid)
@@ -2698,7 +2568,6 @@ void nonVoidTypeCheck(word ExprTypeSynPtr)
     errorUnexpectedVoid();
 }
 
-STATIC
 void scalarTypeCheck(word ExprTypeSynPtr)
 {
   nonVoidTypeCheck(ExprTypeSynPtr);
@@ -2707,7 +2576,6 @@ void scalarTypeCheck(word ExprTypeSynPtr)
     errorOpType();
 }
 
-STATIC
 void numericTypeCheck(word ExprTypeSynPtr)
 {
   if (ExprTypeSynPtr >= 0)
@@ -2728,7 +2596,6 @@ void numericTypeCheck(word ExprTypeSynPtr)
 
 
 
-STATIC
 void anyIntTypeCheck(word ExprTypeSynPtr)
 {
   // Check for any integer type
@@ -2738,13 +2605,11 @@ void anyIntTypeCheck(word ExprTypeSynPtr)
 
 
 
-STATIC
 word isUint(word ExprTypeSynPtr)
 {
   return ExprTypeSynPtr >= 0 && SyntaxStack0[ExprTypeSynPtr] == tokUnsigned;
 }
 
-STATIC
 void compatCheck(word* ExprTypeSynPtr, word TheOtherExprTypeSynPtr, word ConstExpr[2], word lidx, word ridx)
 {
   word exprTypeSynPtr = *ExprTypeSynPtr;
@@ -2870,7 +2735,6 @@ void compatCheck(word* ExprTypeSynPtr, word TheOtherExprTypeSynPtr, word ConstEx
   }
 }
 
-STATIC
 void shiftCountCheck(word *psr, word idx, word ExprTypeSynPtr)
 {
   word sr = *psr;
@@ -2889,7 +2753,6 @@ void shiftCountCheck(word *psr, word idx, word ExprTypeSynPtr)
   }
 }
 
-STATIC
 word divCheckAndCalc(word tok, word* psl, word sr, word Unsigned, word ConstExpr[2])
 {
   word div0 = 0;
@@ -2950,7 +2813,6 @@ word divCheckAndCalc(word tok, word* psl, word sr, word Unsigned, word ConstExpr
   return !div0;
 }
 
-STATIC
 void promoteType(word* ExprTypeSynPtr, word* TheOtherExprTypeSynPtr)
 {
   // Integer promotion to signed int or unsigned int from smaller types
@@ -2981,7 +2843,6 @@ void promoteType(word* ExprTypeSynPtr, word* TheOtherExprTypeSynPtr)
   }
 }
 
-STATIC
 word GetFxnInfo(word ExprTypeSynPtr, word* MinParams, word* MaxParams, word* ReturnExprTypeSynPtr, word* FirstParamSynPtr)
 {
   *MaxParams = *MinParams = 0;
@@ -3066,7 +2927,6 @@ word GetFxnInfo(word ExprTypeSynPtr, word* MinParams, word* MaxParams, word* Ret
   return 1;
 }
 
-STATIC
 void simplifyConstExpr(word val, word isConst, word* ExprTypeSynPtr, word top, word bottom)
 {
   // If non-const, nothing to do.
@@ -3085,7 +2945,6 @@ void simplifyConstExpr(word val, word isConst, word* ExprTypeSynPtr, word top, w
   del(bottom, top - bottom);
 }
 
-STATIC
 word AllocLocal(unsigned size)
 {
   // Let's calculate variable's relative on-stack location
@@ -3113,7 +2972,6 @@ word AllocLocal(unsigned size)
 // DONE: "sizeof expr"
 // DONE: constant expressions
 // DONE: collapse constant subexpressions into constants
-STATIC
 word exprval(word* idx, word* ExprTypeSynPtr, word* ConstExpr)
 {
   word tok;
@@ -4498,7 +4356,6 @@ word exprval(word* idx, word* ExprTypeSynPtr, word* ConstExpr)
 
 
 
-STATIC
 word ParseExpr(word tok, word* GotUnary, word* ExprTypeSynPtr, word* ConstExpr, word* ConstVal, word option, word option2)
 {
   word identFirst = tok == tokIdent;
@@ -4698,7 +4555,6 @@ word ParseExpr(word tok, word* GotUnary, word* ExprTypeSynPtr, word* ConstExpr, 
 
 
 // Equivalent to puts() but outputs to OutFile.
-STATIC
 word puts2(char* s)
 {
   word res;
@@ -4713,7 +4569,6 @@ word puts2(char* s)
 
 
 // Print string to outfile
-STATIC
 word printf2(char* sToWrite)
 {
   if (!OutFile)
@@ -4732,7 +4587,6 @@ word printf2(char* sToWrite)
 
 
 // Print decimal to outfile
-STATIC
 word printd2(word dToWrite)
 {
   if (!OutFile)
@@ -4753,7 +4607,6 @@ word printd2(word dToWrite)
   return res;
 }
 
-STATIC
 void error(char* strToPrint)
 {
   word i, fidx = FileCnt - 1 + !FileCnt;
@@ -4797,7 +4650,6 @@ void error(char* strToPrint)
   exit(EXIT_FAILURE);
 }
 
-STATIC
 void warning(char* strToPrint)
 {
   word fidx = FileCnt - 1 + !FileCnt;
@@ -4814,65 +4666,55 @@ void warning(char* strToPrint)
 
 }
 
-STATIC
 void errorFile(char* n)
 {
   printf("Unable to open, read, write or close file ");
   error(n);
 }
 
-STATIC
 void errorFileName(void)
 {
   error("Invalid or too long file name or path name\n");
 }
 
-STATIC
 void errorInternal(word n)
 {
   printd(n);
   error(" internal error\n");
 }
 
-STATIC
 void errorChrStr(void)
 {
   error("Invalid or unsupported character constant or string literal\n");
 }
 
 
-STATIC
 void errorStrLen(void)
 {
   error("String literal too long\n");
 }
 
-STATIC
 void errorUnexpectedToken(word tok)
 {
   printf("Unexpected token ");
   error((tok == tokIdent) ? TokenIdentName : GetTokenName(tok));
 }
 
-STATIC
 void errorDirective(void)
 {
   error("Invalid or unsupported preprocessor directive\n");
 }
 
-STATIC
 void errorCtrlOutOfScope(void)
 {
   error("break, continue, case or default in wrong scope\n");
 }
 
-STATIC
 void errorDecl(void)
 {
   error("Invalid or unsupported declaration\n");
 }
 
-STATIC
 void errorTagRedef(word ident)
 {
   printf("Redefinition of type tagged ");
@@ -4880,43 +4722,36 @@ void errorTagRedef(word ident)
   error("\n");
 }
 
-STATIC
 void errorVarSize(void)
 {
   error("Variable(s) take(s) too much space\n");
 }
 
-STATIC
 void errorInit(void)
 {
   error("Invalid or unsupported initialization\n");
 }
 
-STATIC
 void errorUnexpectedVoid(void)
 {
   error("Unexpected declaration or expression of type void\n");
 }
 
-STATIC
 void errorOpType(void)
 {
   error("Unexpected operand type\n");
 }
 
-STATIC
 void errorNotLvalue(void)
 {
   error("lvalue expected\n");
 }
 
-STATIC
 void errorNotConst(void)
 {
   error("Non-constant expression\n");
 }
 
-STATIC
 void errorLongExpr(void)
 {
   error("Expression too long\n");
@@ -4930,7 +4765,6 @@ word tsd[] =
   tokStruct, tokUnion,
 };
 
-STATIC
 word TokenStartsDeclaration(word t, word params)
 {
   unsigned i;
@@ -4945,7 +4779,6 @@ word TokenStartsDeclaration(word t, word params)
                       t == tokStatic));
 }
 
-STATIC
 void PushSyntax2(word t, word v)
 {
   if (SyntaxStackCnt >= SYNTAX_STACK_MAX)
@@ -4954,13 +4787,11 @@ void PushSyntax2(word t, word v)
   SyntaxStack1[SyntaxStackCnt++] = v;
 }
 
-STATIC
 void PushSyntax(word t)
 {
   PushSyntax2(t, 0);
 }
 
-STATIC
 void InsertSyntax2(word pos, word t, word v)
 {
   if (SyntaxStackCnt >= SYNTAX_STACK_MAX)
@@ -4976,13 +4807,11 @@ void InsertSyntax2(word pos, word t, word v)
   SyntaxStackCnt++;
 }
 
-STATIC
 void InsertSyntax(word pos, word t)
 {
   InsertSyntax2(pos, t, 0);
 }
 
-STATIC
 void DeleteSyntax(word pos, word cnt)
 {
   memmove(&SyntaxStack0[pos],
@@ -4994,7 +4823,6 @@ void DeleteSyntax(word pos, word cnt)
   SyntaxStackCnt -= cnt;
 }
 
-STATIC
 word FindSymbol(char* s)
 {
   word i;
@@ -5029,7 +4857,6 @@ word FindSymbol(char* s)
   return -1;
 }
 
-STATIC
 word SymType(word SynPtr)
 {
   word local = 0;
@@ -5057,7 +4884,6 @@ word SymType(word SynPtr)
   }
 }
 
-STATIC
 word FindTaggedDecl(char* s, word start, word* CurScope)
 {
   word i;
@@ -5093,7 +4919,6 @@ word FindTaggedDecl(char* s, word start, word* CurScope)
 }
 
 
-STATIC
 word GetDeclSize(word SyntaxPtr, word SizeForDeref)
 {
   word i;
@@ -5198,7 +5023,6 @@ word GetDeclSize(word SyntaxPtr, word SizeForDeref)
   return 0;
 }
 
-STATIC
 word GetDeclAlignment(word SyntaxPtr)
 {
   word i;
@@ -5256,7 +5080,6 @@ word GetDeclAlignment(word SyntaxPtr)
 }
 
 
-STATIC
 void DumpDecl(word SyntaxPtr, word IsParam)
 {
   word i;
@@ -5410,7 +5233,6 @@ void DumpDecl(word SyntaxPtr, word IsParam)
   }
 }
 
-STATIC
 void DumpSynDecls(void)
 {
   word used = SyntaxStackCnt * (sizeof SyntaxStack0[0] + sizeof SyntaxStack1[0]);
@@ -5426,7 +5248,6 @@ void DumpSynDecls(void)
 }
 
 
-STATIC
 word ParseArrayDimension(word AllowEmptyDimension)
 {
   word tok;
@@ -5477,17 +5298,12 @@ word ParseArrayDimension(word AllowEmptyDimension)
   return tok;
 }
 
-STATIC
 void ParseFxnParams(word tok);
 static word BrkCntTargetFxn[2];
-STATIC
 word ParseBlock(word BrkCntTarget[2], word casesIdx);
-STATIC
 void AddFxnParamSymbols(word SyntaxPtr);
-STATIC
 void CheckRedecl(word lastSyntaxPtr);
 
-STATIC
 word ParseBase(word tok, word base[2])
 {
   word valid = 1;
@@ -5759,7 +5575,6 @@ lcont:
   base *3 (*2 (*1 name []1) []2) []3  ->  name : []1 *1 []2 *2 []3 *3 base
 */
 
-STATIC
 word ParseDerived(word tok)
 {
   word stars = 0;
@@ -5851,7 +5666,6 @@ word ParseDerived(word tok)
   return tok;
 }
 
-STATIC
 void PushBase(word base[2])
 {
   {
@@ -5864,14 +5678,10 @@ void PushBase(word base[2])
     errorUnexpectedVoid();
 }
 
-STATIC
 word InitScalar(word synPtr, word tok);
-STATIC
 word InitArray(word synPtr, word tok);
-STATIC
 word InitStruct(word synPtr, word tok);
 
-STATIC
 word InitVar(word synPtr, word tok)
 {
   word p = synPtr, t;
@@ -5914,7 +5724,6 @@ word InitVar(word synPtr, word tok)
   return tok;
 }
 
-STATIC
 word InitScalar(word synPtr, word tok)
 {
   unsigned elementSz = GetDeclSize(synPtr, 0);
@@ -5995,7 +5804,6 @@ word InitScalar(word synPtr, word tok)
   return tok;
 }
 
-STATIC
 word InitArray(word synPtr, word tok)
 {
   word elementTypePtr = synPtr + 3;
@@ -6096,7 +5904,6 @@ word InitArray(word synPtr, word tok)
   return tok;
 }
 
-STATIC
 word InitStruct(word synPtr, word tok)
 {
   word isUnion;
@@ -6194,7 +6001,6 @@ word InitStruct(word synPtr, word tok)
   return tok;
 }
 
-STATIC
 word compatCheck2(word lastSyntaxPtr, word i)
 {
   word res = 0;
@@ -6272,7 +6078,6 @@ lend:
   return res;
 }
 
-STATIC
 void CheckRedecl(word lastSyntaxPtr)
 {
   word tid, id, external = 0;
@@ -6417,7 +6222,6 @@ void CheckRedecl(word lastSyntaxPtr)
 // DONE: support simple non-array initializations with string literals
 // DONE: support basic 1-d array initialization
 // DONE: global/static data allocations
-STATIC
 word ParseDecl(word tok, unsigned structInfo[4], word cast, word label)
 {
   word base[2];
@@ -6932,7 +6736,6 @@ word ParseDecl(word tok, unsigned structInfo[4], word cast, word label)
   return tok;
 }
 
-STATIC
 void ParseFxnParams(word tok)
 {
   word base[2];
@@ -7031,7 +6834,6 @@ void ParseFxnParams(word tok)
   }
 }
 
-STATIC
 void AddFxnParamSymbols(word SyntaxPtr)
 {
   word i;
@@ -7145,7 +6947,6 @@ void AddFxnParamSymbols(word SyntaxPtr)
   }
 }
 
-STATIC
 word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
 {
 /*
@@ -7937,7 +7738,6 @@ word ParseStatement(word tok, word BrkCntTarget[2], word casesIdx)
 }
 
 // TBD!!! think of ways of getting rid of casesIdx
-STATIC
 word ParseBlock(word BrkCntTarget[2], word casesIdx)
 {
   word tok = GetToken();

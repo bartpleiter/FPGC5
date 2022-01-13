@@ -16,12 +16,11 @@ char fopenList[FOPEN_MAX_FILES][FOPEN_FILENAME_LIMIT]; // filenames for each ope
 word fopenCurrentlyOpen[FOPEN_MAX_FILES]; // which indexes are currently opened
 word fopenCursors[FOPEN_MAX_FILES]; // cursors of currently opened files
 word CH376CurrentlyOpened = 0; // index in fopenList which is currently opened on CH376
-word updateCursor = 0; // if the cursor is locally updated
 
 // Buffers for reading/writing
 // Length of buffer always should be less than 65536, since this is the maximum FS_readFile can do in a single call
 #define STDIO_FBUF_LEN 4096
-char inputBuffer[STDIO_FBUF_LEN];
+char *inputBuffer = (char*) INPUTBUFFER_ADDR; //[STDIO_FBUF_LEN];
 word inbufStartPos = 0; // where in the file the buffer starts
 word inbufCursor = 0; // where in the buffer we currently are working
 

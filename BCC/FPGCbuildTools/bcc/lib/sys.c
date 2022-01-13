@@ -58,21 +58,6 @@ word* syscall(word ID)
     return p;
 }
 
-
-word HID_FifoAvailable()
-{
-    char* p = syscall(1);
-    return p[0];
-}
-
-
-word HID_FifoRead()
-{
-    char* p = syscall(2);
-    return p[0];
-}
-
-
 void BDOS_PrintcConsole(char c)
 {
     char* p = (char*) SYSCALL_RETVAL_ADDR;
@@ -106,15 +91,6 @@ void BDOS_PrintDecConsole(word i)
     itoa(i, buffer);
     BDOS_PrintConsole(buffer);
 }
-
-
-void BDOS_PrintHexConsole(word i)
-{
-    char buffer[11];
-    itoah(i, buffer);
-    BDOS_PrintConsole(buffer);
-}
-
 
 // Returns command line args
 char* BDOS_GetArgs()

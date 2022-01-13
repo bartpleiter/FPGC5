@@ -83,16 +83,6 @@
 #define FS_ATTR_DIRECTORY           0x10 
 #define FS_ATTR_ARCHIVE             0x20
 
-
-// Workaround for defines in ASM
-void FS_asmDefines()
-{
-    asm(
-        "define FS_SPI1_CS_ADDR = 0xC0272C ; address of SPI1_CS\n"
-        "define FS_SPI1_ADDR = 0xC0272B    ; address of SPI1\n"
-        );
-}
-
 // Sets SPI1_CS low
 void FS_spiBeginTransfer()
 {
@@ -101,7 +91,7 @@ void FS_spiBeginTransfer()
         "push r1\n"
         "push r2\n"
 
-        "load32 FS_SPI1_CS_ADDR r2          ; r2 = FS_SPI1_CS_ADDR\n"
+        "load32 0xC0272C r2          ; r2 = 0xC0272C\n"
 
         "load 0 r1                          ; r1 = 0 (enable)\n"
         "write 0 r2 r1                      ; write to SPI1_CS\n"
@@ -120,7 +110,7 @@ void FS_spiEndTransfer()
         "push r1\n"
         "push r2\n"
 
-        "load32 FS_SPI1_CS_ADDR r2          ; r2 = FS_SPI1_CS_ADDR\n"
+        "load32 0xC0272C r2          ; r2 = 0xC0272C\n"
 
         "load 1 r1                          ; r1 = 1 (disable)\n"
         "write 0 r2 r1                      ; write to SPI1_CS\n"
@@ -138,7 +128,7 @@ word FS_spiTransfer(word dataByte)
 {
     word retval = 0;
     asm(
-        "load32 FS_SPI1_ADDR r2             ; r2 = FS_SPI1_ADDR\n"
+        "load32 0xC0272B r2             ; r2 = 0xC0272B\n"
         "write 0 r2 r4                      ; write r4 over SPI1\n"
         "read 0 r2 r2                       ; read return value\n"
         "write -4 r14 r2                    ; write to stack to return\n"
@@ -171,19 +161,6 @@ word FS_WaitGetStatus()
     return retval;
 }
 
-
-// Get status without using interrupts
-word FS_noWaitGetStatus()
-{
-    FS_spiBeginTransfer();
-    FS_spiTransfer(FS_CMD_GET_STATUS);
-    word retval = FS_spiTransfer(0x00);
-    FS_spiEndTransfer(); 
-
-    return retval;
-}
-
-
 // Function to send a string (without terminating 0)
 void FS_sendString(char* str)
 {
@@ -211,106 +188,6 @@ void FS_sendData(char* d, word s)
         chr = *d;           // get data from address
     }
 }
-
-
-// Returns IC version of CH376 chip
-// Good test to know if the communication with chip works
-word FS_getICver()
-{
-    FS_spiBeginTransfer();
-    FS_spiTransfer(FS_CMD_GET_IC_VER);
-    delay(1);
-
-    word icVer = FS_spiTransfer(0x00);
-    FS_spiEndTransfer();
-
-    return icVer;
-}
-
-// Sets USB mode to mode, returns status code
-// Which should be FS_ANSW_RET_SUCCESS when successful
-word FS_setUSBmode(word mode)
-{
-    FS_spiBeginTransfer();
-    FS_spiTransfer(FS_CMD_SET_USB_MODE);
-    FS_spiEndTransfer();
-    delay(1);
-
-    FS_spiBeginTransfer();
-    FS_spiTransfer(mode);
-    FS_spiEndTransfer();
-    delay(1);
-
-    FS_spiBeginTransfer();
-    word status = FS_spiTransfer(0x00);
-    FS_spiEndTransfer();
-    delay(1);
-
-    return status;
-}
-
-
-// resets and intitializes CH376
-// returns FS_ANSW_RET_SUCCESS on success
-word FS_init()
-{
-    FS_spiEndTransfer(); // start with cs high
-    delay(10);
-
-    // Reset
-    FS_spiBeginTransfer();
-    FS_spiTransfer(FS_CMD_RESET_ALL);
-    FS_spiEndTransfer();
-    delay(100); // wait after reset
-
-    // USB mode 0
-    return FS_setUSBmode(FS_MODE_HOST_0);
-}
-
-
-// waits for drive connection,
-// sets usb host mode
-// waits for drive to be ready
-// mounts drive
-// also initializes current path to /
-// returns FS_ANSW_USB_INT_SUCCESS on success
-word FS_connectDrive() 
-{
-    // Wait forever until an USB device is connected
-    while(FS_WaitGetStatus() != FS_ANSW_USB_INT_CONNECT);
-
-    // USB mode 1
-    word retval = FS_setUSBmode(FS_MODE_HOST_1);
-    // Return on error
-    if (retval != FS_ANSW_RET_SUCCESS)
-        return retval;
-
-    // USB mode 2
-    retval = FS_setUSBmode(FS_MODE_HOST_2);
-    // Return on error
-    if (retval != FS_ANSW_RET_SUCCESS)
-        return retval;
-
-    // Need to check again for device connection after changing USB mode
-    while(FS_WaitGetStatus() != FS_ANSW_USB_INT_CONNECT);
-
-    // Connect to drive
-    FS_spiBeginTransfer();
-    FS_spiTransfer(FS_CMD_DISK_CONNECT);
-    FS_spiEndTransfer();
-
-    retval = FS_WaitGetStatus();
-    // Return on error
-    if (retval != FS_ANSW_USB_INT_SUCCESS)
-        return retval;
-
-    FS_spiBeginTransfer();
-    FS_spiTransfer(FS_CMD_DISK_MOUNT);
-    FS_spiEndTransfer();
-
-    return FS_WaitGetStatus();
-}
-
 
 // Returns file size of currently opened file (32 bits)
 word FS_getFileSize()
@@ -516,33 +393,11 @@ word FS_open()
 
 
 // returns FS_ANSW_USB_INT_SUCCESS on success
-word FS_delete() 
-{
-    FS_spiBeginTransfer();
-    FS_spiTransfer(FS_CMD_FILE_ERASE);
-    FS_spiEndTransfer();
-
-    return FS_WaitGetStatus();
-}
-
-
-// returns FS_ANSW_USB_INT_SUCCESS on success
 word FS_close() 
 {  
     FS_spiBeginTransfer();
     FS_spiTransfer(FS_CMD_FILE_CLOSE);
     FS_spiTransfer(0x01); //0x01 if update filesize, else 0x00
-    FS_spiEndTransfer();
-
-    return FS_WaitGetStatus();
-}
-
-
-// returns FS_ANSW_USB_INT_SUCCESS on success
-word FS_createDir() 
-{
-    FS_spiBeginTransfer();
-    FS_spiTransfer(FS_CMD_DIR_CREATE);
     FS_spiEndTransfer();
 
     return FS_WaitGetStatus();
@@ -689,218 +544,3 @@ word FS_sendFullPath(char* f)
     return FS_ANSW_USB_INT_SUCCESS;
 }
 
-
-// Parses and prints a string (useful for name and extension) after removing trailing spaces
-// Len should be <= 8 chars
-// Does not add a new line at the end.
-// Returns length of written string
-word FS_parseFATstring(char* fatBuffer, word len, char* b, word* bufLen)
-{
-    //uprintlnDec(bufLen);
-    //uprintlnDec(*bufLen);
-    if (len > 8)
-    {
-        uprintln("FATstring: Len argument > 8");
-        return 0;
-    }
-
-    word retval = 0;
-
-    // buffer of parsed string
-    char nameBuf[9];
-    nameBuf[len] = 0;
-
-    // loop backwards until a non-space character is found
-    // then, write string to nameBuf from there, keeping spaces in filename if any
-    word foundChar = 0;
-    word i;
-    for (i = 0; i < len; i++)
-    {
-        if (!foundChar)
-        {
-            if (fatBuffer[len-1-i] == ' ')
-                nameBuf[len-1-i] = 0; // set null until a non-space char is found
-            else
-            {
-                foundChar = 1;
-                retval = len-i;
-                nameBuf[len-1-i] = fatBuffer[len-1-i]; // write the non-space char
-            }
-        }
-        else
-            nameBuf[len-1-i] = fatBuffer[len-1-i]; // copy char
-    }
-
-    // write to buffer
-    i = 0;
-    while (nameBuf[i] != 0)
-    {
-        b[*bufLen] = nameBuf[i];
-        (*bufLen)++;
-        i++;
-    }
-    
-    return retval;
-}
-
-
-// Parses and writes name.extension and filesize on one line
-void FS_parseFATdata(word datalen, char* fatBuffer, char* b, word* bufLen)
-{
-    if (datalen != 32)
-    {
-        uprintln("Unexpected FAT table length");
-        return;
-    }
-
-    /* // Ignore lines with '.' and ".." as filename
-    // ignore '.'
-    if (memcmp(fatBuffer, ".          ", 11))
-        return;
-
-    // ignore ".."
-    if (memcmp(fatBuffer, "..         ", 11))
-        return;
-    */
-
-    // parse filename
-    word printLen = FS_parseFATstring(fatBuffer, 8, b, bufLen);
-
-    // add '.' and parse extension
-    if (fatBuffer[8] != ' ' || fatBuffer[9] != ' ' || fatBuffer[10] != ' ')
-    {
-        b[*bufLen] = '.';
-        (*bufLen)++;
-        printLen += FS_parseFATstring(fatBuffer+8, 3, b, bufLen) + 1;
-    }
-    
-    // append with spaces until 16th char
-    while (printLen < 16)
-    {
-        b[*bufLen] = ' ';
-        (*bufLen)++;
-        printLen++;
-    }
-
-    // filesize
-    word fileSize = 0;
-    fileSize += fatBuffer[28];
-    fileSize += (fatBuffer[29] << 8);
-    fileSize += (fatBuffer[30] << 16);
-    fileSize += (fatBuffer[31] << 24);
-
-    // filesize to integer string
-    char buffer[10];
-    itoa(fileSize, buffer);
-
-    // write to buffer
-    word i = 0;
-    while (buffer[i] != 0)
-    {
-        b[*bufLen] = buffer[i];
-        (*bufLen)++;
-        i++;
-    }
-    b[*bufLen] = '\n';
-    (*bufLen)++;
-
-    //uprintlnDec(*bufLen);
-}
-
-
-// Reads FAT data for single entry
-// FAT data is parsed by FS_parseFatData()
-void FS_readFATdata(char* b, word* bufLen)
-{
-    FS_spiBeginTransfer();
-    FS_spiTransfer(FS_CMD_RD_USB_DATA0);
-    word datalen = FS_spiTransfer(0x0);
-    char fatbuf[32];
-    word i;
-    for (i = 0; i < datalen; i++)
-    {
-        fatbuf[i] = FS_spiTransfer(0x00);
-    }
-    FS_parseFATdata(datalen, fatbuf, b, bufLen);
-    FS_spiEndTransfer();
-}
-
-// Lists directory of full path f
-// f needs to start with / and not end with /
-// Returns FS_ANSW_USB_INT_SUCCESS if successful
-// Writes parsed result to address b
-// Result is terminated with a \0
-word FS_listDir(char* f, char* b)
-{
-    word bufLen = 0;
-
-    word retval = FS_sendFullPath(f);
-    // Return on failure
-    if (retval != FS_ANSW_USB_INT_SUCCESS)
-        return retval;
-
-    retval = FS_open();
-    // Return on failure
-    if (retval != FS_ANSW_USB_INT_SUCCESS && retval != FS_ANSW_ERR_OPEN_DIR)
-        return retval;
-
-    FS_sendSinglePath("*");
-
-    retval = FS_open();
-    // Return on failure
-    if (retval != FS_ANSW_USB_INT_DISK_READ)
-        return retval;
-
-    // Init length of output buffer
-    bufLen = 0;
-
-    while (retval == FS_ANSW_USB_INT_DISK_READ)
-    {
-        FS_readFATdata(b, &bufLen);
-        FS_spiBeginTransfer();
-        FS_spiTransfer(FS_CMD_FILE_ENUM_GO);
-        FS_spiEndTransfer();
-        retval = FS_WaitGetStatus();
-    }
-
-    // Terminate buffer
-    b[bufLen] = 0;
-    bufLen++;
-
-    return FS_ANSW_USB_INT_SUCCESS;
-}
-
-
-// Returns FS_ANSW_USB_INT_SUCCESS on successful change of dir
-// Will return error FS_ANSW_ERR_FILE_CLOSE if dir is a file
-word FS_changeDir(char* f)
-{
-    // Special case for root, since FS_open() returns as if it opened a file
-    if (f[0] == '/' && f[1] == 0)
-    {
-        FS_sendSinglePath("/");
-        FS_open();
-        return FS_ANSW_USB_INT_SUCCESS;
-    }
-
-    word retval = FS_sendFullPath(f);
-    // Return on failure
-    if (retval != FS_ANSW_USB_INT_SUCCESS)
-        return retval;
-
-    retval = FS_open();
-    
-    // Return sucess on open dir
-    if (retval == FS_ANSW_ERR_OPEN_DIR)
-        return FS_ANSW_USB_INT_SUCCESS;
-
-    // Close and return on opening file
-    if (retval == FS_ANSW_USB_INT_SUCCESS)
-    {
-        FS_close();
-        return FS_ANSW_ERR_FILE_CLOSE;
-    }
-    else // otherwise return error code
-        return retval;
-
-}

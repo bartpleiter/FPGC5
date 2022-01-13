@@ -1,5 +1,4 @@
 // Division and Modulo without / and %
-STATIC
 word divmod(word dividend, word divisor, word* rem)
 {
     word quotient = 1;
@@ -37,36 +36,18 @@ word divmod(word dividend, word divisor, word* rem)
      return quotient;
 }
 
-STATIC
 word division(word dividend, word divisor)
 {
     word rem = 0;
     return divmod(dividend, divisor, &rem);
 }
 
-STATIC
-word MATH_div(word dividend, word divisor)
-{
-    word rem = 0;
-    return divmod(dividend, divisor, &rem);
-}
-
-STATIC
 word modulo(word dividend, word divisor)
 {
     word rem = 0;
     divmod(dividend, divisor, &rem);
     return rem;
 }
-
-STATIC
-word MATH_mod(word dividend, word divisor)
-{
-    word rem = 0;
-    divmod(dividend, divisor, &rem);
-    return rem;
-}
-
 
 // Unsigned Division and Modulo without / and %
 word MATH_divmodU(word dividend, word divisor, word mod)

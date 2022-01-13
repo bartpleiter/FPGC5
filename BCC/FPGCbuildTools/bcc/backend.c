@@ -52,7 +52,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
-STATIC
 void GenInit(void)
 {
   // initialization of target-specific code generator
@@ -67,7 +66,6 @@ void GenInit(void)
 }
 
 
-STATIC
 void GenInitFinalize(void)
 {
   // finalization of initialization of target-specific code generator
@@ -118,14 +116,12 @@ void GenInitFinalize(void)
   }
 }
 
-STATIC
 void GenStartCommentLine(void)
 {
   printf2(" ; ");
 }
 
 // No alignment needed on B322
-STATIC
 void GenWordAlignment(word bss)
 {
   (void)bss;
@@ -135,7 +131,6 @@ void GenWordAlignment(word bss)
   }
 }
 
-STATIC
 void GenLabel(char* Label, word Static)
 {
   {
@@ -150,7 +145,6 @@ void GenLabel(char* Label, word Static)
   }
 }
 
-STATIC
 void GenPrintLabel(char* Label)
 {
   {
@@ -166,7 +160,6 @@ void GenPrintLabel(char* Label)
   }
 }
 
-STATIC
 void GenNumLabel(word Label)
 {
   printf2("Label_");
@@ -174,14 +167,12 @@ void GenNumLabel(word Label)
   printf2(":\n");
 }
 
-STATIC
 void GenPrintNumLabel(word label)
 {
   printf2("Label_");
   printd2(label);
 }
 
-STATIC
 void GenZeroData(unsigned Size, word bss)
 {
   (void)bss;
@@ -216,7 +207,6 @@ void GenZeroData(unsigned Size, word bss)
 
 }
 
-STATIC
 void GenIntData(word Size, word Val)
 {
   Val = truncInt(Val);
@@ -251,13 +241,11 @@ void GenIntData(word Size, word Val)
   
 }
 
-STATIC
 void GenStartAsciiString(void)
 {
   printf2(".dw "); // String should be converted into 1 character per word
 }
 
-STATIC
 void GenAddrData(word Size, char* Label, word ofs)
 {
   ofs = truncInt(ofs);
@@ -279,13 +267,11 @@ void GenAddrData(word Size, char* Label, word ofs)
   }
 }
 
-STATIC
 word GenFxnSizeNeeded(void)
 {
   return 0;
 }
 
-STATIC
 void GenRecordFxnSize(char* startLabelName, word endLabelNo)
 {
   (void)startLabelName;
@@ -326,7 +312,6 @@ void GenRecordFxnSize(char* startLabelName, word endLabelNo)
 #define B322InstrBgeU        0x4F
 
 
-STATIC
 void GenPrintInstr(word instr, word val)
 {
   char* p = "";
@@ -415,7 +400,6 @@ void GenPrintInstr(word instr, word val)
 #define TEMP_REG_A B322OpRegT8 // two temporary registers used for momentary operations, similarly to the AT register
 #define TEMP_REG_B B322OpRegT9
 
-STATIC
 void GenPrintOperand(word op, word val)
 {
   if (op >= B322OpRegZero && op <= B322OpRegRa)
@@ -454,19 +438,16 @@ void GenPrintOperand(word op, word val)
   }
 }
 
-STATIC
 void GenPrintOperandSeparator(void)
 {
   printf2(" ");
 }
 
-STATIC
 void GenPrintNewLine(void)
 {
   puts2("");
 }
 
-STATIC
 void GenPrintInstr1Operand(word instr, word instrval, word operand, word operandval)
 {
   GenPrintInstr(instr, instrval);
@@ -474,7 +455,6 @@ void GenPrintInstr1Operand(word instr, word instrval, word operand, word operand
   GenPrintNewLine();
 }
 
-STATIC
 void GenPrintInstr2Operands(word instr, word instrval, word operand1, word operand1val, word operand2, word operand2val)
 {
   // TODO: figure out if this ever happens because ADD and SUB need 3 args
@@ -489,7 +469,6 @@ void GenPrintInstr2Operands(word instr, word instrval, word operand1, word opera
   GenPrintNewLine();
 }
 
-STATIC
 void GenPrintInstr3Operands(word instr, word instrval,
                             word operand1, word operand1val,
                             word operand2, word operand2val,
@@ -527,7 +506,6 @@ void GenPrintInstr3Operands(word instr, word instrval,
 
 
 // Currently we do not want to "extend" any reg
-STATIC
 void GenExtendRegIfNeeded(word reg, word opSz)
 {
   if (opSz == -1)
@@ -600,7 +578,6 @@ void GenExtendRegIfNeeded(word reg, word opSz)
   }
 }
 
-STATIC
 void GenJumpUncond(word label)
 {
   GenPrintInstr1Operand(B322InstrJump, 0,
@@ -609,7 +586,6 @@ void GenJumpUncond(word label)
 
 extern word GenWreg; // GenWreg is defined below
 
-STATIC
 void GenJumpIfEqual(word val, word label)
 {
 
@@ -630,7 +606,6 @@ void GenJumpIfEqual(word val, word label)
                          B322OpNumLabel, label);
 }
 
-STATIC
 void GenJumpIfZero(word label)
 {
   if (doAnnotations)
@@ -651,7 +626,6 @@ void GenJumpIfZero(word label)
                          B322OpNumLabel, label);
 }
 
-STATIC
 void GenJumpIfNotZero(word label)
 {
   if (doAnnotations)
@@ -675,7 +649,6 @@ void GenJumpIfNotZero(word label)
 word GenPrologPos = 0;
 word GenLeaf;
 
-STATIC
 void GenWriteFrameSize(void) //WORDSIZE
 {
   unsigned size = 8/*RA + FP*/ - CurFxnMinLocalOfs;
@@ -706,7 +679,6 @@ void GenWriteFrameSize(void) //WORDSIZE
   
 }
 
-STATIC
 void GenUpdateFrameSize(void)
 {
   word curpos = 0;
@@ -727,7 +699,6 @@ void GenUpdateFrameSize(void)
   fsetpos(OutFile, curpos);
 }
 
-STATIC
 void GenFxnProlog(void)
 {
   if (CurFxnParamCntMin && CurFxnParamCntMax)
@@ -759,7 +730,6 @@ void GenFxnProlog(void)
   printf2("\n");
 }
 
-STATIC
 void GenGrowStack(word size) //WORDSIZE
 {
   if (!size)
@@ -781,7 +751,6 @@ void GenGrowStack(word size) //WORDSIZE
   }
 }
 
-STATIC
 void GenFxnEpilog(void)
 {
 
@@ -808,13 +777,11 @@ void GenFxnEpilog(void)
                         B322OpRegRa, 0);
 }
 
-STATIC
 word GenMaxLocalsSize(void)
 {
   return 0x7FFFFFFF;
 }
 
-STATIC
 word GenGetBinaryOperatorInstr(word tok)
 {
   switch (tok)
@@ -879,24 +846,6 @@ word GenGetBinaryOperatorInstr(word tok)
   }
 }
 
-// Should not be needed, AT register is not used by B322 assembler
-// Although the lui instruction probably should stay?
-STATIC
-void GenPreIdentAccess(word label)
-{
-  printf2("; .set noat\n lui r1, %%hi(");
-  GenPrintLabel(IdentTable + label);
-  puts2(")");
-}
-
-// Should not be needed, AT register is not used by B322 assembler
-STATIC
-void GenPostIdentAccess(void)
-{
-  puts2("; .set at");
-}
-
-STATIC
 void GenReadIdent(word regDst, word opSz, word label)
 {
   GenPrintInstr2Operands(B322InstrAddr2reg, 0,
@@ -934,7 +883,6 @@ void GenReadIdent(word regDst, word opSz, word label)
   //GenPostIdentAccess();
 }
 
-STATIC
 void GenReadLocal(word regDst, word opSz, word ofs)
 {
   word instr = B322InstrRead;
@@ -961,7 +909,6 @@ void GenReadLocal(word regDst, word opSz, word ofs)
                          regDst, 0);
 }
 
-STATIC
 void GenReadIndirect(word regDst, word regSrc, word opSz)
 {
   word instr = B322InstrRead;
@@ -988,7 +935,6 @@ void GenReadIndirect(word regDst, word regSrc, word opSz)
                          regDst, 0);
 }
 
-STATIC
 void GenWriteIdent(word regSrc, word opSz, word label)
 {
   GenPrintInstr2Operands(B322InstrAddr2reg, 0,
@@ -1016,7 +962,6 @@ void GenWriteIdent(word regSrc, word opSz, word label)
   //GenPostIdentAccess();
 }
 
-STATIC
 void GenWriteLocal(word regSrc, word opSz, word ofs)
 {
   word instr = B322InstrWrite;
@@ -1036,7 +981,6 @@ void GenWriteLocal(word regSrc, word opSz, word ofs)
                          regSrc, 0);
 }
 
-STATIC
 void GenWriteIndirect(word regDst, word regSrc, word opSz)
 {
   word instr = B322InstrWrite;
@@ -1056,7 +1000,6 @@ void GenWriteIndirect(word regDst, word regSrc, word opSz)
                          regSrc, 0);
 }
 
-STATIC
 void GenIncDecIdent(word regDst, word opSz, word label, word tok)
 {
   word instr = B322InstrAdd;
@@ -1073,7 +1016,6 @@ void GenIncDecIdent(word regDst, word opSz, word label, word tok)
   GenExtendRegIfNeeded(regDst, opSz);
 }
 
-STATIC
 void GenIncDecLocal(word regDst, word opSz, word ofs, word tok)
 {
   word instr = B322InstrAdd;
@@ -1090,7 +1032,6 @@ void GenIncDecLocal(word regDst, word opSz, word ofs, word tok)
   GenExtendRegIfNeeded(regDst, opSz);
 }
 
-STATIC
 void GenIncDecIndirect(word regDst, word regSrc, word opSz, word tok)
 {
   word instr = B322InstrAdd;
@@ -1107,7 +1048,6 @@ void GenIncDecIndirect(word regDst, word regSrc, word opSz, word tok)
   GenExtendRegIfNeeded(regDst, opSz);
 }
 
-STATIC
 void GenPostIncDecIdent(word regDst, word opSz, word label, word tok)
 {
   word instr = B322InstrAdd;
@@ -1129,7 +1069,6 @@ void GenPostIncDecIdent(word regDst, word opSz, word label, word tok)
   GenExtendRegIfNeeded(regDst, opSz);
 }
 
-STATIC
 void GenPostIncDecLocal(word regDst, word opSz, word ofs, word tok)
 {
   word instr = B322InstrAdd;
@@ -1151,7 +1090,6 @@ void GenPostIncDecLocal(word regDst, word opSz, word ofs, word tok)
   GenExtendRegIfNeeded(regDst, opSz);
 }
 
-STATIC
 void GenPostIncDecIndirect(word regDst, word regSrc, word opSz, word tok)
 {
   word instr = B322InstrAdd;
@@ -1222,7 +1160,6 @@ word GenLreg, GenRreg; // left operand register and right operand register after
     manipulations in the most simple and very common cases of function calls.
 */
 
-STATIC
 void GenWregInc(word inc)
 {
   if (inc > 0)
@@ -1243,7 +1180,6 @@ void GenWregInc(word inc)
   }
 }
 
-STATIC
 void GenPushReg(void)
 {
   if (CanUseTempRegs && TempsUsed < MAX_TEMP_REGS)
@@ -1265,7 +1201,6 @@ void GenPushReg(void)
   TempsUsed++;
 }
 
-STATIC
 void GenPopReg(void)
 {
   TempsUsed--;
@@ -1295,7 +1230,6 @@ void GenPopReg(void)
 #define tokAssign0     0x102
 #define tokNum0        0x103
 
-STATIC
 void GenPrep(word* idx)
 {
   word tok;
@@ -1616,7 +1550,6 @@ char CmpBlocks[6/*op*/][2/*condbranch*/][3/*constness*/][2] =
   }
 };
 
-STATIC
 void GenCmp(word* idx, word op)
 {
   // TODO: direct conversion from MIPS to B322 is very inefficient, so optimize this!
@@ -1900,7 +1833,6 @@ void GenCmp(word* idx, word op)
   *idx += condbranch != 0;
 }
 
-STATIC
 word GenIsCmp(word t)
 {
   return
@@ -1918,7 +1850,6 @@ word GenIsCmp(word t)
 
 // Improved register/stack-based code generator
 // DONE: test 32-bit code generation
-STATIC
 void GenExpr0(void)
 {
   word i;
@@ -2635,7 +2566,6 @@ void GenExpr0(void)
     errorInternal(104);
 }
 
-STATIC
 void GenDumpChar(word ch)
 {
   if (ch < 0)
@@ -2656,13 +2586,11 @@ void GenDumpChar(word ch)
   printf2(" ");
 }
 
-STATIC
 void GenExpr(void)
 {
   GenExpr0();
 }
 
-STATIC
 void GenFin(void)
 {
   // No idea what this does (something with structs??), so I just literally converted it to B322 asm
