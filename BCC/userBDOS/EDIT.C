@@ -42,29 +42,35 @@
 #include "LIB/STDLIB.C"
 #include "LIB/FS.C"
 
-#define FILE_MEMORY_ADDR  0x480000  // location of file content
-#define MAX_LINE_WIDTH    240     // max width of line in mem buffer, multiple of 40 (screen width)
-#define MAX_LINES       8192    // maximum number of lines to prevent out of memory writes (8192*256*4 = 8MiB)
+#define FILE_MEMORY_ADDR    0x480000 // location of file content
+#define MAX_LINE_WIDTH      240     // max width of line in mem buffer, multiple of 40 (screen width)
+#define MAX_LINES           8192    // maximum number of lines to prevent out of memory writes (8192*256*4 = 8MiB)
 #define TEXT_WINDOW_HEIGHT  20      // number of lines to print on screen
-#define SCREEN_WIDTH    40
-#define SCREEN_HEIGHT     25
+#define SCREEN_WIDTH        40
+#define SCREEN_HEIGHT       25
 
 // Palettes
 #define PALETTE_CURSOR    1
 #define PALETTE_NEWLINE   2
-#define PALETTE_EOF     3
+#define PALETTE_EOF       3
 #define PALETTE_SELECTED  4
 #define PALETTE_HEADER    5
 
 // HID
-#define ARROW_LEFT  256
-#define ARROW_RIGHT 257
-#define ARROW_UP  258
-#define ARROW_DOWN  259
+#define ARROW_LEFT    256
+#define ARROW_RIGHT   257
+#define ARROW_UP      258
+#define ARROW_DOWN    259
+#define BTN_INSERT    260
+#define BTN_HOME      261
+#define BTN_PAGEUP    262
+#define BTN_END       263
+#define BTN_PAGEDOWN  264
+
 
 char infilename[96];  // input filename to edit the contents of
 
-char headerText[SCREEN_WIDTH];
+char headerText[SCREEN_WIDTH]; // text on header (first line)
 
 // Buffer for file contents in memory
 char (*mem)[MAX_LINE_WIDTH] = (char (*)[MAX_LINE_WIDTH]) FILE_MEMORY_ADDR; // 2d array containing all lines of the input file
@@ -83,7 +89,6 @@ word windowYscroll = 0; // vertical line offset for drawing window
 word windowXscroll = 0; // horizontal position offset for drawing window
 word userCursorX = 0; // char position within line, of user cursor
 word userCursorY = 0; // line of user cursor
-
 
 // Opens file for reading
 // requires full paths
@@ -214,6 +219,7 @@ void writeMemToFile()
       lineEndPos++;
       if (lineEndPos == MAX_LINE_WIDTH)
       {
+        exitRoutine();
         BDOS_PrintConsole("E: could not find end of line\n");
         FS_close();
         exit();
@@ -289,6 +295,13 @@ word readFileLine()
     c = fgetc();
   }
 
+  // error when line was too long
+  if (c != EOF && c != '\n' && currentChar >= (MAX_LINE_WIDTH-1))
+  {
+    BDOS_PrintConsole("E: line is too long\n");
+    exit();
+  }
+
   mem[lastLineNumber][currentChar] = c; // add EOF or \n
 
   // append line with zeros
@@ -329,13 +342,12 @@ void readInputFile()
 // Applies window to mem and prints on screen (using window plane)
 void printWindow()
 {
-  GFX_clearWindowtileTable();
-  GFX_clearWindowpaletteTable();
-
   printHeader();
 
   char* vramWindowpattern = (char*) 0xC01420;
   word vramPaletteOffset = 2048;
+
+  word lastLineFound = 0;
 
   word x, y;
   for (y = 0; y < SCREEN_HEIGHT-1; y++) // leave first line open
@@ -351,18 +363,31 @@ void printWindow()
       }
       else if (c == EOF)
       {
-        word vramOffset = GFX_WindowPosFromXY(x, y+1);
-        *(vramWindowpattern + vramOffset) = 4;
-        *(vramWindowpattern + vramOffset + vramPaletteOffset) = PALETTE_EOF;
-        return;
+        // print empty space if EOF is already drawn
+        if (lastLineFound)
+        {
+          word vramOffset = GFX_WindowPosFromXY(x, y+1);
+          *(vramWindowpattern + vramOffset) = 0;
+          *(vramWindowpattern + vramOffset + vramPaletteOffset) = 0;
+        }
+        else
+        {
+          word vramOffset = GFX_WindowPosFromXY(x, y+1);
+          *(vramWindowpattern + vramOffset) = 4;
+          *(vramWindowpattern + vramOffset + vramPaletteOffset) = PALETTE_EOF;
+          lastLineFound = 1; // notify, but continue rendering the line
+        }
       }
       else
       {
         word vramOffset = GFX_WindowPosFromXY(x, y+1);
         *(vramWindowpattern + vramOffset) = c;
         *(vramWindowpattern + vramOffset + vramPaletteOffset) = 0;
-
       }
+    }
+    if (lastLineFound)
+    {
+      return;
     }
   }
 }
@@ -410,6 +435,7 @@ void fixCursorToNewline()
     newLinePos++;
     if (newLinePos == MAX_LINE_WIDTH)
     {
+      exitRoutine();
       BDOS_PrintConsole("E: could not find newline\n");
       exit();
     }
@@ -433,6 +459,7 @@ void fixCursorToNewline()
       }
       else
       {
+        exitRoutine();
         BDOS_PrintConsole("E: scroll left limit reached\n");
         exit();
       }
@@ -469,6 +496,7 @@ void gotoPosOfPrevLine(word targetPos)
     }
     else
     {
+      exitRoutine();
       BDOS_PrintConsole("E: could not move up a line\n");
       exit();
     }
@@ -494,6 +522,7 @@ void gotoPosOfPrevLine(word targetPos)
 
     if (xpos == MAX_LINE_WIDTH)
     {
+      exitRoutine();
       BDOS_PrintConsole("E: target out of bounds\n");
       exit();
     }
@@ -550,6 +579,7 @@ void gotoEndOfPrevLine()
 
     if (xpos == MAX_LINE_WIDTH)
     {
+      exitRoutine();
       BDOS_PrintConsole("E: could not find newline\n");
       exit();
     }
@@ -687,6 +717,128 @@ void moveCursorRight()
 }
 
 
+void pageUp()
+{
+  clearCursor();
+
+  word i;
+  for (i = 0; i < SCREEN_HEIGHT-2; i++)
+  {
+    if (userCursorY > 0)
+    {
+      userCursorY--;
+    }
+    else
+    {
+      if (windowYscroll > 0)
+      {
+        windowYscroll--;
+      }
+    }
+  }
+
+  printWindow();
+  fixCursorToNewline();
+  printCursor();
+  
+}
+
+void pageDown()
+{
+  clearCursor();
+
+  word lastLineFound = 0;
+
+  word i;
+  for (i = 0; i < SCREEN_HEIGHT-2; i++)
+  {
+    if (lastLineFound)
+    {
+      break;
+    }
+
+    // skip if current line contains EOF
+    word ypos = userCursorY+windowYscroll;
+    word i;
+    for (i = 0; i < MAX_LINE_WIDTH; i++)
+    {
+      if (mem[ypos][i] == '\n')
+      {
+        break;
+      }
+      if (mem[ypos][i] == EOF)
+      {
+        lastLineFound = 1;
+        break;
+      }
+    }
+
+    if (userCursorY < SCREEN_HEIGHT-2)
+    {
+      userCursorY++;
+    }
+    else
+    {
+      if (windowYscroll < lastLineNumber-(SCREEN_HEIGHT-2))
+      {
+        windowYscroll++;
+      }
+    }
+  }
+
+  printWindow();
+  fixCursorToNewline();
+  printCursor();
+}
+
+void home()
+{
+  clearCursor();
+  userCursorX = 0;
+  windowXscroll = 0;
+  printWindow();
+  printCursor();
+}
+
+void end()
+{
+  clearCursor();
+  
+  userCursorX = 0;
+  windowXscroll = 0;
+
+
+  word xpos = 0;
+  word ypos = userCursorY+windowYscroll;
+  while (mem[ypos][xpos] != '\n' && mem[ypos][xpos] != EOF)
+  {
+    if (userCursorX < SCREEN_WIDTH-1)
+    {
+      userCursorX++;
+    }
+    else
+    {
+      if (windowXscroll < MAX_LINE_WIDTH-SCREEN_WIDTH)
+      {
+        windowXscroll++;
+      }
+    }
+
+    xpos = userCursorX + windowXscroll;
+
+    if (xpos == MAX_LINE_WIDTH)
+    {
+      exitRoutine();
+      BDOS_PrintConsole("E: could not find newline\n");
+      exit();
+    }
+  }
+  
+  printWindow();
+  printCursor();
+}
+
+
 void removeCurrentLine()
 {
   word ypos = userCursorY+windowYscroll;
@@ -780,6 +932,7 @@ void removeCharacter()
         newLinePos++;
         if (newLinePos == MAX_LINE_WIDTH)
         {
+          exitRoutine();
           BDOS_PrintConsole("E: could not find newline\n");
           exit();
         }
@@ -827,6 +980,15 @@ void addEditHeader()
   headerText[35] = 'X';
   headerText[36] = ':';
   itoa(userCursorX+windowXscroll, &headerText[37]);
+}
+
+
+void exitRoutine()
+{
+  GFX_clearWindowtileTable();
+  GFX_clearWindowpaletteTable();
+  GFX_clearBGtileTable();
+  GFX_clearBGpaletteTable();
 }
 
 
@@ -889,18 +1051,32 @@ int main()
       switch (c)
       {
         case 27: // escape
-          memcpy(&headerText[25], "Type y to save", 14);
+          memcpy(&headerText[23], "Save? Type y/n/c", 16);
           printHeader();
 
-          // wait for user input
-          while (HID_FifoAvailable() == 0);
-
-          if (HID_FifoRead() == 'y')
+          // ask for confirmation
+          while (c != 'y' && c != 'n' && c != 'Y' && c != 'N' && c != 'c' && c != 'C')
           {
-            writeMemToFile();
+            // wait until a character is pressed
+            while (HID_FifoAvailable() == 0);
+
+            c = HID_FifoRead();
           }
 
-          return 'q'; // exit
+          if (c == 'y' || c == 'Y')
+          {
+            writeMemToFile();
+            exitRoutine();
+            return 'q'; // exit
+          }
+          if (c == 'n' || c == 'N')
+          {
+            exitRoutine();
+            return 'q'; // exit
+          }
+
+          memcpy(&headerText[23], "                ", 16); // clear header text
+
           break;
         case ARROW_LEFT:
           moveCursorLeft();
@@ -913,6 +1089,18 @@ int main()
           break;
         case ARROW_UP:
           moveCursorUp();
+          break;
+        case BTN_HOME:
+          home();
+          break;
+        case BTN_END:
+          end();
+          break;
+        case BTN_PAGEUP:
+          pageUp();
+          break;
+        case BTN_PAGEDOWN:
+          pageDown();
           break;
         case 0x8: // backspace
           removeCharacter();
@@ -941,7 +1129,7 @@ int main()
 // timer1 interrupt handler
 void int1()
 {
-   timer1Value = 1; // notify ending of timer1
+  timer1Value = 1; // notify ending of timer1
 }
 
 void int2()
