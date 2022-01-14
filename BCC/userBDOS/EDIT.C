@@ -42,6 +42,7 @@
 #include "LIB/STDLIB.C"
 #include "LIB/FS.C"
 
+#define FBUF_ADDR           0x440000 // location of input file buffer
 #define FILE_MEMORY_ADDR    0x480000 // location of file content
 #define MAX_LINE_WIDTH      240     // max width of line in mem buffer, multiple of 40 (screen width)
 #define MAX_LINES           8192    // maximum number of lines to prevent out of memory writes (8192*256*4 = 8MiB)
@@ -79,7 +80,7 @@ char (*mem)[MAX_LINE_WIDTH] = (char (*)[MAX_LINE_WIDTH]) FILE_MEMORY_ADDR; // 2d
 // Length of buffer always should be less than 65536, since this is the maximum FS_readFile can do in a single call
 #define FBUF_LEN 4096
 #define EOF -1
-char inputBuffer[FBUF_LEN];
+char *inputBuffer = (char*) FBUF_ADDR; //[FBUF_LEN];
 word inbufStartPos = 0; // where in the file the buffer starts
 word inbufCursor = 0; // where in the buffer we currently are working
 word lastLineNumber = 0;
@@ -1018,15 +1019,16 @@ int main()
     strcpy(infilename, bothPath);
   }
 
-  // Open the input file
-  BDOS_PrintConsole(infilename);
-  BDOS_PrintConsole("\n");
-
   if (!fopenRead())
   {
     BDOS_PrintConsole("E: Could not open file\n");
     exit();
   }
+
+  // Open the input file
+  BDOS_PrintConsole("Opening ");
+  BDOS_PrintConsole(infilename);
+  BDOS_PrintConsole("...\n");
 
   readInputFile();
 
@@ -1051,7 +1053,7 @@ int main()
       switch (c)
       {
         case 27: // escape
-          memcpy(&headerText[23], "Save? Type y/n/c", 16);
+          memcpy(&headerText[24], "Save? Type y/n/c", 16);
           printHeader();
 
           // ask for confirmation
@@ -1075,7 +1077,7 @@ int main()
             return 'q'; // exit
           }
 
-          memcpy(&headerText[23], "                ", 16); // clear header text
+          memcpy(&headerText[24], "                ", 16); // clear header text
 
           break;
         case ARROW_LEFT:
