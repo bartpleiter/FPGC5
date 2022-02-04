@@ -646,63 +646,25 @@ void SHELL_createDir(char* arg)
     strcpy(SHELL_path, SHELL_pathBackup);
 }
 
-
-// Copies a file. TODO: add dir (recursive) support
-void SHELL_copy(char* src, char* dst)
-{
-    // backup current path
-    strcpy(SHELL_pathBackup, SHELL_path);
-
-    // if current path is correct (can be file or directory)
-    if (FS_sendFullPath(SHELL_path) == FS_ANSW_USB_INT_SUCCESS)
-    {
-        word retval = FS_open();
-        // check that we can open the path
-        if (retval == FS_ANSW_USB_INT_SUCCESS || retval == FS_ANSW_ERR_OPEN_DIR)
-        {
-            /*
-            [] check src file is valid
-            [] create dst file using SHELL_createFile (check on success)
-            [] in chunks of ?KiB,
-                [] open src
-                [] set cursor to start of chunk
-                [] read chunk into buffer
-                [] close src
-                [] open dst
-                [] set cursor to start of chunk
-                [] write buffer into dst
-                [] close dst
-            */
-        }
-        else
-            GFX_PrintConsole("E: Invalid path\n");
-    }
-    else
-        GFX_PrintConsole("E: Invalid path\n");
-
-    // restore path
-    strcpy(SHELL_path, SHELL_pathBackup);
-}
-
-
 // Print help text
 void SHELL_printHelp()
 {
     GFX_PrintConsole("BDOS for FPGC\n");
-    GFX_PrintConsole("Currently supported commands:\n");
+    GFX_PrintConsole("Supported OS commands:\n");
     GFX_PrintConsole("- ./file [args]\n");
     GFX_PrintConsole("- CD     [arg1]\n");
     GFX_PrintConsole("- LS     [arg1]\n");
-    GFX_PrintConsole("- CLEAR\n");
     GFX_PrintConsole("- PRINT  [arg1]\n");
     GFX_PrintConsole("- MKDIR  [arg1]\n");
     GFX_PrintConsole("- MKFILE [arg1]\n");
     GFX_PrintConsole("- RM     [arg1]\n");
+    GFX_PrintConsole("- CLEAR\n");
     GFX_PrintConsole("- HELP\n");
 
     GFX_PrintConsole("\nExtra info:\n");
-    GFX_PrintConsole("Paths can be relative or absolute\n");
-    GFX_PrintConsole("Unrecognized commands will be looked\n up in the /BIN dir, if a file matches\n the command then it will be executed\n");
+    GFX_PrintConsole("- Programs are executed form /BIN\n");
+    GFX_PrintConsole("- Run LS /BIN to list all programs\n");
+    GFX_PrintConsole("- Paths can be relative or absolute\n");
 }
 
 
@@ -717,10 +679,7 @@ void SHELL_printHelp()
 // [x] MKFILE
 // [x] RM
 // [x] HELP
-// [] CP
-// [] MV (CP + RM source)
 // [] RENAME
-// [] DUMP (print from memory address)
 void SHELL_parseCommand(char* p)
 {
     // ./ (RUN)
@@ -856,23 +815,6 @@ void SHELL_parseCommand(char* p)
     else if (SHELL_commandCompare(p, "help"))
     {
         SHELL_printHelp();
-    }
-
-    // CP
-    else if (SHELL_commandCompare(p, "cp"))
-    {
-        word args = SHELL_numberOfArguments(p);
-        // if incorrect number of arguments
-        if (args != 2)
-        {
-            GFX_PrintConsole("E: Expected 2 argument\n");
-            return;
-        }
-        else
-        {
-            char* secondArgLocation = p+0; // TODO: find pointer location of second space
-            SHELL_copy(p+3, secondArgLocation); // pointer first arg, which ends with space, and second arg which ends with \0
-        }
     }
 
     // No command
