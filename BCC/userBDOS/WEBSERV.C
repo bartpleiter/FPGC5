@@ -9,10 +9,11 @@
 #include "LIB/FS.C"
 #include "LIB/WIZ5500.C"
 
-#define HEAP_LOCATION 0x500000
-#define FILE_BUFFER_SIZE 1024 // buffer size for reading files from USB storage
+#define TMPMEM_LOCATION 0x440000
+#define FILE_BUFFER_LOCATION 0x430000
+#define FILE_BUFFER_SIZE 8192 // buffer size for reading files from USB storage
 
-char fileBuffer[FILE_BUFFER_SIZE];
+char* fileBuffer = (char *) FILE_BUFFER_LOCATION; //fileBuffer[FILE_BUFFER_SIZE];
 char WIZrbuf[WIZNET_MAX_RBUF];
 
 //-------------------
@@ -168,7 +169,11 @@ word wiz_listDir(char* f, char* b)
 }
 
 
-
+word PercentageDone(word remaining, word full)
+{
+  word x = remaining * 100;
+  return 100 - MATH_divU(x, full);
+}
 
 //-------------------
 //W5500 CONNECTION HANDLING FUNCTIONS
@@ -185,27 +190,59 @@ word wizWriteResponseFromUSB(word s, word fileSize)
   word bytesSent = 0;
   char buffer[10];
 
+  char dbuf[10]; // percentage done for progress indication
+  dbuf[0] = 0; // terminate
+
   // loop until all bytes are sent
   while (bytesSent != fileSize)
   {
-  word partToSend = fileSize - bytesSent;
-  // send in parts of FILE_BUFFER_SIZE
-  if (partToSend > FILE_BUFFER_SIZE)
-    partToSend = FILE_BUFFER_SIZE;
+    word partToSend = fileSize - bytesSent;
+    // send in parts of FILE_BUFFER_SIZE
+    if (partToSend > FILE_BUFFER_SIZE)
+      partToSend = FILE_BUFFER_SIZE;
 
-  // read from usb to buffer
-  if (FS_readFile(fileBuffer, partToSend, 0) != FS_ANSW_USB_INT_SUCCESS)
-    BDOS_PrintConsole("read error\n");
-  if (!wizWriteDataFromMemory(s, fileBuffer, partToSend))
-  {
-    //uprintln("wizTranser error");
-    return 0;
+    // read from usb to buffer
+    if (FS_readFile(fileBuffer, partToSend, 0) != FS_ANSW_USB_INT_SUCCESS)
+      BDOS_PrintConsole("read error\n");
+    if (!wizWriteDataFromMemory(s, fileBuffer, partToSend))
+    {
+      //uprintln("wizTranser error");
+      return 0;
+    }
+
+    // Update the amount of bytes sent
+    bytesSent += partToSend;
+
+    //BDOS_PrintConsole(".");
+
+    // indicate progress
+    // remove previous percentage
+    word i = strlen(dbuf);
+    while (i > 0)
+    {
+      BDOS_PrintcConsole(0x8); // backspace
+      i--;
+    }
+    if (strlen(dbuf) != 0)
+    {
+      BDOS_PrintcConsole(0x8); // backspace
+    }
+
+    itoa(PercentageDone(fileSize - bytesSent, fileSize), dbuf);
+    BDOS_PrintConsole(dbuf);
+    BDOS_PrintcConsole('%');
   }
 
-  // Update the amount of bytes sent
-  bytesSent += partToSend;
-
-  BDOS_PrintConsole(".");
+  // remove previous percentage
+  word i = strlen(dbuf);
+  while (i > 0)
+  {
+    BDOS_PrintcConsole(0x8); // backspace
+    i--;
+  }
+  if (strlen(dbuf) != 0)
+  {
+    BDOS_PrintcConsole(0x8); // backspace
   }
 
   FS_close();
@@ -216,7 +253,7 @@ word wizWriteResponseFromUSB(word s, word fileSize)
 void wizSend404Response(word s)
 {
   char* retTxt = "<!DOCTYPE html><html><head><title>ERROR404</title></head><body>ERROR 404: This is not the page you are looking for</body></html>";
-  wizWriteDataFromMemory(s, retTxt, 128);
+  wizWriteDataFromMemory(s, retTxt, strlen(retTxt));
 }
 
 
@@ -233,32 +270,32 @@ word wizGetFilePath(char* rbuf, char* pbuf)
 
   while (foundPath == 0)
   {
-  // until we found the first space after GET (or POST)
-  if (foundSpace == 0 && rbuf[cursor] == 32)
-  {
-    foundSpace = 1;
-  }
-  else 
-  {
-    if (foundSpace == 1)
+    // until we found the first space after GET (or POST)
+    if (foundSpace == 0 && rbuf[cursor] == 32)
     {
-      // until we found the second space (after the file path)
-      if (rbuf[cursor] == 32)
+      foundSpace = 1;
+    }
+    else 
+    {
+      if (foundSpace == 1)
       {
-      // exit the loop, we are done
-      foundPath = 1;
-      }
-      else
-      {
-      // copy the character
-      pbuf[pathIndex] = rbuf[cursor];
-      //uprintc(rbuf[cursor]);
-      pathIndex++;
+        // until we found the second space (after the file path)
+        if (rbuf[cursor] == 32)
+        {
+          // exit the loop, we are done
+          foundPath = 1;
+        }
+        else
+        {
+          // copy the character
+          pbuf[pathIndex] = rbuf[cursor];
+          //uprintc(rbuf[cursor]);
+          pathIndex++;
+        }
       }
     }
-  }
-  // go to next character
-  cursor++;
+    // go to next character
+    cursor++;
   }
 
   pbuf[pathIndex] = 0; // terminate string
@@ -283,17 +320,17 @@ void wizDirectoryListing(word s, char* path)
   wizWriteDataFromMemory(s, "</h2><table><tr><th>Name</th><th>Size</th></tr>", 47);
 
 
-  char *b = (char *) HEAP_LOCATION;
+  char *b = (char *) TMPMEM_LOCATION;
   if (wiz_listDir(path, b) == FS_ANSW_USB_INT_SUCCESS)
   {
-  word listSize = 0;
-  while (b[listSize] != 0)
-    listSize++;
+    word listSize = 0;
+    while (b[listSize] != 0)
+      listSize++;
 
-  if (listSize == 0)
-    listSize = 1;
+    if (listSize == 0)
+      listSize = 1;
 
-  wizWriteDataFromMemory(s, b, listSize-1);
+    wizWriteDataFromMemory(s, b, listSize-1);
   }
 
   // write end of html page
@@ -303,123 +340,129 @@ void wizDirectoryListing(word s, char* path)
 
 void wizServeFile(word s, char* path)
 {
-  BDOS_PrintConsole("Request: ");
   BDOS_PrintConsole(path);
-  BDOS_PrintConsole("\n");
+  BDOS_PrintConsole(": ");
 
   // Redirect "/" to "/INDEX.HTM"
   if (path[0] == 47 && path[1] == 0)
   {
-  // send an actual redirect to the browser
-  char* response = "HTTP/1.1 301 Moved Permanently\nLocation: /INDEX.HTM\n";
-  BDOS_PrintConsole("Response: redirect to /INDEX.HTM\n");
-  wizWriteDataFromMemory(s, response, 52);
-  // Disconnect after sending the redirect
-  wizCmd(s, WIZNET_CR_DISCON);
-  return;
+    // send an actual redirect to the browser
+    char* response = "HTTP/1.1 301 Moved Permanently\nLocation: /INDEX.HTM\n";
+    BDOS_PrintConsole("Redirect to /INDEX.HTM\n");
+    wizWriteDataFromMemory(s, response, strlen(response));
+    // Disconnect after sending the redirect
+    wizCmd(s, WIZNET_CR_DISCON);
+    return;
   }
 
   word error = 0;
   word listDir = 0;
 
   if (FS_sendFullPath(&path[0]) != FS_ANSW_USB_INT_SUCCESS) // automatically upercases the path
-  error = 404;
+    error = 404;
 
   if (!error)
   {
-  word openStatus = FS_open();
-  if (openStatus == FS_ANSW_ERR_OPEN_DIR)
-    listDir = 1;
-  else if (openStatus != FS_ANSW_USB_INT_SUCCESS)
-    error = 404;
+    word openStatus = FS_open();
+    if (openStatus == FS_ANSW_ERR_OPEN_DIR)
+      listDir = 1;
+    else if (openStatus != FS_ANSW_USB_INT_SUCCESS)
+      error = 404;
   }
 
   word fileSize = 0;
   if (!error && !listDir)
-  fileSize = FS_getFileSize();
+    fileSize = FS_getFileSize();
 
   if (!error && !listDir)
   {
-  if (fileSize == 0)
-    error = 404; // handle empty files as if they do not exist
+    if (fileSize == 0)
+      error = 404; // handle empty files as if they do not exist
   }
 
   // send error response on error
   if (error)
   {
-  BDOS_PrintConsole("Response: 404 ");
-  // currently puts all errors under 404
-  // write header
-  char* header = "HTTP/1.1 404 Not Found\nServer: FPGC4/1.0\nContent-Type: text/html\n\n";
-  wizWriteDataFromMemory(s, header, 66);
+    BDOS_PrintConsole("404 ");
+    // currently puts all errors under 404
+    // write header
+    char* header = "HTTP/1.1 404 Not Found\nServer: FPGC/1.0\nContent-Type: text/html\n\n";
+    wizWriteDataFromMemory(s, header, strlen(header));
 
-  FS_sendFullPath("/404.HTM");
-  if (FS_open() != FS_ANSW_USB_INT_SUCCESS)
-  {
-    // if the custom 404 does not exist, return own error code
-    BDOS_PrintConsole("no 404.HTM\n");
-    wizSend404Response(s);
-  }
-  else
-  {
-    // send custom 404
-    fileSize = FS_getFileSize();
-    // write the response from USB
-    BDOS_PrintConsole("404.HTM ");
-    wizWriteResponseFromUSB(s, fileSize);
-    BDOS_PrintConsole("Done\n");
-  }
-  }
-  else
-  {
-  if (listDir)
-  {
-    // check if last character is a /
-    // if not, redirect to the path with / after it
-    word i = 0;
-    while (path[i] != 0)
-    i++;
-
-    if (path[i-1] != '/')
+    FS_sendFullPath("/404.HTM");
+    if (FS_open() != FS_ANSW_USB_INT_SUCCESS)
     {
-    BDOS_PrintConsole(path);
-    BDOS_PrintConsole("\n");
-    path[i] = '/';
-    path[i+1] = 0;
-    char* response = "HTTP/1.1 301 Moved Permanently\nLocation: ";
-    BDOS_PrintConsole("Response: redirect to ");
-    BDOS_PrintConsole(path);
-    BDOS_PrintConsole("\n");
-    wizWriteDataFromMemory(s, response, 41);
-    wizWriteDataFromMemory(s, path, i+1);
-    wizWriteDataFromMemory(s, "\n", 1);
+      // if the custom 404 does not exist, return own error code
+      BDOS_PrintConsole("no 404.HTM\n");
+      wizSend404Response(s);
     }
     else
     {
-    BDOS_PrintConsole("Response: 200 OK ");
-    // write header
-    // currently omitting content type
-    char* header = "HTTP/1.1 200 OK\nServer: FPGC4/1.0\n\n";
-    wizWriteDataFromMemory(s, header, 35);
-    wizDirectoryListing(s, path);
-    BDOS_PrintConsole("Done\n");
+      // send custom 404
+      fileSize = FS_getFileSize();
+      // write the response from USB
+      BDOS_PrintConsole("/404.HTM ");
+      wizWriteResponseFromUSB(s, fileSize);
+      BDOS_PrintConsole("Done\n");
     }
   }
   else
   {
-    if (fileSize + 1 != 0) // really make sure no directory is being read
+    if (listDir)
     {
-    BDOS_PrintConsole("Response: 200 OK ");
-    // write header
-    // currently omitting content type
-    char* header = "HTTP/1.1 200 OK\nServer: FPGC4/1.0\n\n";
-    wizWriteDataFromMemory(s, header, 35);
-    // write the response from USB
-    wizWriteResponseFromUSB(s, fileSize);
-    BDOS_PrintConsole("Done\n");
+      // check if last character is a /
+      // if not, redirect to the path with / after it
+      word i = 0;
+      while (path[i] != 0)
+        i++;
+
+      if (path[i-1] != '/')
+      {
+        //BDOS_PrintConsole(path);
+        //BDOS_PrintConsole("\n");
+        path[i] = '/';
+        path[i+1] = 0;
+        char* response = "HTTP/1.1 301 Moved Permanently\nLocation: ";
+        BDOS_PrintConsole("Redirect to ");
+        BDOS_PrintConsole(path);
+        BDOS_PrintConsole("\n");
+        wizWriteDataFromMemory(s, response, strlen(response));
+        wizWriteDataFromMemory(s, path, i+1);
+        wizWriteDataFromMemory(s, "\n", 1);
+      }
+      else
+      {
+        BDOS_PrintConsole("200 ");
+        // write header
+        // currently omitting content type
+        char* header = "HTTP/1.1 200 OK\nServer: FPGC/1.0\n\n";
+        wizWriteDataFromMemory(s, header, strlen(header));
+        wizDirectoryListing(s, path);
+        BDOS_PrintConsole("Done\n");
+      }
     }
-    
-  }
+    else
+    {
+      if (fileSize + 1 != 0) // really make sure no directory is being read
+      {
+        BDOS_PrintConsole("200 ");
+        // write header
+        // currently omitting content type
+        // includes content length so the client knows how large a download is
+        char header[128];
+        header[0] = 0;
+        strcat(header, "HTTP/1.1 200 OK\nServer: FPGC/1.0\nContent-Length: ");
+        char fileSizeStr[24];
+        itoa(fileSize, fileSizeStr);
+        strcat(header, fileSizeStr);
+        strcat(header, "\n\n");
+        wizWriteDataFromMemory(s, header, strlen(header));
+        // write the response from USB
+        wizWriteResponseFromUSB(s, fileSize);
+        BDOS_PrintConsole("Done\n");
+      }
+      
+    }
   }
 
   // Disconnect after sending a response
@@ -439,8 +482,8 @@ void wizHandleSession(word s)
 
   if (rsize == 0)
   {
-  wizCmd(s, WIZNET_CR_DISCON);
-  return;
+    wizCmd(s, WIZNET_CR_DISCON);
+    return;
   }
 
   char* rbuf = WIZrbuf;
@@ -494,40 +537,40 @@ int main()
   {
     if (HID_FifoAvailable())
     {
-    HID_FifoRead(); // remove it from the buffer
-    return 'q';
+      HID_FifoRead(); // remove it from the buffer
+      return 'q';
     }
     // handle all sockets (socket 7 is reserved by netHID)
     word s;
     for (s = 0; s < 7; s++)
     {
-    // Get status for socket s
-    sxStatus = wizGetSockReg8(s, WIZNET_SnSR);
+      // Get status for socket s
+      sxStatus = wizGetSockReg8(s, WIZNET_SnSR);
 
-    if (sxStatus == WIZNET_SOCK_CLOSED)
-    { 
-      // Open the socket when closed
-      // Set socket s in TCP Server mode at port 80
-      wizInitSocketTCP(s, 80);
-    }
-    else if (sxStatus == WIZNET_SOCK_ESTABLISHED)
-    {
-      // Handle session when a connection is established
-      // Also reinitialize socket
-      wizHandleSession(s);
-      // Set socket s in TCP Server mode at port 80
-      wizInitSocketTCP(s, 80);
-    }
-    else if (sxStatus == WIZNET_SOCK_LISTEN || sxStatus == WIZNET_SOCK_SYNSENT || sxStatus == WIZNET_SOCK_SYNRECV)
-    {
-      // Do nothing in these cases
-    }
-    else
-    {
-      // In other cases, reset the socket
-      // Set socket s in TCP Server mode at port 80
-      wizInitSocketTCP(s, 80);
-    }
+      if (sxStatus == WIZNET_SOCK_CLOSED)
+      { 
+        // Open the socket when closed
+        // Set socket s in TCP Server mode at port 80
+        wizInitSocketTCP(s, 80);
+      }
+      else if (sxStatus == WIZNET_SOCK_ESTABLISHED)
+      {
+        // Handle session when a connection is established
+        // Also reinitialize socket
+        wizHandleSession(s);
+        // Set socket s in TCP Server mode at port 80
+        wizInitSocketTCP(s, 80);
+      }
+      else if (sxStatus == WIZNET_SOCK_LISTEN || sxStatus == WIZNET_SOCK_SYNSENT || sxStatus == WIZNET_SOCK_SYNRECV)
+      {
+        // Do nothing in these cases
+      }
+      else
+      {
+        // In other cases, reset the socket
+        // Set socket s in TCP Server mode at port 80
+        wizInitSocketTCP(s, 80);
+      }
     }
     // Delay a few milliseconds
     // Should (could) eventually be replaced by an interrupt checker
@@ -540,7 +583,7 @@ int main()
 // timer1 interrupt handler
 void int1()
 {
-   timer1Value = 1; // notify ending of timer1
+  timer1Value = 1; // notify ending of timer1
 }
 
 void int2()

@@ -31,7 +31,7 @@ char outfilename[96];  // output filename
 #define FOPEN_FILENAME_LIMIT 32
 #define STDIO_FBUF_ADDR 0x420000
 #define STDIO_MEMBUF_ADDR 0x440000
-#define FOPEN_MAX_FILESIZE 0x200000 // 8 MiB
+#define FOPEN_MAX_FILESIZE 0x200000 // 5 MiB
 
 // Buffers for reading
 // Length of buffer always should be less than 65536, since this is the maximum FS_readFile can do in a single call
