@@ -23,7 +23,9 @@
 #define word char
 
 #define SYSCALL_RETVAL_ADDR 0x200000    // address for system call communication with user program
-#define TEMP_ADDR           0x210000    // address for (potentially) large temporary outputs/buffers
+#define FS_LDIR_FNAME_ADDR  0x210000    // address for filename list in ldir command
+#define FS_LDIR_FSIZE_ADDR  0x218000    // address for filesize list in ldir command
+#define TEMP_ADDR           0x220000    // address for (potentially) large temporary outputs/buffers
 #define RUN_ADDR            0x400000    // address of loaded user program
 
 #define FS_PATH_MAX_LENGHT  256         // max length of a path

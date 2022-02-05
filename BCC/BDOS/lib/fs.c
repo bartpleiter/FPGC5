@@ -82,6 +82,12 @@
 #define FS_ATTR_DIRECTORY           0x10 
 #define FS_ATTR_ARCHIVE             0x20
 
+#define FS_LDIR_FNAME_SIZE          16
+
+// 2d array for filename list and 1d array for filesize list used in listdir
+char (*fsLdirFnames)[FS_LDIR_FNAME_SIZE] = (char (*)[FS_LDIR_FNAME_SIZE]) FS_LDIR_FNAME_ADDR;
+word *fsLdirFsizes= (word *) FS_LDIR_FSIZE_ADDR;
+word fsLdirEntries = 0; // index for lists
 
 // Workaround for defines in ASM
 void FS_asmDefines()
@@ -701,7 +707,7 @@ word FS_sendFullPath(char* f)
 // len should be <= 8 chars
 // does not add a new line at the end.
 // returns length of written string
-word FS_parseFATstring(char* fatBuffer, word len, char* b, word* bufLen)
+word FS_parseFATstring(char* fatBuffer, word len, char* b)
 {
     if (len > 8)
     {
@@ -710,6 +716,8 @@ word FS_parseFATstring(char* fatBuffer, word len, char* b, word* bufLen)
     }
 
     word retval = 0;
+
+    word bufLen = 0;
 
     // buffer of parsed string
     char nameBuf[9];
@@ -744,8 +752,8 @@ word FS_parseFATstring(char* fatBuffer, word len, char* b, word* bufLen)
     i = 0;
     while (nameBuf[i] != 0)
     {
-        b[*bufLen] = nameBuf[i];
-        (*bufLen)++;
+        b[bufLen] = nameBuf[i];
+        bufLen++;
         i++;
     }
     
@@ -754,10 +762,12 @@ word FS_parseFATstring(char* fatBuffer, word len, char* b, word* bufLen)
 
 // Parses and writes name.extension and filesize on one line
 // ignores lines with '.' and ".." as filename
-void FS_parseFATdata(word datalen, char* fatBuffer, char* b, word* bufLen)
+void FS_parseFATdata(word datalen, char* fatBuffer)
 {
     if (datalen != 32)
     {
+        memcpy(fsLdirFnames[fsLdirEntries], "", 1);
+        fsLdirFsizes[fsLdirEntries] = 0;
         GFX_PrintConsole("Unexpected FAT table length\n");
         return;
     }
@@ -765,24 +775,28 @@ void FS_parseFATdata(word datalen, char* fatBuffer, char* b, word* bufLen)
     // ignore '.'
     if (memcmp(fatBuffer, ".          ", 11))
     {
+        memcpy(fsLdirFnames[fsLdirEntries], ".", 2);
+        fsLdirFsizes[fsLdirEntries] = -1;
         return;
     }
 
     // ignore ".."
     if (memcmp(fatBuffer, "..         ", 11))
     {
+        memcpy(fsLdirFnames[fsLdirEntries], "..", 3);
+        fsLdirFsizes[fsLdirEntries] = -1;
         return;
     }
 
     // parse filename
-    word printLen = FS_parseFATstring(fatBuffer, 8, b, bufLen);
+    word fnameLen = FS_parseFATstring(fatBuffer, 8, fsLdirFnames[fsLdirEntries]);
 
     // add '.' and parse extension
     if (fatBuffer[8] != ' ' || fatBuffer[9] != ' ' || fatBuffer[10] != ' ')
     {
-        b[*bufLen] = '.';
-        (*bufLen)++;
-        printLen += FS_parseFATstring(fatBuffer+8, 3, b, bufLen) + 1;
+        fsLdirFnames[fsLdirEntries][fnameLen] = '.';
+        fnameLen++;
+        fnameLen += FS_parseFATstring(fatBuffer+8, 3, fsLdirFnames[fsLdirEntries] + fnameLen);
     }
 
     // check if dir
@@ -793,20 +807,13 @@ void FS_parseFATdata(word datalen, char* fatBuffer, char* b, word* bufLen)
         isDir = 1;
     }
 
+    fsLdirFnames[fsLdirEntries][fnameLen] = 0; // terminate
+
     // stop if dir
     if (isDir)
     {
-        b[*bufLen] = '\n';
-        (*bufLen)++;
+        fsLdirFsizes[fsLdirEntries] = -1;
         return;
-    }
-    
-    // append with spaces until 16th char
-    while (printLen < 16)
-    {
-        b[*bufLen] = ' ';
-        (*bufLen)++;
-        printLen++;
     }
 
     // filesize
@@ -816,25 +823,12 @@ void FS_parseFATdata(word datalen, char* fatBuffer, char* b, word* bufLen)
     fileSize += (fatBuffer[30] << 16);
     fileSize += (fatBuffer[31] << 24);
 
-    // filesize to integer string
-    char buffer[10];
-    itoa(fileSize, buffer);
-
-    // write to buffer
-    word i = 0;
-    while (buffer[i] != 0)
-    {
-        b[*bufLen] = buffer[i];
-        (*bufLen)++;
-        i++;
-    }
-    b[*bufLen] = '\n';
-    (*bufLen)++;
+    fsLdirFsizes[fsLdirEntries] = fileSize;
 }
 
 // Reads FAT data for single entry
 // FAT data is parsed by FS_parseFatData()
-void FS_readFATdata(char* b, word* bufLen)
+void FS_readFATdata()
 {
     FS_spiBeginTransfer();
     FS_spiTransfer(FS_CMD_RD_USB_DATA0);
@@ -845,20 +839,19 @@ void FS_readFATdata(char* b, word* bufLen)
     {
         fatbuf[i] = FS_spiTransfer(0x00);
     }
-    FS_parseFATdata(datalen, fatbuf, b, bufLen);
+    FS_parseFATdata(datalen, fatbuf);
     FS_spiEndTransfer();
 }
 
 // Lists directory of full path f
 // f needs to start with / and not end with /
 // returns FS_ANSW_USB_INT_SUCCESS if successful
+// uses fsLdirX variables to sort all entries
 // writes parsed result to address b
 // result is terminated with a \0
-// TODO: use two 2d arrays for dirs and files,
-//  then sort afterwards and write to buffer b
 word FS_listDir(char* f, char* b)
 {
-    word bufLen = 0;
+    b[0] = 0; // initialize output string
 
     word retval = FS_sendFullPath(f);
     // return on failure
@@ -883,21 +876,90 @@ word FS_listDir(char* f, char* b)
         return retval;
     }
 
-    // init length of output buffer
-    bufLen = 0;
+    fsLdirEntries = 0; // reset
 
     while (retval == FS_ANSW_USB_INT_DISK_READ)
     {
-        FS_readFATdata(b, &bufLen);
+        FS_readFATdata();
+        fsLdirEntries++;
         FS_spiBeginTransfer();
         FS_spiTransfer(FS_CMD_FILE_ENUM_GO);
         FS_spiEndTransfer();
         retval = FS_WaitGetStatus();
     }
 
-    // terminate buffer
-    b[bufLen] = 0;
-    bufLen++;
+    // print lists
+    word i, j, tmpFsize;
+    char tmpFname[FS_LDIR_FNAME_SIZE];
+    char fsizeBuf[12]; // max 4.29B which fits in 12b + term
+
+    // sort ascending on filesize to get folders on top
+    for (i = 0; i < fsLdirEntries; ++i)
+    {
+        for (j = i + 1; j < fsLdirEntries; ++j)
+        {
+            if (fsLdirFsizes[i] > fsLdirFsizes[j]) // signed comparison
+            {
+                tmpFsize = fsLdirFsizes[i];
+                strcpy(tmpFname, fsLdirFnames[i]);
+
+                fsLdirFsizes[i] = fsLdirFsizes[j];
+                strcpy(fsLdirFnames[i], fsLdirFnames[j]);
+
+                fsLdirFsizes[j] = tmpFsize;
+                strcpy(fsLdirFnames[j], tmpFname);
+            }
+        }
+    }
+
+    // sort ascending on filename without mixing files and folders
+    for (i = 0; i < fsLdirEntries; ++i)
+    {
+        for (j = i + 1; j < fsLdirEntries; ++j)
+        {
+            if ((fsLdirFsizes[i] >= 0 && fsLdirFsizes[j] >= 0) || (fsLdirFsizes[i] < 0 && fsLdirFsizes[j] < 0)) // do not mix
+            {
+                if (strcmp(fsLdirFnames[i], fsLdirFnames[j]) > 0) // signed comparison
+                {
+                    tmpFsize = fsLdirFsizes[i];
+                    strcpy(tmpFname, fsLdirFnames[i]);
+
+                    fsLdirFsizes[i] = fsLdirFsizes[j];
+                    strcpy(fsLdirFnames[i], fsLdirFnames[j]);
+
+                    fsLdirFsizes[j] = tmpFsize;
+                    strcpy(fsLdirFnames[j], tmpFname);
+                }
+            } 
+        }
+    }
+
+    // write printable string to b
+    for (i = 0; i < fsLdirEntries; i++)
+    {
+        // skip "." and ".."
+        if (strcmp(fsLdirFnames[i], ".")  && strcmp(fsLdirFnames[i], ".."))
+        {
+            // print filename.ext
+            strcat(b, fsLdirFnames[i]);
+
+            // skip filesize if directory
+            if (fsLdirFsizes[i] >= 0)
+            {
+                // append with spaces until a width of 16 is reached
+                word fnameLen = strlen(fsLdirFnames[i]);
+                while (fnameLen < 16)
+                {
+                    strcat(b, " ");
+                    fnameLen++;
+                }
+
+                itoa(fsLdirFsizes[i], fsizeBuf);
+                strcat(b, fsizeBuf);
+            }  
+            strcat(b, "\n");
+        }
+    }
 
     return FS_ANSW_USB_INT_SUCCESS;
 }

@@ -111,25 +111,17 @@ word strcat(char* dest, char* src)
 
 /*
 Compares two strings a and b
-Returns 1 if similar, 0 otherwise
+Returns 0 if similar
+ otherwise returns the difference in the first non-matching character
 */
-word strcmp(char* a, char* b, word n)
+word strcmp(char* s1, char* s2)
 {
-    if (strlen(a) != strlen(b))
-        return 0;
-
-
-    word i = 0;
-    while (a[i] != 0)
-    {
-        if (a[i] != b[i])
-        {
-            return 0;
-        }
-        i++;
-    }
-
-    return 1;
+  while(*s1 && (*s1 == *s2))
+  {
+    s1++;
+    s2++;
+  }
+  return *s1 - *s2;
 }
 
 
