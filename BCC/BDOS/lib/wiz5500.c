@@ -416,6 +416,7 @@ word wizGetSockReg16(word s, word addr)
 // Initialize W5500 chip
 void wiz_Init(char* ip_addr, char* gateway_addr, char* mac_addr, char* sub_mask)
 {
+  W5500_asmDefines(); // workaround to prevent deletion by optimizer
   WizSpiEndTransfer();
   delay(10);
 

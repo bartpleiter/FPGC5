@@ -447,6 +447,7 @@ void GFX_clearParameters()
 // clears and initializes VRAM (excluding pattern and palette data table)
 void GFX_initVram() 
 {
+    GFX_asmDefines(); // workaround to prevent deletion of function by optimizer
     GFX_clearBGtileTable();
     GFX_clearBGpaletteTable();
     GFX_clearWindowtileTable();

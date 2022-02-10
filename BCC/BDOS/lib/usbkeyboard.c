@@ -177,6 +177,7 @@ void USBkeyboard_setUSBspeed(word speed)
 // resets and initializes CH376
 void USBkeyboard_init()
 {
+    USBkeyboard_asmDefines(); // workaround to prevent deletion by optimizer
     USBkeyboard_spiEndTransfer(); // start with cs high
     delay(10);
     

@@ -17,6 +17,88 @@ BDOSprogram = False
 #Global offset of program in memory
 programOffset = 0
 
+#Remove unreachable code
+optimizeSize = False
+
+
+def removeFunctionFromCode(parsedLines, toRemove):
+    returnList = []
+
+    start = -1
+    end = -1
+
+    belowCodeSection = False
+
+    for idx, line in enumerate(parsedLines):
+        if line[1][0] == "Int4:":
+            belowCodeSection = True
+        if start == -1:
+            if line[1][0] == toRemove + ":":
+                start = idx
+                #print (start)
+                #print(parsedLines[start])
+        elif end == -1:
+            # continue until next function found
+            if (line[1][0][-1] == ':'):
+                if not belowCodeSection:
+                    if ("Label_" not in line[1][0]):
+                        end = idx
+                        #print (end)
+                        #print(parsedLines[end])
+                # when we are below the code section, stop at any new label
+                else:
+                    end = idx
+
+    returnList = returnList + parsedLines[0:start]
+    returnList = returnList + parsedLines[end:]
+
+    return returnList
+
+
+def removeUnreachebleCode(parsedLines):
+    #print("orig len:", len(parsedLines))
+    returnList = parsedLines
+
+    asm = [x[1] for x in parsedLines]
+    functionNames = []
+    jumps = []
+
+    for x in asm:
+
+        if len(x) > 0:
+            if (x[0][-1] == ':'):
+                if ("Label_" not in x[0]):
+                    functionNames.append(x[0][:-1])
+            if (x[0] == "addr2reg"):
+                if ("Label_" not in x[1]):
+                    jumps.append(x[1])
+
+            if (x[0] == "jump"):
+                if ("Label_" not in x[1]):
+                    jumps.append(x[1])
+
+    #for f in functionNames:
+    #    print(f)
+    
+    #for j in jumps:
+    #    print(j)
+
+    unusedFunctions = list((set(functionNames).difference(jumps)).difference(["Main", "Int1", "Int2", "Int3", "Int4", "Syscall"]))
+
+    foundUnusedFunctions = len(unusedFunctions)
+
+    for u in unusedFunctions:
+        #print(u)
+        returnList = removeFunctionFromCode(returnList, u)
+
+    # recursive check
+    if foundUnusedFunctions > 0:
+        returnList = removeUnreachebleCode(returnList)
+
+    #print("after len:", len(returnList))
+
+    return returnList
+
 
 def parseLines(fileName):
     parsedLines = []
@@ -371,12 +453,16 @@ def main():
     global BDOSos
     global BDOSprogram
     global programOffset
+    global optimizeSize
 
     if len(sys.argv) >= 3:
         BDOSprogram = (sys.argv[1].lower() == "bdos")
-        programOffset = CompileInstruction.getNumber(sys.argv[2])
-    elif len(sys.argv) == 2:
+        if BDOSprogram:
+            programOffset = CompileInstruction.getNumber(sys.argv[2])
+    if len(sys.argv) >= 2:
         BDOSos = (sys.argv[1].lower() == "os")
+    if sys.argv[len(sys.argv)-1] == "-O":
+        optimizeSize = True
 
     #parse lines from file
     parsedLines = parseLines("code.asm")
@@ -395,6 +481,9 @@ def main():
 
     #insert libraries
     parsedLines = insertLibraries(parsedLines)
+
+    if optimizeSize:
+        parsedLines = removeUnreachebleCode(parsedLines)
 
     #obtain and remove the define statements
     defines, parsedLines = obtainDefines(parsedLines)

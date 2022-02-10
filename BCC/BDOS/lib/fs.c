@@ -247,6 +247,7 @@ word FS_setUSBmode(word mode)
 // returns FS_ANSW_RET_SUCCESS on success
 word FS_init()
 {
+    FS_asmDefines(); // prevent deletion of function by optimizer
     FS_spiEndTransfer(); // start with cs high
     delay(10);
 

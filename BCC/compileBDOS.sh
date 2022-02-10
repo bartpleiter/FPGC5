@@ -8,7 +8,7 @@ then
     echo "C code successfully compiled"
 
     echo "Assembling B332 ASM code"
-    if (cd ../Assembler && python3 Assembler.py os > ../Programmer/code.list) # compile and write to code.list in Programmer folder
+    if (cd ../Assembler && python3 Assembler.py os -O > ../Programmer/code.list) # compile and write to code.list in Programmer folder
     then
             echo "B332 ASM code successfully assembled"
             # convert list to binary files and send to FPGC
@@ -31,7 +31,7 @@ then
     
     else # assemble failed, run again to show error
         echo "Failed to assemble B332 ASM code"
-        cd ../Assembler && python3 Assembler.py os
+        cd ../Assembler && python3 Assembler.py os -O
     fi
 else # compile failed
     echo "Failed to compile C code"

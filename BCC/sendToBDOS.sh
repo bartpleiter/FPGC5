@@ -16,7 +16,7 @@ then
     echo "C code successfully compiled"
 
     echo "Assembling B332 ASM code"
-    if (cd ../Assembler && python3 Assembler.py bdos 0x400000 > ../Programmer/code.list) # assemble with offset for BDOS and write to code.list in Programmer folder
+    if (cd ../Assembler && python3 Assembler.py bdos 0x400000 -O > ../Programmer/code.list) # assemble with offset for BDOS and write to code.list in Programmer folder
     then
             echo "B332 ASM code successfully assembled"
             # convert list to binary files and send to FPGC
@@ -29,7 +29,7 @@ then
     
     else # assemble failed, run again to show error
         echo "Failed to assemble B332 ASM code"
-        cd ../Assembler && python3 Assembler.py bdos 0x400000
+        cd ../Assembler && python3 Assembler.py bdos 0x400000 -O
     fi
 else # compile failed
     echo "Failed to compile C code"
